@@ -1,0 +1,436 @@
+// Kharko Dozor — Prisma Schema
+//
+// Single source of truth for the database shape. All server queries go
+// through the generated client at `src/generated/prisma/`; migrations
+// live at `prisma/migrations/` and are applied with `npx prisma migrate
+// dev` (Neon unpooled connection, see `prisma.config.ts`).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+/// Discriminates auto-provisioned personal workspaces from user-created
+/// team organisations. Exactly one `PERSONAL` org per user, created in
+/// the `createUser` Auth.js event; cannot be deleted, and its single
+/// member cannot be removed. `TEAM` orgs support full CRUD and multi-
+/// member invites.
+enum OrgType {
+  PERSONAL
+  TEAM
+}
+
+/// RBAC ranks (ascending privilege). Full capability matrix lives in
+/// `src/server/auth/permissions.ts`; client-side derivation via
+/// `useCanManageActiveOrg`. Double-validated: UI hides + API 403s.
+enum Role {
+  /// Governance — invite lifecycle, role changes, API key lifecycle,
+  /// destructive deletes. Multiple owners allowed per org.
+  OWNER
+  /// Day-to-day edits — org rename/avatar, project rename,
+  /// `defaultDisplayNameTraitKey`, tracked-user `displayName`, session
+  /// delete. No key-material access (plaintext or regen).
+  ADMIN
+  /// Read-only everywhere. Can self-leave orgs and edit own profile.
+  VIEWER
+}
+
+/// Invite lifecycle — PENDING is the only live state; ACCEPTED and
+/// EXPIRED are terminal. Expiry is time-based (see `Invite.expiresAt`)
+/// and swept daily by the `daily-cleanup` cron; status also flips on
+/// admin revoke.
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
+// ─── Auth.js Models ──────────────────────────────────────
+
+/// Platform user — the human who signs in. One personal organisation
+/// auto-provisioned on first sign-in (see `src/server/auth/events.ts`);
+/// additional team organisations are created on demand. Auth.js fields
+/// (`email`, `emailVerified`, `image`) follow the adapter contract.
+model User {
+  id                   String    @id @default(cuid())
+  name                 String?
+  email                String    @unique
+  emailVerified        DateTime?
+  /// Avatar URL — DiceBear `shapes` style, deterministic per user id.
+  /// Override-able via the avatar regen button in settings.
+  image                String
+  /// FK → currently selected org for this session. Nullable by design
+  /// (user may temporarily have no active org if the previous one was
+  /// deleted — the JWT callback then falls back to the personal space).
+  /// NB: kept nullable in code via the cron's pre-delete null-sweep;
+  /// the FK itself uses `SetNull` so schema enforces the invariant.
+  activeOrganizationId String?
+  /// UI language preference — source of truth for authenticated users,
+  /// projected onto `session.user.locale` via the JWT callback and
+  /// consumed by every `getTranslations({ locale })` call in email
+  /// builders. Stored as a free-form string (not a Prisma enum) so
+  /// adding a locale to `src/i18n/config.ts::LOCALES` never requires
+  /// a schema migration — the app-side `hasLocale` guard narrows any
+  /// unknown persisted value back to `DEFAULT_LOCALE` at read time.
+  locale               String    @default("en")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  activeOrganization   Organization?         @relation("activeOrg", fields: [activeOrganizationId], references: [id], onDelete: SetNull)
+  accounts             Account[]
+  authenticators       Authenticator[]
+  memberships          Membership[]
+  createdOrganizations Organization[]
+  invites              Invite[]
+  inviteSendRateLimits InviteSendRateLimit[]
+}
+
+/// OAuth / OIDC account link — managed by the Auth.js Prisma adapter.
+/// One user can have multiple accounts (Google + GitHub + passkey).
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Single-use email OTP token — Auth.js Nodemailer provider contract.
+/// Not to be confused with a Session row; Auth.js v5 uses JWT sessions,
+/// so there is no Session table. Rows expire via the `expires` field
+/// (cleaned on next sign-in attempt by Auth.js itself).
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+/// Per-day invite send counter, keyed on `(userId, date)`. Same
+/// pattern as `OtpRateLimit` but scoped to a signed-in user rather
+/// than an email — caps a single admin account to
+/// `INVITE_DAILY_LIMIT` invite sends per UTC day so a compromised
+/// OWNER session can't fan out hundreds of emails. Incremented via
+/// `bumpInviteRateLimit` after a successful invite create + email
+/// dispatch; read via `queryInviteRateLimit`; enforced by
+/// `assertInviteRateLimit` at the start of the invite route.
+model InviteSendRateLimit {
+  id        String   @id @default(cuid())
+  userId    String
+  count     Int      @default(1)
+  /// Date-only column (`@db.Date`) — same bucket-reset trick as
+  /// `OtpRateLimit`; the `(userId, date)` unique index auto-rolls at
+  /// UTC midnight without an explicit cleanup step.
+  date      DateTime @default(now()) @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+}
+
+/// Per-day OTP send counter, keyed on `(email, date)`. Guards the OTP
+/// daily cap (see `OTP_DAILY_LIMIT` in `lib/auth/otp.constants.ts`) and
+/// the inter-send cooldown. Incremented atomically via
+/// `bumpOtpRateLimit` in `server/auth/providers.ts` when a code is
+/// actually minted; separate read-only probe via `queryOtpRateLimit`.
+model OtpRateLimit {
+  id        String   @id @default(cuid())
+  email     String
+  count     Int      @default(1)
+  /// Date-only column (`@db.Date`) so the `(email, date)` unique index
+  /// bucket-resets at UTC midnight without explicit cleanup.
+  date      DateTime @default(now()) @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, date])
+  @@index([email])
+}
+
+/// WebAuthn authenticator (passkey). Composite PK `(userId, credentialID)`
+/// so the same credential id theoretically cannot collide across users;
+/// `credentialID @unique` guards the same invariant server-wide.
+model Authenticator {
+  credentialID         String   @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+  name                 String   @default("Passkey")
+  createdAt            DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+  @@index([userId])
+}
+
+// ─── Business Models ─────────────────────────────────────
+
+/// Workspace scope — groups projects + tracked users + sessions and
+/// defines the RBAC boundary. Every user has at least one organisation
+/// at all times (personal space auto-created on sign-up, not deletable).
+/// Team orgs support full CRUD and multi-member invites.
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  /// DiceBear `glass` style, deterministic per org id — visually
+  /// distinct from user avatars (`shapes`) and tracked-user avatars
+  /// (`big-smile`) so the three kinds can never be confused on screen.
+  image       String
+  type        OrgType
+  /// The user who created this org. Kept for audit only — not used for
+  /// permissions (role is read from `Membership`, not here).
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  activeForUsers User[]       @relation("activeOrg")
+  memberships    Membership[]
+  invites        Invite[]
+  projects       Project[]
+}
+
+/// User ↔ Organisation link with a role. A user can belong to many
+/// orgs; `(userId, organizationId)` is unique so at most one role per
+/// pair. Deleting either side cascades the membership out.
+model Membership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           Role
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+}
+
+/// Pending / terminated invite to an organisation. Duplicate PENDING
+/// invites for the same `(email, organizationId)` are refreshed in
+/// place rather than blocked with a 409 — the API route reuses the
+/// existing row and resets `expiresAt`/`role`/`invitedById`.
+/// Expiry sweep is lazy (per-read via `expireStaleInvites`) + daily
+/// cron.
+model Invite {
+  id             String       @id @default(cuid())
+  email          String
+  role           Role         @default(VIEWER)
+  status         InviteStatus
+  /// 3-day TTL from creation — see `INVITE_EXPIRY_DAYS` in
+  /// `src/api-client/organizations/constants.ts` (shared between route
+  /// math, email copy, and the admin invite modal extend helper).
+  expiresAt      DateTime
+  organizationId String
+  invitedById    String
+  createdAt      DateTime     @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation(fields: [invitedById], references: [id])
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+/// Ingest credential + logical grouping of sessions. One `key` per
+/// project; plaintext in the DB but treated as a secret at every
+/// application boundary (branded `ApiKeyPlaintext` type; `maskApiKey`
+/// for display; fetch-on-copy endpoint with `Cache-Control: no-store`).
+/// Rotating the key via `/regenerate-key` invalidates the old one
+/// atomically — no grace window, on purpose.
+model Project {
+  id             String    @id @default(cuid())
+  name           String
+  /// `dp_<32hex>` ingest key (unique, rotatable). Never leaked to the
+  /// client tree — the list endpoint returns `maskedKey` only; the
+  /// copy button hits `/api/projects/[id]/key` on click.
+  key            String    @unique
+  organizationId String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  /// Bumped fire-and-forget on every accepted ingest batch. Failures
+  /// are intentionally swallowed so a slow project-meta write never
+  /// breaks ingestion itself.
+  lastUsedAt     DateTime?
+
+  /// Project-wide default: when a TrackedUser has no local override,
+  /// fall back to the value of `traits[this]` (see `resolveDisplayName`).
+  defaultDisplayNameTraitKey String?
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sessions     Session[]
+  trackedUsers TrackedUser[]
+
+  @@index([organizationId])
+  @@index([key])
+}
+
+/// End user identified by the SDK via `identify()`. Uniqueness is per
+/// project — the same `externalId` in two projects is two different
+/// rows. `traits` is free-form JSON; resolution of a display-friendly
+/// name walks a 4-level priority chain (see `resolveDisplayName`).
+model TrackedUser {
+  id         String   @id @default(cuid())
+  /// Opaque id provided by the SDK — anything the customer uses to
+  /// identify a user internally (email, uuid, numeric id, etc.).
+  externalId String
+  projectId  String
+  /// Free-form JSON payload from `Dozor.identify(traits)`. Shape is not
+  /// validated; resolve safely with `resolveDisplayName` / the
+  /// modal's local trait-key picker before reading specific fields.
+  traits     Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  /// Display-name resolution (priority 1 → 2, before the project default and externalId):
+  /// 1. `customName` — explicit override typed by an admin
+  /// 2. `displayNameTraitKey` — read `traits[this]` for this specific user
+  /// See `src/api-client/tracked-users/resolve-display-name.ts` for the resolver.
+  customName          String?
+  displayNameTraitKey String?
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sessions Session[]
+
+  @@unique([projectId, externalId])
+  @@index([projectId])
+  /// Composite index accelerates list-page cursor pagination sorted by
+  /// recency within a project (`ORDER BY updatedAt DESC`, which is the
+  /// default sort on `/users`).
+  @@index([projectId, updatedAt(sort: Desc)])
+}
+
+/// One recording session. `externalId` is SDK-assigned and unique per
+/// project so re-ingest batches upsert idempotently on `(projectId,
+/// externalId)`. `startedAt` is the SDK-reported session start
+/// (client wall-clock); `createdAt` is when the server first wrote the
+/// row. They can diverge on clock skew or delayed batches; the list UI
+/// sorts by `createdAt` to match what "recently seen" means to an
+/// admin.
+model Session {
+  id            String    @id @default(cuid())
+  externalId    String
+  projectId     String
+  /// Optional — set when the SDK emits `identify()`. `SetNull` on
+  /// tracked-user delete so the recording stays replayable even after
+  /// the user is cleaned up.
+  trackedUserId String?
+  url           String?
+  userAgent     String?
+  screenWidth   Int?
+  screenHeight  Int?
+  language      String?
+  startedAt     DateTime
+  /// Nullable while the session is live (open tab); populated when the
+  /// SDK reports a session-end (visibility change, SPA navigation that
+  /// crosses a session boundary, or idle timeout).
+  endedAt       DateTime?
+  /// Denormalised aggregates maintained by the ingest pipeline — cheap
+  /// list-page reads without per-row event scans.
+  duration      Int       @default(0)
+  eventCount    Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  trackedUser TrackedUser? @relation(fields: [trackedUserId], references: [id], onDelete: SetNull)
+  events      Event[]
+  slices      Slice[]
+
+  @@unique([projectId, externalId])
+  @@index([projectId])
+  @@index([trackedUserId])
+  /// Composite index for `/replays` list cursor pagination (default
+  /// sort: newest-first within project). Matches the WHERE +
+  /// ORDER BY shape exactly.
+  @@index([projectId, createdAt(sort: Desc)])
+}
+
+/// Replayable segment of a Session — sliced on page navigation or idle
+/// gap > 30s. Each slice has its own rrweb Full Snapshot so the replay
+/// viewer can jump directly into any slice without replaying earlier
+/// ones. `(sessionId, index)` is unique; ingest upserts on this key.
+model Slice {
+  id             String    @id @default(cuid())
+  sessionId      String
+  /// 0-based slice index within the session — strictly monotonic per
+  /// session. Used as the primary stable identifier in the URL and
+  /// slice-events API routes.
+  index          Int
+  /// `init` (first slice) | `idle` (gap > 30 s) | `navigation` (SPA
+  /// route change). Drives the icon shown in the replay slice picker.
+  reason         String
+  pathname       String
+  url            String
+  viewportWidth  Int?
+  viewportHeight Int?
+  startedAt      DateTime
+  /// Null while the slice is the most recent one being recorded;
+  /// populated when the next slice starts or the session ends.
+  endedAt        DateTime?
+  /// Per-slice denormalised aggregates (same rationale as Session).
+  duration       Int       @default(0)
+  eventCount     Int       @default(0)
+  createdAt      DateTime  @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  events  Event[]
+
+  @@unique([sessionId, index])
+  @@index([sessionId])
+}
+
+/// Raw rrweb event. `timestamp` is `BigInt` to tolerate microsecond
+/// precision if rrweb ever emits it (current builds emit ms); cast
+/// down to Number for Date arithmetic on the client. `sliceId` is
+/// nullable for SDK builds that pre-date the slice-marker protocol —
+/// such events fall back to `sliceIndex = 0` via `ensureDefaultSlice`
+/// in the ingest pipeline.
+model Event {
+  id         String   @id @default(cuid())
+  sessionId  String
+  sliceId    String?
+  /// Denormalised copy of `slice.index` so event-batch queries can
+  /// filter/group by slice without a join. Kept in sync by the ingest
+  /// pipeline.
+  sliceIndex Int?
+  type       Int
+  timestamp  BigInt
+  data       Json
+  createdAt  DateTime @default(now())
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  slice   Slice?  @relation(fields: [sliceId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId])
+  @@index([sliceId])
+}
