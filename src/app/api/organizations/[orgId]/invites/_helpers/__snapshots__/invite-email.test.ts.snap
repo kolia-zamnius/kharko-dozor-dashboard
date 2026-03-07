@@ -1,0 +1,457 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`inviteEmailHtml > renders for locale de (role=ADMIN) 1`] = `
+"<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <style>
+    :root { color-scheme: light dark; }
+    @media (prefers-color-scheme: dark) {
+      .email-bg { background-color: #18181b !important; }
+      .card { background-color: #27272a !important; border-color: #3f3f46 !important; }
+      .title { color: #fafafa !important; }
+      .subtitle { color: #a1a1aa !important; }
+      .divider { background-color: #3f3f46 !important; }
+      .muted { color: #71717a !important; }
+      .brand { color: #fafafa !important; }
+      .btn { background-color: #7c3aed !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" class="email-bg" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+    <tr><td align="center" style="padding:48px 16px;">
+      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;">
+
+        <tr><td align="center" style="padding-bottom:32px;">
+          <span class="brand" style="font-size:16px;font-weight:600;color:#18181b;letter-spacing:0.3px;">Kharko Dozor</span>
+        </td></tr>
+
+        <tr><td class="card" style="background-color:#ffffff;border-radius:12px;border:1px solid #e4e4e7;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+
+            <tr><td style="padding:36px 32px 8px;text-align:center;">
+              <p class="title" style="margin:0;font-size:20px;font-weight:600;color:#18181b;">Sie wurden eingeladen</p>
+            </td></tr>
+
+            <tr><td style="padding:4px 32px 24px;text-align:center;">
+              <p class="subtitle" style="margin:0;font-size:14px;color:#71717a;line-height:1.5;">
+                <strong>Alice Rogers</strong> lädt Sie ein, <strong>Acme Team</strong> als <strong>Admin</strong> beizutreten.
+              </p>
+            </td></tr>
+
+            <tr><td align="center" style="padding:0 32px 32px;">
+              <a href="http://localhost:3000/settings/organizations" class="btn" style="display:inline-block;background-color:#7c3aed;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;">
+                Einladung ansehen
+              </a>
+            </td></tr>
+
+            <tr><td style="padding:0 32px;">
+              <div class="divider" style="height:1px;background-color:#e4e4e7;"></div>
+            </td></tr>
+
+            <tr><td style="padding:20px 32px 28px;text-align:center;">
+              <p class="muted" style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.5;">
+                Diese Einladung läuft in 3 Tagen ab. Wenn Sie dies nicht erwartet haben, können Sie sie ignorieren.
+              </p>
+            </td></tr>
+
+          </table>
+        </td></tr>
+
+        <tr><td style="padding-top:24px;text-align:center;">
+          <p class="muted" style="margin:0;font-size:12px;color:#a1a1aa;">
+            Kharko Dozor — Aufzeichnung und Wiedergabe von Sitzungen
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"
+`;
+
+exports[`inviteEmailHtml > renders for locale en (role=ADMIN) 1`] = `
+"<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <style>
+    :root { color-scheme: light dark; }
+    @media (prefers-color-scheme: dark) {
+      .email-bg { background-color: #18181b !important; }
+      .card { background-color: #27272a !important; border-color: #3f3f46 !important; }
+      .title { color: #fafafa !important; }
+      .subtitle { color: #a1a1aa !important; }
+      .divider { background-color: #3f3f46 !important; }
+      .muted { color: #71717a !important; }
+      .brand { color: #fafafa !important; }
+      .btn { background-color: #7c3aed !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" class="email-bg" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+    <tr><td align="center" style="padding:48px 16px;">
+      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;">
+
+        <tr><td align="center" style="padding-bottom:32px;">
+          <span class="brand" style="font-size:16px;font-weight:600;color:#18181b;letter-spacing:0.3px;">Kharko Dozor</span>
+        </td></tr>
+
+        <tr><td class="card" style="background-color:#ffffff;border-radius:12px;border:1px solid #e4e4e7;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+
+            <tr><td style="padding:36px 32px 8px;text-align:center;">
+              <p class="title" style="margin:0;font-size:20px;font-weight:600;color:#18181b;">You're invited</p>
+            </td></tr>
+
+            <tr><td style="padding:4px 32px 24px;text-align:center;">
+              <p class="subtitle" style="margin:0;font-size:14px;color:#71717a;line-height:1.5;">
+                <strong>Alice Rogers</strong> invited you to join <strong>Acme Team</strong> as <strong>Admin</strong>.
+              </p>
+            </td></tr>
+
+            <tr><td align="center" style="padding:0 32px 32px;">
+              <a href="http://localhost:3000/settings/organizations" class="btn" style="display:inline-block;background-color:#7c3aed;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;">
+                View invitation
+              </a>
+            </td></tr>
+
+            <tr><td style="padding:0 32px;">
+              <div class="divider" style="height:1px;background-color:#e4e4e7;"></div>
+            </td></tr>
+
+            <tr><td style="padding:20px 32px 28px;text-align:center;">
+              <p class="muted" style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.5;">
+                This invitation expires in 3 days. If you didn't expect this, you can safely ignore it.
+              </p>
+            </td></tr>
+
+          </table>
+        </td></tr>
+
+        <tr><td style="padding-top:24px;text-align:center;">
+          <p class="muted" style="margin:0;font-size:12px;color:#a1a1aa;">
+            Kharko Dozor — session recording & replay
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"
+`;
+
+exports[`inviteEmailHtml > renders for locale es (role=ADMIN) 1`] = `
+"<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <style>
+    :root { color-scheme: light dark; }
+    @media (prefers-color-scheme: dark) {
+      .email-bg { background-color: #18181b !important; }
+      .card { background-color: #27272a !important; border-color: #3f3f46 !important; }
+      .title { color: #fafafa !important; }
+      .subtitle { color: #a1a1aa !important; }
+      .divider { background-color: #3f3f46 !important; }
+      .muted { color: #71717a !important; }
+      .brand { color: #fafafa !important; }
+      .btn { background-color: #7c3aed !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" class="email-bg" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+    <tr><td align="center" style="padding:48px 16px;">
+      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;">
+
+        <tr><td align="center" style="padding-bottom:32px;">
+          <span class="brand" style="font-size:16px;font-weight:600;color:#18181b;letter-spacing:0.3px;">Kharko Dozor</span>
+        </td></tr>
+
+        <tr><td class="card" style="background-color:#ffffff;border-radius:12px;border:1px solid #e4e4e7;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+
+            <tr><td style="padding:36px 32px 8px;text-align:center;">
+              <p class="title" style="margin:0;font-size:20px;font-weight:600;color:#18181b;">Te han invitado</p>
+            </td></tr>
+
+            <tr><td style="padding:4px 32px 24px;text-align:center;">
+              <p class="subtitle" style="margin:0;font-size:14px;color:#71717a;line-height:1.5;">
+                <strong>Alice Rogers</strong> te invita a unirte a <strong>Acme Team</strong> como <strong>Admin</strong>.
+              </p>
+            </td></tr>
+
+            <tr><td align="center" style="padding:0 32px 32px;">
+              <a href="http://localhost:3000/settings/organizations" class="btn" style="display:inline-block;background-color:#7c3aed;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;">
+                Ver invitación
+              </a>
+            </td></tr>
+
+            <tr><td style="padding:0 32px;">
+              <div class="divider" style="height:1px;background-color:#e4e4e7;"></div>
+            </td></tr>
+
+            <tr><td style="padding:20px 32px 28px;text-align:center;">
+              <p class="muted" style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.5;">
+                Esta invitación caduca en 3 días. Si no la esperabas, puedes ignorarla.
+              </p>
+            </td></tr>
+
+          </table>
+        </td></tr>
+
+        <tr><td style="padding-top:24px;text-align:center;">
+          <p class="muted" style="margin:0;font-size:12px;color:#a1a1aa;">
+            Kharko Dozor — grabación y reproducción de sesiones
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"
+`;
+
+exports[`inviteEmailHtml > renders for locale it (role=ADMIN) 1`] = `
+"<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <style>
+    :root { color-scheme: light dark; }
+    @media (prefers-color-scheme: dark) {
+      .email-bg { background-color: #18181b !important; }
+      .card { background-color: #27272a !important; border-color: #3f3f46 !important; }
+      .title { color: #fafafa !important; }
+      .subtitle { color: #a1a1aa !important; }
+      .divider { background-color: #3f3f46 !important; }
+      .muted { color: #71717a !important; }
+      .brand { color: #fafafa !important; }
+      .btn { background-color: #7c3aed !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" class="email-bg" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+    <tr><td align="center" style="padding:48px 16px;">
+      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;">
+
+        <tr><td align="center" style="padding-bottom:32px;">
+          <span class="brand" style="font-size:16px;font-weight:600;color:#18181b;letter-spacing:0.3px;">Kharko Dozor</span>
+        </td></tr>
+
+        <tr><td class="card" style="background-color:#ffffff;border-radius:12px;border:1px solid #e4e4e7;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+
+            <tr><td style="padding:36px 32px 8px;text-align:center;">
+              <p class="title" style="margin:0;font-size:20px;font-weight:600;color:#18181b;">Sei stato invitato</p>
+            </td></tr>
+
+            <tr><td style="padding:4px 32px 24px;text-align:center;">
+              <p class="subtitle" style="margin:0;font-size:14px;color:#71717a;line-height:1.5;">
+                <strong>Alice Rogers</strong> ti invita a unirti a <strong>Acme Team</strong> come <strong>Admin</strong>.
+              </p>
+            </td></tr>
+
+            <tr><td align="center" style="padding:0 32px 32px;">
+              <a href="http://localhost:3000/settings/organizations" class="btn" style="display:inline-block;background-color:#7c3aed;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;">
+                Vedi invito
+              </a>
+            </td></tr>
+
+            <tr><td style="padding:0 32px;">
+              <div class="divider" style="height:1px;background-color:#e4e4e7;"></div>
+            </td></tr>
+
+            <tr><td style="padding:20px 32px 28px;text-align:center;">
+              <p class="muted" style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.5;">
+                Questo invito scade tra 3 giorni. Se non lo aspettavi, puoi ignorarlo.
+              </p>
+            </td></tr>
+
+          </table>
+        </td></tr>
+
+        <tr><td style="padding-top:24px;text-align:center;">
+          <p class="muted" style="margin:0;font-size:12px;color:#a1a1aa;">
+            Kharko Dozor — registrazione e riproduzione di sessioni
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"
+`;
+
+exports[`inviteEmailHtml > renders for locale pt (role=ADMIN) 1`] = `
+"<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <style>
+    :root { color-scheme: light dark; }
+    @media (prefers-color-scheme: dark) {
+      .email-bg { background-color: #18181b !important; }
+      .card { background-color: #27272a !important; border-color: #3f3f46 !important; }
+      .title { color: #fafafa !important; }
+      .subtitle { color: #a1a1aa !important; }
+      .divider { background-color: #3f3f46 !important; }
+      .muted { color: #71717a !important; }
+      .brand { color: #fafafa !important; }
+      .btn { background-color: #7c3aed !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" class="email-bg" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+    <tr><td align="center" style="padding:48px 16px;">
+      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;">
+
+        <tr><td align="center" style="padding-bottom:32px;">
+          <span class="brand" style="font-size:16px;font-weight:600;color:#18181b;letter-spacing:0.3px;">Kharko Dozor</span>
+        </td></tr>
+
+        <tr><td class="card" style="background-color:#ffffff;border-radius:12px;border:1px solid #e4e4e7;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+
+            <tr><td style="padding:36px 32px 8px;text-align:center;">
+              <p class="title" style="margin:0;font-size:20px;font-weight:600;color:#18181b;">Foi convidado</p>
+            </td></tr>
+
+            <tr><td style="padding:4px 32px 24px;text-align:center;">
+              <p class="subtitle" style="margin:0;font-size:14px;color:#71717a;line-height:1.5;">
+                <strong>Alice Rogers</strong> convida-o a juntar-se a <strong>Acme Team</strong> como <strong>Admin</strong>.
+              </p>
+            </td></tr>
+
+            <tr><td align="center" style="padding:0 32px 32px;">
+              <a href="http://localhost:3000/settings/organizations" class="btn" style="display:inline-block;background-color:#7c3aed;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;">
+                Ver convite
+              </a>
+            </td></tr>
+
+            <tr><td style="padding:0 32px;">
+              <div class="divider" style="height:1px;background-color:#e4e4e7;"></div>
+            </td></tr>
+
+            <tr><td style="padding:20px 32px 28px;text-align:center;">
+              <p class="muted" style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.5;">
+                Este convite expira em 3 dias. Se não o esperava, pode ignorá-lo.
+              </p>
+            </td></tr>
+
+          </table>
+        </td></tr>
+
+        <tr><td style="padding-top:24px;text-align:center;">
+          <p class="muted" style="margin:0;font-size:12px;color:#a1a1aa;">
+            Kharko Dozor — gravação e reprodução de sessões
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"
+`;
+
+exports[`inviteEmailHtml > renders for locale uk (role=ADMIN) 1`] = `
+"<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <style>
+    :root { color-scheme: light dark; }
+    @media (prefers-color-scheme: dark) {
+      .email-bg { background-color: #18181b !important; }
+      .card { background-color: #27272a !important; border-color: #3f3f46 !important; }
+      .title { color: #fafafa !important; }
+      .subtitle { color: #a1a1aa !important; }
+      .divider { background-color: #3f3f46 !important; }
+      .muted { color: #71717a !important; }
+      .brand { color: #fafafa !important; }
+      .btn { background-color: #7c3aed !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" class="email-bg" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;">
+    <tr><td align="center" style="padding:48px 16px;">
+      <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;">
+
+        <tr><td align="center" style="padding-bottom:32px;">
+          <span class="brand" style="font-size:16px;font-weight:600;color:#18181b;letter-spacing:0.3px;">Kharko Dozor</span>
+        </td></tr>
+
+        <tr><td class="card" style="background-color:#ffffff;border-radius:12px;border:1px solid #e4e4e7;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+
+            <tr><td style="padding:36px 32px 8px;text-align:center;">
+              <p class="title" style="margin:0;font-size:20px;font-weight:600;color:#18181b;">Вас запросили</p>
+            </td></tr>
+
+            <tr><td style="padding:4px 32px 24px;text-align:center;">
+              <p class="subtitle" style="margin:0;font-size:14px;color:#71717a;line-height:1.5;">
+                <strong>Alice Rogers</strong> запрошує вас до <strong>Acme Team</strong> як <strong>Адмін</strong>.
+              </p>
+            </td></tr>
+
+            <tr><td align="center" style="padding:0 32px 32px;">
+              <a href="http://localhost:3000/settings/organizations" class="btn" style="display:inline-block;background-color:#7c3aed;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 32px;border-radius:8px;">
+                Переглянути запрошення
+              </a>
+            </td></tr>
+
+            <tr><td style="padding:0 32px;">
+              <div class="divider" style="height:1px;background-color:#e4e4e7;"></div>
+            </td></tr>
+
+            <tr><td style="padding:20px 32px 28px;text-align:center;">
+              <p class="muted" style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.5;">
+                Це запрошення дійсне ще 3 дні. Якщо ви не очікуєте цього листа, можете ігнорувати його.
+              </p>
+            </td></tr>
+
+          </table>
+        </td></tr>
+
+        <tr><td style="padding-top:24px;text-align:center;">
+          <p class="muted" style="margin:0;font-size:12px;color:#a1a1aa;">
+            Kharko Dozor — запис і відтворення користувацьких сесій
+          </p>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"
+`;
