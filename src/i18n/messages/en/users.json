@@ -1,0 +1,211 @@
+{
+  "page": {
+    "title": "Users — Kharko Dozor"
+  },
+  "mutations": {
+    "updateDisplayName": {
+      "customNameSet": "Custom name saved",
+      "customNameCleared": "Custom name cleared",
+      "traitKeySet": "Trait key saved",
+      "traitKeyCleared": "Trait key cleared",
+      "generic": "Display name updated",
+      "error": "Failed to update display name"
+    }
+  },
+  "list": {
+    "heading": "Users",
+    "subtitle": "Tracked users identified by your SDK across all projects.",
+    "liveAnnounceFiltered": "Showing {count, plural, one {# user} other {# users}} (filtered).",
+    "liveAnnounce": "Showing {count, plural, one {# user} other {# users}}.",
+    "stats": {
+      "totalTracked": "Total tracked",
+      "onlineNow": "Online now",
+      "active24h": "Active 24h",
+      "newThisWeek": "New this week"
+    },
+    "search": {
+      "placeholder": "Search users...",
+      "ariaLabel": "Search tracked users",
+      "clearAria": "Clear search"
+    },
+    "projectFilter": {
+      "label": "Project",
+      "empty": "No projects"
+    },
+    "statusFilter": {
+      "label": "Status"
+    },
+    "empty": {
+      "withFiltersTitle": "No users match your filters",
+      "withFiltersBody": "Try adjusting your search, project, or status filters.",
+      "noUsersTitle": "No tracked users yet",
+      "noUsersBody": "Users will appear here when your tracker SDK calls <code></code>."
+    },
+    "table": {
+      "colUser": "User",
+      "colProject": "Project",
+      "colStatus": "Status",
+      "colLastSeen": "Last seen",
+      "colSessions": "Sessions",
+      "colActive7d": "Active 7d",
+      "emptyDash": "—"
+    },
+    "loadMore": "Load more"
+  },
+  "status": {
+    "ONLINE": {
+      "label": "Online",
+      "description": "Active in the last 2 minutes"
+    },
+    "ACTIVE_24H": {
+      "label": "Active",
+      "description": "Had activity in the last 24 hours"
+    },
+    "IDLE_7D": {
+      "label": "Idle",
+      "description": "Last seen within the past 7 days"
+    },
+    "DORMANT": {
+      "label": "Dormant",
+      "description": "No activity for more than 7 days"
+    }
+  },
+  "activity": {
+    "6h": {
+      "label": "Last 6 hours",
+      "shortLabel": "6h"
+    },
+    "24h": {
+      "label": "Last 24 hours",
+      "shortLabel": "24h"
+    },
+    "7d": {
+      "label": "Last 7 days",
+      "shortLabel": "7d"
+    }
+  },
+  "errorContext": {
+    "list": "Users list",
+    "detail": "User"
+  },
+  "detail": {
+    "page": {
+      "title": "User — Kharko Dozor"
+    },
+    "rangeSelectorAria": "Select activity range",
+    "header": {
+      "prefix": "Tracked user · ID ",
+      "firstSeen": "First seen {date}",
+      "sessionCount": "{count, plural, one {# session} other {# sessions}}",
+      "editAria": "Edit display name"
+    },
+    "online": {
+      "onlineNow": "Online now",
+      "lastSeen": "Last seen {relative}",
+      "neverSeen": "Never seen",
+      "tooltipLast": "Last event {time}",
+      "tooltipNone": "No events yet"
+    },
+    "stats": {
+      "sessions": "Sessions",
+      "activeTime": "Active time",
+      "avgSession": "Avg session",
+      "events": "Events",
+      "uniquePages": "Unique pages",
+      "topPage": "Top page",
+      "dash": "—",
+      "noSessions": "no sessions",
+      "across": "across {count}",
+      "topPageSub": "most time spent"
+    },
+    "activityChart": {
+      "title": "Activity",
+      "empty": "No activity in this range.",
+      "ariaLabel": "Activity histogram: {events} events across {buckets} buckets, peak {peak}.",
+      "bucketAria": "{range}: {count, plural, one {# event} other {# events}}",
+      "tooltipEvents": "{count, plural, one {# event} other {# events}}"
+    },
+    "pages": {
+      "title": "Pages",
+      "empty": "No page visits in this range.",
+      "countLabel": "{visible} / {total} unique",
+      "colNum": "#",
+      "colPage": "Page",
+      "colTime": "Time",
+      "colShare": "Share",
+      "colVisits": "Visits",
+      "showMore": "Show more ({count})",
+      "showLess": "Show less (−{count})"
+    },
+    "timeline": {
+      "title": "Sessions timeline",
+      "empty": "No sessions in this range.",
+      "summary": "{count, plural, one {# session} other {# sessions}} · {lanes, plural, one {# lane} other {# lanes}} · {range}",
+      "ariaLabel": "Sessions timeline: {count, plural, one {# session} other {# sessions}} across {lanes, plural, one {# lane} other {# lanes}}.",
+      "sessionAria": "Session {id}, {duration}",
+      "ongoing": "ongoing",
+      "lessThanSecond": "<1s",
+      "clickToReplay": "Click to replay",
+      "sliceCount": "{count, plural, one {# slice} other {# slices}}"
+    },
+    "sessions": {
+      "title": "Sessions",
+      "empty": "No sessions recorded for this user.",
+      "colSession": "Session",
+      "colStarted": "Started",
+      "colDuration": "Duration",
+      "colEvents": "Events",
+      "colSlices": "Slices",
+      "loadMore": "Load more",
+      "loading": "Loading…"
+    },
+    "traits": {
+      "title": "Traits",
+      "keyCount": "{count, plural, one {# key} other {# keys}}",
+      "hideJson": "Hide JSON",
+      "showAll": "Show all ({count})",
+      "showJson": "Show JSON",
+      "copyAria": "Copy traits as JSON",
+      "copyJson": "Copy JSON",
+      "copied": "Copied",
+      "toastCopySuccess": "Copied traits JSON to clipboard",
+      "toastCopyError": "Failed to copy to clipboard"
+    },
+    "displayName": {
+      "title": "Display name",
+      "description": "Choose how this user appears in the dashboard. Entries lower in the list only apply when nothing above them is set.",
+      "custom": {
+        "heading": "Custom name",
+        "description": "Literal display name for this user. Wins over everything else.",
+        "placeholder": "e.g. Alice Johnson",
+        "set": "Set",
+        "reset": "Reset"
+      },
+      "local": {
+        "heading": "Trait key (this user)",
+        "description": "Pick a key from this user's <code></code>. Their display name will be the value of <codeValue></codeValue>.",
+        "placeholder": "e.g. email",
+        "set": "Set",
+        "reset": "Reset",
+        "available": "Available: "
+      },
+      "project": {
+        "heading": "Trait key (project default)",
+        "description": "Applies to <strong></strong> in <projectName></projectName> that has no local override. Pick a key most users carry (e.g. <code></code>).",
+        "placeholder": "e.g. email",
+        "set": "Set",
+        "reset": "Reset"
+      }
+    },
+    "notFound": {
+      "title": "User not found",
+      "description": "This tracked user may have been deleted, or you don't have access to the project that owns it.",
+      "backButton": "Back to users"
+    },
+    "error": {
+      "backButton": "Back to users",
+      "tryAgain": "Try again",
+      "errorId": "Error ID: {id}"
+    }
+  }
+}

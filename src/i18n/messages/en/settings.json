@@ -1,0 +1,331 @@
+{
+  "page": {
+    "userTitle": "User Settings — Kharko Dozor",
+    "orgsTitle": "Manage Organizations — Kharko Dozor"
+  },
+  "user": {
+    "heading": "User Settings",
+    "profile": {
+      "title": "Profile",
+      "description": "Your personal information",
+      "regenerateAvatar": "Regenerate avatar",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "saveName": "Save name",
+      "emailHeading": "Email",
+      "emailNote": "Email cannot be changed. It is used as your login identifier.",
+      "avatarFallback": "User"
+    },
+    "auth": {
+      "title": "Authentication",
+      "description": "Manage your sign-in methods"
+    },
+    "passkeys": {
+      "heading": "Passkeys",
+      "empty": "No passkeys registered yet.",
+      "addButton": "Add passkey",
+      "renameAria": "Rename passkey",
+      "deleteAria": "Delete passkey",
+      "renameTitle": "Rename passkey",
+      "renameLabel": "Name",
+      "renamePlaceholder": "e.g. MacBook Pro",
+      "save": "Save",
+      "cancel": "Cancel",
+      "deleteTitle": "Delete \"{name}\"?",
+      "deleteDescription": "This passkey will be permanently removed from your account. To sign in from this device again, you'll need to register a new passkey. This action cannot be undone.",
+      "delete": "Delete",
+      "deviceTypeMulti": "Multi-device",
+      "deviceTypeSingle": "Single device"
+    },
+    "accounts": {
+      "heading": "Connected accounts",
+      "empty": "No accounts connected.",
+      "disconnect": "Disconnect",
+      "confirmTitle": "Disconnect {provider}?",
+      "confirmDescription": "You will no longer be able to sign in with {provider}. Make sure you have at least one other sign-in method (passkey, email OTP, or another OAuth provider) before disconnecting, otherwise you may lose access to your account.",
+      "cancel": "Cancel"
+    },
+    "danger": {
+      "title": "Danger Zone",
+      "description": "Irreversible actions",
+      "body": "Permanently delete your account and all associated data. This action cannot be undone.",
+      "deleteButton": "Delete account",
+      "dialogTitle": "Delete account?",
+      "dialogDescription": "This will permanently delete your account, all organizations where you are the only member, and remove you from all shared organizations.",
+      "confirmLabel": "Type \"delete my account\" to confirm",
+      "confirmPlaceholder": "delete my account",
+      "cancel": "Cancel",
+      "confirm": "Delete account"
+    },
+    "locale": {
+      "title": "Language",
+      "description": "Choose the language used across the dashboard and in emails.",
+      "selectAria": "Select language"
+    }
+  },
+  "mutations": {
+    "user": {
+      "updateProfile": {
+        "success": "Profile updated",
+        "error": "Failed to update profile"
+      },
+      "regenerateAvatar": {
+        "success": "Avatar regenerated",
+        "error": "Failed to regenerate avatar"
+      },
+      "registerPasskey": {
+        "success": "Passkey registered",
+        "error": "Passkey registration failed. Please try again."
+      },
+      "renamePasskey": {
+        "success": "Passkey renamed",
+        "error": "Failed to rename passkey"
+      },
+      "deletePasskey": {
+        "success": "Passkey deleted",
+        "error": "Failed to delete passkey"
+      },
+      "disconnectAccount": {
+        "success": "Account disconnected",
+        "error": "Failed to disconnect account"
+      },
+      "deleteAccount": {
+        "success": "Account deleted",
+        "error": "Failed to delete account"
+      },
+      "updateLocale": {
+        "success": "Language updated",
+        "error": "Failed to update language"
+      }
+    },
+    "orgs": {
+      "switch": {
+        "error": "Failed to switch organization"
+      },
+      "create": {
+        "success": "Organization created",
+        "error": "Failed to create organization"
+      },
+      "update": {
+        "renamed": "Organization updated",
+        "avatarRegenerated": "Avatar regenerated",
+        "error": "Failed to update organization"
+      },
+      "delete": {
+        "success": "Organization deleted",
+        "error": "Failed to delete organization"
+      },
+      "invite": {
+        "success": "Invite sent to {email}",
+        "error": "Failed to send invite"
+      },
+      "updateInvite": {
+        "roleChanged": "Role for {email} set to {role, select, OWNER {owner} ADMIN {admin} VIEWER {viewer} other {member}}",
+        "extended": "Invite for {email} extended",
+        "error": "Failed to update invite"
+      },
+      "deleteInvite": {
+        "success": "Revoked invite for {email}",
+        "error": "Failed to revoke invite"
+      },
+      "updateRole": {
+        "success": "Role updated to {role, select, OWNER {owner} ADMIN {admin} VIEWER {viewer} other {member}}",
+        "error": "Failed to update role"
+      },
+      "removeMember": {
+        "selfLeftNamed": "You left {orgName}",
+        "selfLeftGeneric": "You left the organization",
+        "removed": "Member removed",
+        "error": "Failed to remove member"
+      }
+    },
+    "projects": {
+      "create": {
+        "success": "API key created",
+        "error": "Failed to create API key"
+      },
+      "update": {
+        "success": "API key renamed",
+        "error": "Failed to rename API key"
+      },
+      "delete": {
+        "success": "API key deleted",
+        "error": "Failed to delete API key"
+      },
+      "regenerateKey": {
+        "success": "API key regenerated",
+        "error": "Failed to regenerate key"
+      },
+      "updateDisplayNameTrait": {
+        "set": "Project default saved",
+        "cleared": "Project default cleared",
+        "error": "Failed to update project display-name setting"
+      }
+    },
+    "invites": {
+      "accept": {
+        "success": "Joined {organizationName}",
+        "error": "Failed to accept invitation"
+      },
+      "decline": {
+        "success": "Declined invitation to {organizationName}",
+        "error": "Failed to decline invitation"
+      }
+    }
+  },
+  "orgs": {
+    "heading": "Manage Organizations",
+    "invitations": {
+      "title": "My invitations",
+      "empty": "You have no pending invitations. When someone invites you to an organization, it will show up here.",
+      "col": {
+        "organization": "Organization",
+        "role": "Role",
+        "invitedBy": "Invited by",
+        "actions": "Actions"
+      },
+      "accept": {
+        "triggerAria": "Accept invitation to {orgName}",
+        "trigger": "Accept",
+        "dialogTitle": "Join {orgName}?",
+        "dialogDescription": "You'll be added as <role></role> and gain access to every project in this organization.",
+        "cancel": "Cancel",
+        "confirm": "Join organization"
+      },
+      "decline": {
+        "triggerAria": "Decline invitation to {orgName}",
+        "trigger": "Decline",
+        "dialogTitle": "Decline invitation to {orgName}?",
+        "dialogDescription": "The invitation will be removed from your list. If you change your mind later, an admin will need to send you a new one.",
+        "cancel": "Cancel",
+        "confirm": "Decline invitation"
+      }
+    },
+    "card": {
+      "badgePersonal": "Personal",
+      "badgeTeam": "Team",
+      "personalDescription": "Your personal workspace — projects here are visible only to you.",
+      "createdOn": "Created {date}",
+      "editAria": "Edit organization",
+      "deleteAria": "Delete organization",
+      "leaveAria": "Leave organization"
+    },
+    "edit": {
+      "title": "Edit organization",
+      "regenerateAvatar": "Regenerate avatar",
+      "nameLabel": "Name",
+      "namePlaceholder": "Organization name",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "delete": {
+      "title": "Delete {orgName}?",
+      "description": "This will permanently delete the organization, remove all members, and cancel all pending invites. This action cannot be undone.",
+      "confirmLabel": "Type \"delete organization\" to confirm",
+      "confirmPlaceholder": "delete organization",
+      "cancel": "Cancel",
+      "confirm": "Delete organization"
+    },
+    "leave": {
+      "title": "Leave {orgName}?",
+      "description": "You will lose access to all projects and data in this organization. You can only rejoin if someone invites you again.",
+      "cancel": "Cancel",
+      "confirm": "Leave organization"
+    },
+    "members": {
+      "triggerAria": "Manage members",
+      "countLabel": "{count, plural, one {# member} other {# members}}",
+      "dialogTitle": "Members — {orgName}",
+      "empty": "No members found.",
+      "roleAria": "Role",
+      "selfSuffix": "(you)",
+      "unnamed": "Unnamed",
+      "unknownFallback": "Member",
+      "removeAria": "Remove member",
+      "leaveAria": "Leave organization",
+      "removeTitle": "Remove {memberName}?",
+      "removeDescription": "{memberName} will lose access to all projects and data in this organization. You can re-invite them at any time.",
+      "leaveTitle": "Leave {orgName}?",
+      "leaveDescription": "You will lose access to all projects and data in this organization. You can only rejoin if someone invites you again.",
+      "cancel": "Cancel",
+      "confirmRemove": "Remove member",
+      "confirmLeave": "Leave organization"
+    },
+    "invite": {
+      "triggerAria": "Invite member",
+      "trigger": "Invite",
+      "dialogTitle": "Invite to {orgName}",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "colleague@example.com",
+      "roleLabel": "Role",
+      "submit": "Send invite",
+      "expiryNote": "Invites expire after {days} days. Submitting the same email again refreshes the existing invite — no manual revoke needed.",
+      "pending": {
+        "heading": "Pending invites",
+        "errorTitle": "Failed to load pending invites",
+        "errorDescription": "Something went wrong. Please try again.",
+        "empty": "No pending invites. Invites you send will appear here until accepted or expired.",
+        "col": {
+          "email": "Email",
+          "role": "Role",
+          "expires": "Expires",
+          "invitedBy": "Invited by",
+          "actions": "Actions"
+        },
+        "expiresRelative": "expires {relative}",
+        "roleAria": "Role for {email}",
+        "extendAria": "Extend invite for {email}",
+        "revokeAria": "Revoke invite for {email}",
+        "extendTooltip": "Extend expiration",
+        "revokeTooltip": "Revoke invite"
+      }
+    },
+    "roles": {
+      "owner": {
+        "label": "Owner",
+        "description": "Full control: manage members, edit, delete"
+      },
+      "admin": {
+        "label": "Admin",
+        "description": "Edit settings, invite members"
+      },
+      "viewer": {
+        "label": "Viewer",
+        "description": "View projects and data"
+      }
+    },
+    "apiKeys": {
+      "heading": "API keys",
+      "empty": "No API keys yet.",
+      "emptyHint": "Click \"Add key\" to create one.",
+      "addButton": "Add key",
+      "createTitle": "Create API key",
+      "createNameLabel": "Name",
+      "createNamePlaceholder": "Production",
+      "createCancel": "Cancel",
+      "createConfirm": "Create",
+      "copyAria": "Copy API key",
+      "copySuccess": "Key copied to clipboard",
+      "copyError": "Failed to copy key",
+      "regenerateAria": "Regenerate key",
+      "regenerateTitle": "Regenerate {name} key?",
+      "regenerateDescription": "The previous key will be immediately invalidated. Any SDK instances using the old key will stop ingesting until you update them with the new one.",
+      "regenerateCancel": "Cancel",
+      "regenerateConfirm": "Regenerate",
+      "deleteAria": "Delete key",
+      "deleteTitle": "Delete {name}?",
+      "deleteDescriptionPrefix": "This will permanently delete the API key and ",
+      "deleteDescriptionStrong": "all sessions, users and recordings",
+      "deleteDescriptionSuffix": " tied to it. This action cannot be undone.",
+      "deleteCancel": "Cancel",
+      "deleteConfirm": "Delete"
+    },
+    "create": {
+      "title": "Create a new organization",
+      "description": "Team organizations let you collaborate with others",
+      "nameLabel": "Organization name",
+      "namePlaceholder": "My Team",
+      "submit": "Create"
+    }
+  }
+}

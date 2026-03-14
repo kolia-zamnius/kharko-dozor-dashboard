@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "title": "Kharko Dozor — Open-source session replay",
+    "description": "Session recording and replay platform for the web. Free and open source, forever."
+  },
+  "header": {
+    "signIn": "Sign in",
+    "signUp": "Get started",
+    "dashboard": "Go to dashboard",
+    "localeAria": "Change language"
+  },
+  "hero": {
+    "eyebrow": "Open source · MIT",
+    "headline": "Watch how your users actually use your product",
+    "subheadline": "Kharko Dozor records real browser sessions with rrweb and lets you replay them in pixel-perfect detail. Self-hosted, framework-agnostic, free forever.",
+    "ctaPrimary": "Install SDK",
+    "ctaSecondary": "View on GitHub"
+  },
+  "features": {
+    "heading": "What it does",
+    "subheading": "Built on rrweb, designed for teams who want to understand their users without shipping their data to a third-party vendor.",
+    "sessionReplay": {
+      "title": "Pixel-perfect session replay",
+      "description": "Every DOM mutation, mouse move, and input event captured and reconstructed in a sandboxed iframe. Scrub, skip idle time, jump by page — the replay player treats long sessions as first-class."
+    },
+    "trackedUsers": {
+      "title": "Tracked users and traits",
+      "description": "Link sessions to your end users through a simple `identify()` call. Traits, activity timelines, and per-user session history — all derived from your own SDK payloads."
+    },
+    "slices": {
+      "title": "Slices for long sessions",
+      "description": "Sessions automatically split on navigation or idle gaps, each slice independently replayable. No more scrubbing through a 40-minute tab that was open in the background."
+    },
+    "privacy": {
+      "title": "Your data, your database",
+      "description": "No third-party processors, no hidden telemetry. Point the SDK at your own dashboard, host on your own Postgres, own every byte."
+    }
+  },
+  "installation": {
+    "heading": "Install in under a minute",
+    "subheading": "Two packages on npm — pick the one that matches your stack. Full setup guides live in the SDK repo.",
+    "stepsLabel": "Quick steps",
+    "step1": "Create a project in the dashboard and copy the public key.",
+    "step2": "Install the SDK package that matches your stack.",
+    "step3": "Wrap your app (React) or call `init()` (vanilla) with the public key.",
+    "tabs": {
+      "react": "React",
+      "vanilla": "Vanilla JS"
+    },
+    "reactInstall": "npm install @kharko/dozor-react",
+    "vanillaInstall": "npm install @kharko/dozor",
+    "copyCommandAria": "Copy install command",
+    "docsLink": "Read the full guide on GitHub",
+    "dashboardLink": "Open the dashboard"
+  },
+  "thankAuthor": {
+    "heading": "Thank the author",
+    "subheading": "Kharko Dozor is an open-source personal project. There are no paid tiers, no enterprise upsell, no plan to monetise. If it helped you and you want to say thanks, here are two ways.",
+    "uahTitle": "Ukraine — Monobank (UAH)",
+    "uahDescription": "One-tap donation via Monobank link. Works from any card, any country, no sign-up needed.",
+    "uahCta": "Donate via Monobank",
+    "eurTitle": "Europe — bank transfer (EUR)",
+    "eurDescription": "SEPA transfer to the author's EUR account. Use these details in your bank's transfer form.",
+    "eurIbanLabel": "IBAN",
+    "eurBicLabel": "BIC",
+    "eurReceiverLabel": "Receiver",
+    "eurCopyAria": "Copy {field}",
+    "eurCopied": "Copied",
+    "otherWays": "Other ways to say thanks — or want to send from a different rail? <contactLink>Get in touch</contactLink>."
+  },
+  "footer": {
+    "tagline": "Open-source session replay. Free for everyone, forever.",
+    "resourcesHeading": "Resources",
+    "resourcesGithub": "GitHub",
+    "resourcesSdk": "SDK (npm)",
+    "resourcesSdkReact": "React bindings (npm)",
+    "resourcesDocs": "Documentation",
+    "contactHeading": "Contact",
+    "contactEmail": "Email",
+    "contactLinkedin": "LinkedIn",
+    "copyright": "© {year} Kolia Zamnyus. Kharko is an independent open-source project."
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "page": {
+    "listTitle": "Replays — Kharko Dozor",
+    "detailTitle": "Replay — Kharko Dozor"
+  },
+  "mutations": {
+    "deleteSession": {
+      "success": "Session deleted",
+      "error": "Failed to delete session"
+    }
+  },
+  "errorContext": {
+    "list": "Replays list",
+    "detail": "Replay"
+  },
+  "list": {
+    "heading": "Replays",
+    "subtitle": "Recorded user sessions across all projects.",
+    "liveAnnounce": "Showing {count, plural, one {# session} other {# sessions}}.",
+    "liveAnnounceFiltered": "Showing {count, plural, one {# session} other {# sessions}} (filtered).",
+    "stats": {
+      "totalSessions": "Total sessions",
+      "totalDuration": "Total duration",
+      "avgDuration": "Avg duration",
+      "activeToday": "Active today",
+      "dash": "—"
+    },
+    "search": {
+      "placeholder": "Search by session ID...",
+      "ariaLabel": "Search sessions",
+      "clearAria": "Clear search"
+    },
+    "projectFilter": {
+      "label": "Project",
+      "empty": "No projects"
+    },
+    "dateRangeFilter": {
+      "default": "Date"
+    },
+    "empty": {
+      "withFiltersTitle": "No sessions match your filters",
+      "withFiltersBody": "Try adjusting your search, project, or date range filters.",
+      "noSessionsTitle": "No recorded sessions yet",
+      "noSessionsBody": "Sessions will appear here when your tracker SDK starts recording. Install <code></code> to get started."
+    },
+    "table": {
+      "colSession": "Session",
+      "colUser": "User",
+      "colProject": "Project",
+      "colPages": "Pages",
+      "colDuration": "Duration",
+      "colDate": "Date",
+      "emptyDash": "—"
+    },
+    "rowMenu": {
+      "triggerAria": "Session actions",
+      "delete": "Delete session"
+    },
+    "deleteDialog": {
+      "title": "Delete session",
+      "description": "This will permanently delete this session and all its recorded events. This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "loadMore": "Load more"
+  },
+  "dateRange": {
+    "today": "Today",
+    "7d": "Last 7 days",
+    "30d": "Last 30 days",
+    "90d": "Last {days, plural, one {# day} other {# days}}"
+  },
+  "detail": {
+    "missingTitle": "Session not found",
+    "missingDescription": "This session may have been deleted or you don't have access to it.",
+    "anonymous": "Anonymous",
+    "copyIdSuccess": "Session ID copied",
+    "refreshButton": {
+      "reload": "Refresh",
+      "reloading": "Reloading",
+      "ariaReloading": "Reloading session",
+      "ariaReload": "Reload session"
+    },
+    "updateTooltip": {
+      "newSlices": "{count, plural, one {# new slice} other {# new slices}}",
+      "newEvents": "{count, plural, one {# new event} other {# new events}}",
+      "ended": "session has ended",
+      "suffix": "Click to reload"
+    },
+    "player": {
+      "empty": "No events recorded in this session.",
+      "control": {
+        "play": "Play",
+        "pause": "Pause",
+        "backFive": "Back 5 seconds",
+        "forwardFive": "Forward 5 seconds",
+        "skipIdleAria": "Skip idle periods",
+        "skipIdle": "Skip idle",
+        "autoPlayAria": "Auto-play next slice",
+        "autoPlay": "Auto-play",
+        "consoleAria": "Toggle console panel",
+        "console": "Console"
+      },
+      "console": {
+        "title": "Console",
+        "empty": "No logs at this point in time."
+      },
+      "slicePicker": {
+        "reasonInit": "Start",
+        "reasonIdle": "After idle",
+        "reasonNavigation": "Navigation",
+        "tooltip": "{reason} · {pathname} · {duration} · {events} events"
+      }
+    }
+  }
+}

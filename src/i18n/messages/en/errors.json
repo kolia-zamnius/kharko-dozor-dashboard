@@ -1,0 +1,62 @@
+{
+  "generic": {
+    "unknown": "Something went wrong",
+    "unknownDescription": "An unexpected error occurred. Try again or refresh the page."
+  },
+  "apiKinds": {
+    "notFoundTitle": "{context} not found",
+    "notFoundDescription": "The resource may have been deleted, or the link may be stale.",
+    "permissionTitle": "You don't have permission",
+    "permissionDescription": "Ask an organization owner for access, or switch to an organization that has this data.",
+    "authTitle": "Session expired",
+    "authDescription": "You'll be redirected to sign in.",
+    "rateLimitTitle": "Too many requests",
+    "rateLimitDescription": "Give it a minute and try again.",
+    "validationTitle": "Invalid request",
+    "validationDescriptionFallback": "Check the form inputs and try again.",
+    "conflictTitle": "Conflict",
+    "conflictDescription": "Data changed while you were working — reload to pick up the latest state.",
+    "serverTitle": "Server error",
+    "serverDescription": "Failed to load {context}. This is likely a temporary issue.",
+    "networkTitle": "Network error",
+    "networkDescription": "Check your connection and try again."
+  },
+  "validation": {
+    "required": "Required",
+    "invalidType": "Expected {expected}",
+    "tooSmall": {
+      "string": "Must be at least {minimum, plural, one {# character} other {# characters}}",
+      "number": "Must be at least {minimum}",
+      "array": "Must have at least {minimum, plural, one {# item} other {# items}}",
+      "file": "File is too small",
+      "generic": "Value is too small"
+    },
+    "tooBig": {
+      "string": "Must be at most {maximum, plural, one {# character} other {# characters}}",
+      "number": "Must be at most {maximum}",
+      "array": "Must have at most {maximum, plural, one {# item} other {# items}}",
+      "file": "File is too large",
+      "generic": "Value is too large"
+    },
+    "invalidFormat": {
+      "email": "Invalid email address",
+      "url": "Invalid URL",
+      "uuid": "Invalid UUID",
+      "id": "Invalid ID",
+      "datetime": "Invalid date/time",
+      "ip": "Invalid IP address",
+      "regex": "Invalid format",
+      "startsWith": "Must start with \"{prefix}\"",
+      "endsWith": "Must end with \"{suffix}\"",
+      "includes": "Must contain \"{includes}\"",
+      "generic": "Invalid format"
+    },
+    "notMultipleOf": "Must be a multiple of {divisor}",
+    "unrecognizedKeys": "Unrecognized {count, plural, one {key} other {keys}}: {keys}",
+    "invalidUnion": "Invalid input",
+    "invalidKey": "Invalid key",
+    "invalidElement": "Invalid element",
+    "invalidValue": "Must be one of: {options}",
+    "custom": "Invalid input"
+  }
+}
