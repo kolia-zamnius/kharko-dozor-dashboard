@@ -1,0 +1,9 @@
+{
+  "subject": "You're invited to {orgName} — Kharko Dozor",
+  "brand": "Kharko Dozor",
+  "title": "You're invited",
+  "body": "<strong>{inviterName}</strong> invited you to join <strong>{orgName}</strong> as <strong>{role, select, OWNER {Owner} ADMIN {Admin} VIEWER {Viewer} other {Member}}</strong>.",
+  "cta": "View invitation",
+  "footer": "This invitation expires in {days, plural, one {# day} other {# days}}. If you didn't expect this, you can safely ignore it.",
+  "tagline": "Kharko Dozor — session recording & replay"
+}

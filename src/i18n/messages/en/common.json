@@ -1,0 +1,41 @@
+{
+  "app": {
+    "name": "Kharko Dozor"
+  },
+  "duration": {
+    "seconds": "{count}s",
+    "minutes": "{count}m",
+    "minutesSeconds": "{minutes}m {seconds}s",
+    "hours": "{count}h",
+    "hoursMinutes": "{hours}h {minutes}m"
+  },
+  "relative": {
+    "justNow": "just now",
+    "secondsAgo": "{count}s ago",
+    "inSeconds": "in {count}s"
+  },
+  "lastUpdated": {
+    "refreshing": "Refreshing…",
+    "updated": "Updated {label}",
+    "notYet": "not yet",
+    "tooltipWithTime": "Last fetch: {time}. Auto-refresh every {interval}s while tab is focused.",
+    "tooltipNoTime": "Auto-refresh every {interval}s while tab is focused.",
+    "refreshAria": "Refresh now"
+  },
+  "error": {
+    "contextPage": "Page",
+    "tryAgain": "Try again",
+    "errorId": "Error ID: {id}"
+  },
+  "notFound": {
+    "title": "Not found",
+    "description": "The page you're looking for doesn't exist or you don't have access to it.",
+    "goToDashboard": "Go to Dashboard"
+  },
+  "theme": {
+    "toggle": "Toggle theme"
+  },
+  "a11y": {
+    "skipToContent": "Skip to content"
+  }
+}
