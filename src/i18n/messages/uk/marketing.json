@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "title": "Kharko Dozor — open-source реплеї сесій",
+    "description": "Платформа запису та відтворення сесій у браузері. Безкоштовна та open source, назавжди."
+  },
+  "header": {
+    "signIn": "Увійти",
+    "signUp": "Почати",
+    "dashboard": "До панелі",
+    "localeAria": "Змінити мову"
+  },
+  "hero": {
+    "eyebrow": "Open source · MIT",
+    "headline": "Дивіться, як ваші користувачі насправді користуються продуктом",
+    "subheadline": "Kharko Dozor записує реальні сесії у браузері за допомогою rrweb і дозволяє відтворювати їх з точністю до пікселя. Self-hosted, не залежить від фреймворку, безкоштовний назавжди.",
+    "ctaPrimary": "Встановити SDK",
+    "ctaSecondary": "Дивитися на GitHub"
+  },
+  "features": {
+    "heading": "Що він уміє",
+    "subheading": "Побудований на rrweb, створений для команд, які хочуть розуміти своїх користувачів без передавання даних стороннім постачальникам.",
+    "sessionReplay": {
+      "title": "Піксельна точність відтворення",
+      "description": "Кожна DOM-мутація, рух миші та ввід захоплюються і реконструюються в sandbox iframe. Прокручування, пропуск пауз, перехід по сторінках — плеєр обробляє довгі сесії як першокласний об'єкт."
+    },
+    "trackedUsers": {
+      "title": "Відстеження користувачів та їхні traits",
+      "description": "Пов'яжіть сесії з вашими користувачами через простий виклик `identify()`. Traits, таймлайни активності та історія сесій — усе з ваших власних SDK payloads."
+    },
+    "slices": {
+      "title": "Слайси для довгих сесій",
+      "description": "Сесії автоматично розбиваються при навігації чи паузах, кожен слайс відтворюється окремо. Більше не треба скрабити 40-хвилинну вкладку, яка висіла у фоні."
+    },
+    "privacy": {
+      "title": "Ваші дані, ваша база",
+      "description": "Ніяких сторонніх процесорів, ніякої прихованої телеметрії. Спрямуйте SDK на вашу власну панель, хостіть на своєму Postgres, володійте кожним байтом."
+    }
+  },
+  "installation": {
+    "heading": "Встановлення менш як за хвилину",
+    "subheading": "Два пакети на npm — оберіть той, що підходить вашому стеку. Повні гайди живуть у репозиторії SDK.",
+    "stepsLabel": "Швидкі кроки",
+    "step1": "Створіть проєкт у панелі та скопіюйте публічний ключ.",
+    "step2": "Встановіть SDK-пакет, що відповідає вашому стеку.",
+    "step3": "Оберніть застосунок (React) або викличте `init()` (vanilla) з публічним ключем.",
+    "tabs": {
+      "react": "React",
+      "vanilla": "Vanilla JS"
+    },
+    "reactInstall": "npm install @kharko/dozor-react",
+    "vanillaInstall": "npm install @kharko/dozor",
+    "copyCommandAria": "Скопіювати команду встановлення",
+    "docsLink": "Повний гайд на GitHub",
+    "dashboardLink": "Відкрити панель"
+  },
+  "thankAuthor": {
+    "heading": "Подякувати автору",
+    "subheading": "Kharko Dozor — це особистий open-source проєкт. Немає платних тарифів, немає enterprise-апсейлу, немає планів монетизації. Якщо він допоміг вам і ви хочете подякувати — є два способи.",
+    "uahTitle": "Україна — Monobank (UAH)",
+    "uahDescription": "Донат в один тап через посилання Monobank. Працює з будь-якої картки, з будь-якої країни, без реєстрації.",
+    "uahCta": "Задонатити через Monobank",
+    "eurTitle": "Європа — банківський переказ (EUR)",
+    "eurDescription": "SEPA-переказ на євровий рахунок автора. Використайте ці реквізити у формі переказу вашого банку.",
+    "eurIbanLabel": "IBAN",
+    "eurBicLabel": "BIC",
+    "eurReceiverLabel": "Отримувач",
+    "eurCopyAria": "Скопіювати {field}",
+    "eurCopied": "Скопійовано",
+    "otherWays": "Інші способи подякувати — або хочете надіслати з іншої системи? <contactLink>Напишіть мені</contactLink>."
+  },
+  "footer": {
+    "tagline": "Open-source реплеї сесій. Безкоштовно для всіх, назавжди.",
+    "resourcesHeading": "Ресурси",
+    "resourcesGithub": "GitHub",
+    "resourcesSdk": "SDK (npm)",
+    "resourcesSdkReact": "React-біндинги (npm)",
+    "resourcesDocs": "Документація",
+    "contactHeading": "Контакти",
+    "contactEmail": "Email",
+    "contactLinkedin": "LinkedIn",
+    "copyright": "© {year} Kolia Zamnyus. Kharko — незалежний open-source проєкт."
+  }
+}

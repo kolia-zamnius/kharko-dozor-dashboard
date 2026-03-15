@@ -1,0 +1,331 @@
+{
+  "page": {
+    "userTitle": "Налаштування користувача — Kharko Dozor",
+    "orgsTitle": "Керування організаціями — Kharko Dozor"
+  },
+  "user": {
+    "heading": "Налаштування користувача",
+    "profile": {
+      "title": "Профіль",
+      "description": "Ваші персональні дані",
+      "regenerateAvatar": "Згенерувати новий аватар",
+      "nameLabel": "Ім'я",
+      "namePlaceholder": "Ваше ім'я",
+      "saveName": "Зберегти ім'я",
+      "emailHeading": "Email",
+      "emailNote": "Email не можна змінити. Він використовується як ідентифікатор входу.",
+      "avatarFallback": "Користувач"
+    },
+    "auth": {
+      "title": "Автентифікація",
+      "description": "Керування способами входу"
+    },
+    "passkeys": {
+      "heading": "Passkeys",
+      "empty": "Passkey ще не зареєстровано.",
+      "addButton": "Додати passkey",
+      "renameAria": "Перейменувати passkey",
+      "deleteAria": "Видалити passkey",
+      "renameTitle": "Перейменувати passkey",
+      "renameLabel": "Назва",
+      "renamePlaceholder": "напр. MacBook Pro",
+      "save": "Зберегти",
+      "cancel": "Скасувати",
+      "deleteTitle": "Видалити «{name}»?",
+      "deleteDescription": "Цей passkey буде остаточно видалено з вашого акаунта. Щоб знову увійти з цього пристрою, доведеться зареєструвати новий passkey. Цю дію не можна скасувати.",
+      "delete": "Видалити",
+      "deviceTypeMulti": "Мультипристрій",
+      "deviceTypeSingle": "Один пристрій"
+    },
+    "accounts": {
+      "heading": "Приєднані акаунти",
+      "empty": "Немає приєднаних акаунтів.",
+      "disconnect": "Від'єднати",
+      "confirmTitle": "Від'єднати {provider}?",
+      "confirmDescription": "Ви більше не зможете входити через {provider}. Переконайтеся, що у вас є принаймні один інший спосіб входу (passkey, email OTP або інший OAuth-провайдер), інакше ви можете втратити доступ до акаунта.",
+      "cancel": "Скасувати"
+    },
+    "danger": {
+      "title": "Небезпечна зона",
+      "description": "Незворотні дії",
+      "body": "Остаточно видалити акаунт і всі пов'язані дані. Цю дію не можна скасувати.",
+      "deleteButton": "Видалити акаунт",
+      "dialogTitle": "Видалити акаунт?",
+      "dialogDescription": "Це остаточно видалить ваш акаунт, усі організації, де ви єдиний учасник, і вилучить вас з усіх спільних організацій.",
+      "confirmLabel": "Введіть «delete my account», щоб підтвердити",
+      "confirmPlaceholder": "delete my account",
+      "cancel": "Скасувати",
+      "confirm": "Видалити акаунт"
+    },
+    "locale": {
+      "title": "Мова",
+      "description": "Оберіть мову, яка використовується в дашборді та у листах.",
+      "selectAria": "Оберіть мову"
+    }
+  },
+  "mutations": {
+    "user": {
+      "updateProfile": {
+        "success": "Профіль оновлено",
+        "error": "Не вдалося оновити профіль"
+      },
+      "regenerateAvatar": {
+        "success": "Аватар згенеровано заново",
+        "error": "Не вдалося згенерувати аватар"
+      },
+      "registerPasskey": {
+        "success": "Passkey зареєстровано",
+        "error": "Не вдалося зареєструвати passkey. Спробуйте ще раз."
+      },
+      "renamePasskey": {
+        "success": "Passkey перейменовано",
+        "error": "Не вдалося перейменувати passkey"
+      },
+      "deletePasskey": {
+        "success": "Passkey видалено",
+        "error": "Не вдалося видалити passkey"
+      },
+      "disconnectAccount": {
+        "success": "Акаунт від'єднано",
+        "error": "Не вдалося від'єднати акаунт"
+      },
+      "deleteAccount": {
+        "success": "Акаунт видалено",
+        "error": "Не вдалося видалити акаунт"
+      },
+      "updateLocale": {
+        "success": "Мову оновлено",
+        "error": "Не вдалося оновити мову"
+      }
+    },
+    "orgs": {
+      "switch": {
+        "error": "Не вдалося змінити організацію"
+      },
+      "create": {
+        "success": "Організацію створено",
+        "error": "Не вдалося створити організацію"
+      },
+      "update": {
+        "renamed": "Організацію оновлено",
+        "avatarRegenerated": "Аватар згенеровано заново",
+        "error": "Не вдалося оновити організацію"
+      },
+      "delete": {
+        "success": "Організацію видалено",
+        "error": "Не вдалося видалити організацію"
+      },
+      "invite": {
+        "success": "Запрошення надіслано на {email}",
+        "error": "Не вдалося надіслати запрошення"
+      },
+      "updateInvite": {
+        "roleChanged": "Роль для {email} змінено на {role, select, OWNER {власника} ADMIN {адміна} VIEWER {переглядача} other {учасника}}",
+        "extended": "Запрошення для {email} продовжено",
+        "error": "Не вдалося оновити запрошення"
+      },
+      "deleteInvite": {
+        "success": "Запрошення для {email} відкликано",
+        "error": "Не вдалося відкликати запрошення"
+      },
+      "updateRole": {
+        "success": "Роль змінено на {role, select, OWNER {власника} ADMIN {адміна} VIEWER {переглядача} other {учасника}}",
+        "error": "Не вдалося оновити роль"
+      },
+      "removeMember": {
+        "selfLeftNamed": "Ви вийшли з {orgName}",
+        "selfLeftGeneric": "Ви вийшли з організації",
+        "removed": "Учасника видалено",
+        "error": "Не вдалося видалити учасника"
+      }
+    },
+    "projects": {
+      "create": {
+        "success": "API-ключ створено",
+        "error": "Не вдалося створити API-ключ"
+      },
+      "update": {
+        "success": "API-ключ перейменовано",
+        "error": "Не вдалося перейменувати API-ключ"
+      },
+      "delete": {
+        "success": "API-ключ видалено",
+        "error": "Не вдалося видалити API-ключ"
+      },
+      "regenerateKey": {
+        "success": "API-ключ згенеровано заново",
+        "error": "Не вдалося згенерувати новий ключ"
+      },
+      "updateDisplayNameTrait": {
+        "set": "Налаштування за замовчуванням збережено",
+        "cleared": "Налаштування за замовчуванням очищено",
+        "error": "Не вдалося оновити налаштування відображення імені"
+      }
+    },
+    "invites": {
+      "accept": {
+        "success": "Ви приєдналися до {organizationName}",
+        "error": "Не вдалося прийняти запрошення"
+      },
+      "decline": {
+        "success": "Запрошення до {organizationName} відхилено",
+        "error": "Не вдалося відхилити запрошення"
+      }
+    }
+  },
+  "orgs": {
+    "heading": "Керування організаціями",
+    "invitations": {
+      "title": "Мої запрошення",
+      "empty": "У вас немає очікуваних запрошень. Коли хтось запросить вас до організації, запрошення з'явиться тут.",
+      "col": {
+        "organization": "Організація",
+        "role": "Роль",
+        "invitedBy": "Запросив",
+        "actions": "Дії"
+      },
+      "accept": {
+        "triggerAria": "Прийняти запрошення до {orgName}",
+        "trigger": "Прийняти",
+        "dialogTitle": "Приєднатися до {orgName}?",
+        "dialogDescription": "Вас буде додано як <role></role>, і ви отримаєте доступ до всіх проектів цієї організації.",
+        "cancel": "Скасувати",
+        "confirm": "Приєднатися"
+      },
+      "decline": {
+        "triggerAria": "Відхилити запрошення до {orgName}",
+        "trigger": "Відхилити",
+        "dialogTitle": "Відхилити запрошення до {orgName}?",
+        "dialogDescription": "Запрошення буде видалено зі списку. Якщо ви передумаєте, адмін має надіслати нове запрошення.",
+        "cancel": "Скасувати",
+        "confirm": "Відхилити запрошення"
+      }
+    },
+    "card": {
+      "badgePersonal": "Особиста",
+      "badgeTeam": "Команда",
+      "personalDescription": "Ваш особистий простір — проекти тут бачите тільки ви.",
+      "createdOn": "Створено {date}",
+      "editAria": "Редагувати організацію",
+      "deleteAria": "Видалити організацію",
+      "leaveAria": "Покинути організацію"
+    },
+    "edit": {
+      "title": "Редагувати організацію",
+      "regenerateAvatar": "Згенерувати новий аватар",
+      "nameLabel": "Назва",
+      "namePlaceholder": "Назва організації",
+      "cancel": "Скасувати",
+      "save": "Зберегти"
+    },
+    "delete": {
+      "title": "Видалити {orgName}?",
+      "description": "Це остаточно видалить організацію, вилучить усіх учасників і скасує всі очікувані запрошення. Цю дію не можна скасувати.",
+      "confirmLabel": "Введіть «delete organization», щоб підтвердити",
+      "confirmPlaceholder": "delete organization",
+      "cancel": "Скасувати",
+      "confirm": "Видалити організацію"
+    },
+    "leave": {
+      "title": "Покинути {orgName}?",
+      "description": "Ви втратите доступ до всіх проектів і даних цієї організації. Повернутися можна лише якщо вас запросять знову.",
+      "cancel": "Скасувати",
+      "confirm": "Покинути організацію"
+    },
+    "members": {
+      "triggerAria": "Керування учасниками",
+      "countLabel": "{count, plural, one {# учасник} few {# учасники} many {# учасників} other {# учасників}}",
+      "dialogTitle": "Учасники — {orgName}",
+      "empty": "Учасників не знайдено.",
+      "roleAria": "Роль",
+      "selfSuffix": "(ви)",
+      "unnamed": "Без імені",
+      "unknownFallback": "Учасник",
+      "removeAria": "Видалити учасника",
+      "leaveAria": "Покинути організацію",
+      "removeTitle": "Видалити {memberName}?",
+      "removeDescription": "{memberName} втратить доступ до всіх проектів і даних цієї організації. Ви зможете запросити цю людину знову у будь-який момент.",
+      "leaveTitle": "Покинути {orgName}?",
+      "leaveDescription": "Ви втратите доступ до всіх проектів і даних цієї організації. Повернутися можна лише якщо вас запросять знову.",
+      "cancel": "Скасувати",
+      "confirmRemove": "Видалити учасника",
+      "confirmLeave": "Покинути організацію"
+    },
+    "invite": {
+      "triggerAria": "Запросити учасника",
+      "trigger": "Запросити",
+      "dialogTitle": "Запросити до {orgName}",
+      "emailLabel": "Email-адреса",
+      "emailPlaceholder": "colleague@example.com",
+      "roleLabel": "Роль",
+      "submit": "Надіслати запрошення",
+      "expiryNote": "Запрошення дійсні {days} днів. Повторне надсилання на той самий email оновлює наявне запрошення — вручну відкликати не потрібно.",
+      "pending": {
+        "heading": "Очікувані запрошення",
+        "errorTitle": "Не вдалося завантажити очікувані запрошення",
+        "errorDescription": "Щось пішло не так. Спробуйте ще раз.",
+        "empty": "Очікуваних запрошень немає. Надіслані вами запрошення з'являться тут, доки їх не приймуть або не закінчиться термін дії.",
+        "col": {
+          "email": "Email",
+          "role": "Роль",
+          "expires": "Термін дії",
+          "invitedBy": "Запросив",
+          "actions": "Дії"
+        },
+        "expiresRelative": "діє {relative}",
+        "roleAria": "Роль для {email}",
+        "extendAria": "Продовжити запрошення для {email}",
+        "revokeAria": "Відкликати запрошення для {email}",
+        "extendTooltip": "Продовжити термін дії",
+        "revokeTooltip": "Відкликати запрошення"
+      }
+    },
+    "roles": {
+      "owner": {
+        "label": "Власник",
+        "description": "Повний контроль: керування учасниками, редагування, видалення"
+      },
+      "admin": {
+        "label": "Адмін",
+        "description": "Редагування налаштувань, запрошення учасників"
+      },
+      "viewer": {
+        "label": "Переглядач",
+        "description": "Перегляд проектів і даних"
+      }
+    },
+    "apiKeys": {
+      "heading": "API-ключі",
+      "empty": "API-ключів ще немає.",
+      "emptyHint": "Натисніть «Додати ключ», щоб створити.",
+      "addButton": "Додати ключ",
+      "createTitle": "Створити API-ключ",
+      "createNameLabel": "Назва",
+      "createNamePlaceholder": "Production",
+      "createCancel": "Скасувати",
+      "createConfirm": "Створити",
+      "copyAria": "Скопіювати API-ключ",
+      "copySuccess": "Ключ скопійовано в буфер обміну",
+      "copyError": "Не вдалося скопіювати ключ",
+      "regenerateAria": "Згенерувати новий ключ",
+      "regenerateTitle": "Згенерувати новий ключ {name}?",
+      "regenerateDescription": "Попередній ключ миттєво стане недійсним. SDK, що використовували старий ключ, припинять надсилати події, доки ви не оновите їх новим ключем.",
+      "regenerateCancel": "Скасувати",
+      "regenerateConfirm": "Згенерувати",
+      "deleteAria": "Видалити ключ",
+      "deleteTitle": "Видалити {name}?",
+      "deleteDescriptionPrefix": "Це остаточно видалить API-ключ і ",
+      "deleteDescriptionStrong": "всі сесії, користувачів і записи",
+      "deleteDescriptionSuffix": ", пов'язані з ним. Цю дію не можна скасувати.",
+      "deleteCancel": "Скасувати",
+      "deleteConfirm": "Видалити"
+    },
+    "create": {
+      "title": "Створити нову організацію",
+      "description": "Командні організації дають змогу працювати разом з іншими",
+      "nameLabel": "Назва організації",
+      "namePlaceholder": "Моя команда",
+      "submit": "Створити"
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "page": {
+    "listTitle": "Записи — Kharko Dozor",
+    "detailTitle": "Запис — Kharko Dozor"
+  },
+  "mutations": {
+    "deleteSession": {
+      "success": "Сесію видалено",
+      "error": "Не вдалося видалити сесію"
+    }
+  },
+  "errorContext": {
+    "list": "Список записів",
+    "detail": "Запис"
+  },
+  "list": {
+    "heading": "Записи",
+    "subtitle": "Записані сесії користувачів у всіх проектах.",
+    "liveAnnounce": "Показано {count, plural, one {# сесія} few {# сесії} many {# сесій} other {# сесій}}.",
+    "liveAnnounceFiltered": "Показано {count, plural, one {# сесія} few {# сесії} many {# сесій} other {# сесій}} (відфільтровано).",
+    "stats": {
+      "totalSessions": "Всього сесій",
+      "totalDuration": "Загальна тривалість",
+      "avgDuration": "Середня тривалість",
+      "activeToday": "Активні сьогодні",
+      "dash": "—"
+    },
+    "search": {
+      "placeholder": "Пошук за ID сесії...",
+      "ariaLabel": "Пошук сесій",
+      "clearAria": "Очистити пошук"
+    },
+    "projectFilter": {
+      "label": "Проект",
+      "empty": "Немає проектів"
+    },
+    "dateRangeFilter": {
+      "default": "Дата"
+    },
+    "empty": {
+      "withFiltersTitle": "Немає сесій, що відповідають фільтрам",
+      "withFiltersBody": "Спробуйте змінити пошук, проект або діапазон дат.",
+      "noSessionsTitle": "Записаних сесій ще немає",
+      "noSessionsBody": "Сесії з'являться тут, коли ваш tracker SDK почне запис. Встановіть <code></code>, щоб почати."
+    },
+    "table": {
+      "colSession": "Сесія",
+      "colUser": "Користувач",
+      "colProject": "Проект",
+      "colPages": "Сторінки",
+      "colDuration": "Тривалість",
+      "colDate": "Дата",
+      "emptyDash": "—"
+    },
+    "rowMenu": {
+      "triggerAria": "Дії над сесією",
+      "delete": "Видалити сесію"
+    },
+    "deleteDialog": {
+      "title": "Видалити сесію",
+      "description": "Цю сесію та всі її записані події буде остаточно видалено. Цю дію не можна скасувати.",
+      "cancel": "Скасувати",
+      "confirm": "Видалити"
+    },
+    "loadMore": "Завантажити ще"
+  },
+  "dateRange": {
+    "today": "Сьогодні",
+    "7d": "Останні 7 днів",
+    "30d": "Останні 30 днів",
+    "90d": "Останні {days, plural, one {# день} few {# дні} many {# днів} other {# днів}}"
+  },
+  "detail": {
+    "missingTitle": "Сесію не знайдено",
+    "missingDescription": "Цю сесію могли видалити або у вас немає до неї доступу.",
+    "anonymous": "Анонім",
+    "copyIdSuccess": "ID сесії скопійовано",
+    "refreshButton": {
+      "reload": "Оновити",
+      "reloading": "Оновлення",
+      "ariaReloading": "Оновлення сесії",
+      "ariaReload": "Оновити сесію"
+    },
+    "updateTooltip": {
+      "newSlices": "{count, plural, one {# новий сегмент} few {# нові сегменти} many {# нових сегментів} other {# нових сегментів}}",
+      "newEvents": "{count, plural, one {# нова подія} few {# нові події} many {# нових подій} other {# нових подій}}",
+      "ended": "сесія завершилася",
+      "suffix": "Клікніть, щоб оновити"
+    },
+    "player": {
+      "empty": "У цій сесії не записано подій.",
+      "control": {
+        "play": "Грати",
+        "pause": "Пауза",
+        "backFive": "Назад на 5 секунд",
+        "forwardFive": "Вперед на 5 секунд",
+        "skipIdleAria": "Пропускати періоди бездіяльності",
+        "skipIdle": "Пропускати паузи",
+        "autoPlayAria": "Автовідтворення наступного сегмента",
+        "autoPlay": "Авто",
+        "consoleAria": "Перемкнути панель консолі",
+        "console": "Консоль"
+      },
+      "console": {
+        "title": "Консоль",
+        "empty": "Логів у цей момент немає."
+      },
+      "slicePicker": {
+        "reasonInit": "Початок",
+        "reasonIdle": "Після паузи",
+        "reasonNavigation": "Навігація",
+        "tooltip": "{reason} · {pathname} · {duration} · {events} подій"
+      }
+    }
+  }
+}

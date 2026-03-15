@@ -1,0 +1,41 @@
+{
+  "app": {
+    "name": "Kharko Dozor"
+  },
+  "duration": {
+    "seconds": "{count}с",
+    "minutes": "{count}хв",
+    "minutesSeconds": "{minutes}хв {seconds}с",
+    "hours": "{count}год",
+    "hoursMinutes": "{hours}год {minutes}хв"
+  },
+  "relative": {
+    "justNow": "щойно",
+    "secondsAgo": "{count}с тому",
+    "inSeconds": "через {count}с"
+  },
+  "lastUpdated": {
+    "refreshing": "Оновлення…",
+    "updated": "Оновлено {label}",
+    "notYet": "ще ні",
+    "tooltipWithTime": "Останнє оновлення: {time}. Автооновлення кожні {interval}с, доки вкладка активна.",
+    "tooltipNoTime": "Автооновлення кожні {interval}с, доки вкладка активна.",
+    "refreshAria": "Оновити зараз"
+  },
+  "error": {
+    "contextPage": "Сторінка",
+    "tryAgain": "Спробувати ще раз",
+    "errorId": "ID помилки: {id}"
+  },
+  "notFound": {
+    "title": "Не знайдено",
+    "description": "Сторінка, яку ви шукаєте, не існує або у вас немає до неї доступу.",
+    "goToDashboard": "На головну"
+  },
+  "theme": {
+    "toggle": "Перемкнути тему"
+  },
+  "a11y": {
+    "skipToContent": "Перейти до вмісту"
+  }
+}

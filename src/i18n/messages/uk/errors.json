@@ -1,0 +1,62 @@
+{
+  "generic": {
+    "unknown": "Щось пішло не так",
+    "unknownDescription": "Сталася неочікувана помилка. Спробуйте ще раз або оновіть сторінку."
+  },
+  "apiKinds": {
+    "notFoundTitle": "{context} не знайдено",
+    "notFoundDescription": "Ресурс міг бути видалений або посилання застаріло.",
+    "permissionTitle": "Недостатньо прав",
+    "permissionDescription": "Попросіть власника організації надати доступ або переключіться на організацію, у якій є ці дані.",
+    "authTitle": "Сесія завершилася",
+    "authDescription": "Вас буде перенаправлено до сторінки входу.",
+    "rateLimitTitle": "Забагато запитів",
+    "rateLimitDescription": "Зачекайте хвилину та спробуйте ще раз.",
+    "validationTitle": "Некоректний запит",
+    "validationDescriptionFallback": "Перевірте дані форми та спробуйте ще раз.",
+    "conflictTitle": "Конфлікт",
+    "conflictDescription": "Дані змінилися під час роботи — оновіть сторінку, щоб побачити актуальний стан.",
+    "serverTitle": "Помилка сервера",
+    "serverDescription": "Не вдалося завантажити {context}. Імовірно, це тимчасова проблема.",
+    "networkTitle": "Помилка мережі",
+    "networkDescription": "Перевірте з'єднання та спробуйте ще раз."
+  },
+  "validation": {
+    "required": "Обов'язкове поле",
+    "invalidType": "Очікувалось: {expected}",
+    "tooSmall": {
+      "string": "Має містити щонайменше {minimum, plural, one {# символ} few {# символи} many {# символів} other {# символів}}",
+      "number": "Має бути не менше ніж {minimum}",
+      "array": "Має містити щонайменше {minimum, plural, one {# елемент} few {# елементи} many {# елементів} other {# елементів}}",
+      "file": "Файл замалий",
+      "generic": "Значення замале"
+    },
+    "tooBig": {
+      "string": "Має містити не більше {maximum, plural, one {# символу} few {# символів} many {# символів} other {# символів}}",
+      "number": "Має бути не більше ніж {maximum}",
+      "array": "Має містити не більше {maximum, plural, one {# елемента} few {# елементів} many {# елементів} other {# елементів}}",
+      "file": "Файл завеликий",
+      "generic": "Значення завелике"
+    },
+    "invalidFormat": {
+      "email": "Некоректна адреса email",
+      "url": "Некоректне посилання",
+      "uuid": "Некоректний UUID",
+      "id": "Некоректний ідентифікатор",
+      "datetime": "Некоректна дата/час",
+      "ip": "Некоректна IP-адреса",
+      "regex": "Некоректний формат",
+      "startsWith": "Має починатися з «{prefix}»",
+      "endsWith": "Має закінчуватися на «{suffix}»",
+      "includes": "Має містити «{includes}»",
+      "generic": "Некоректний формат"
+    },
+    "notMultipleOf": "Має бути кратним {divisor}",
+    "unrecognizedKeys": "Невідомі {count, plural, one {ключ} few {ключі} many {ключів} other {ключів}}: {keys}",
+    "invalidUnion": "Некоректне значення",
+    "invalidKey": "Некоректний ключ",
+    "invalidElement": "Некоректний елемент",
+    "invalidValue": "Має бути одне з: {options}",
+    "custom": "Некоректне значення"
+  }
+}
