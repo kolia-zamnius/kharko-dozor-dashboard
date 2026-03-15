@@ -1,0 +1,9 @@
+{
+  "subject": "Вас запросили до {orgName} — Kharko Dozor",
+  "brand": "Kharko Dozor",
+  "title": "Вас запросили",
+  "body": "<strong>{inviterName}</strong> запрошує вас до <strong>{orgName}</strong> як <strong>{role, select, OWNER {Власник} ADMIN {Адмін} VIEWER {Переглядач} other {Учасник}}</strong>.",
+  "cta": "Переглянути запрошення",
+  "footer": "Це запрошення дійсне ще {days, plural, one {# день} few {# дні} many {# днів} other {# днів}}. Якщо ви не очікуєте цього листа, можете ігнорувати його.",
+  "tagline": "Kharko Dozor — запис і відтворення користувацьких сесій"
+}

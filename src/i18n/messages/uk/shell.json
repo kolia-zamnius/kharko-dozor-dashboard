@@ -1,0 +1,30 @@
+{
+  "brand": "Kharko",
+  "nav": {
+    "users": "Користувачі",
+    "replays": "Записи"
+  },
+  "identity": {
+    "userFallbackName": "Користувач",
+    "personalSpace": "Особистий простір",
+    "ownerLabel": "Власник"
+  },
+  "avatarDropdown": {
+    "ariaLabel": "Меню акаунта"
+  },
+  "drawer": {
+    "openMenu": "Відкрити меню",
+    "openMenuWithInvites": "Відкрити меню — {count, plural, one {# нове запрошення} few {# нові запрошення} many {# нових запрошень} other {# запрошень}}",
+    "title": "Меню"
+  },
+  "actions": {
+    "switchOrg": "Змінити організацію",
+    "manageOrgs": "Керування організаціями",
+    "userSettings": "Налаштування користувача",
+    "signOut": "Вийти"
+  },
+  "theme": {
+    "light": "Світла тема",
+    "dark": "Темна тема"
+  }
+}

@@ -1,0 +1,211 @@
+{
+  "page": {
+    "title": "Користувачі — Kharko Dozor"
+  },
+  "mutations": {
+    "updateDisplayName": {
+      "customNameSet": "Власне ім'я збережено",
+      "customNameCleared": "Власне ім'я очищено",
+      "traitKeySet": "Ключ trait збережено",
+      "traitKeyCleared": "Ключ trait очищено",
+      "generic": "Відображуване ім'я оновлено",
+      "error": "Не вдалося оновити відображуване ім'я"
+    }
+  },
+  "list": {
+    "heading": "Користувачі",
+    "subtitle": "Відстежені користувачі, ідентифіковані вашим SDK у всіх проектах.",
+    "liveAnnounceFiltered": "Показано {count, plural, one {# користувача} few {# користувачів} many {# користувачів} other {# користувачів}} (відфільтровано).",
+    "liveAnnounce": "Показано {count, plural, one {# користувача} few {# користувачів} many {# користувачів} other {# користувачів}}.",
+    "stats": {
+      "totalTracked": "Усього відстежено",
+      "onlineNow": "Онлайн зараз",
+      "active24h": "Активні за 24 год",
+      "newThisWeek": "Нові цього тижня"
+    },
+    "search": {
+      "placeholder": "Пошук користувачів...",
+      "ariaLabel": "Пошук відстежених користувачів",
+      "clearAria": "Очистити пошук"
+    },
+    "projectFilter": {
+      "label": "Проект",
+      "empty": "Немає проектів"
+    },
+    "statusFilter": {
+      "label": "Статус"
+    },
+    "empty": {
+      "withFiltersTitle": "Немає користувачів, що відповідають фільтрам",
+      "withFiltersBody": "Спробуйте змінити пошук, проект або статусні фільтри.",
+      "noUsersTitle": "Відстежених користувачів поки немає",
+      "noUsersBody": "Користувачі з'являться тут, коли ваш tracker SDK викличе <code></code>."
+    },
+    "table": {
+      "colUser": "Користувач",
+      "colProject": "Проект",
+      "colStatus": "Статус",
+      "colLastSeen": "Останній візит",
+      "colSessions": "Сесії",
+      "colActive7d": "Активність 7д",
+      "emptyDash": "—"
+    },
+    "loadMore": "Завантажити ще"
+  },
+  "status": {
+    "ONLINE": {
+      "label": "Онлайн",
+      "description": "Активний протягом останніх 2 хвилин"
+    },
+    "ACTIVE_24H": {
+      "label": "Активний",
+      "description": "Мав активність за останні 24 години"
+    },
+    "IDLE_7D": {
+      "label": "Неактивний",
+      "description": "Останній візит протягом останнього тижня"
+    },
+    "DORMANT": {
+      "label": "Сплячий",
+      "description": "Немає активності понад 7 днів"
+    }
+  },
+  "activity": {
+    "6h": {
+      "label": "Останні 6 годин",
+      "shortLabel": "6 год"
+    },
+    "24h": {
+      "label": "Останні 24 години",
+      "shortLabel": "24 год"
+    },
+    "7d": {
+      "label": "Останні 7 днів",
+      "shortLabel": "7 дн"
+    }
+  },
+  "errorContext": {
+    "list": "Список користувачів",
+    "detail": "Користувач"
+  },
+  "detail": {
+    "page": {
+      "title": "Користувач — Kharko Dozor"
+    },
+    "rangeSelectorAria": "Обрати діапазон активності",
+    "header": {
+      "prefix": "Відстежений користувач · ID ",
+      "firstSeen": "Перший візит {date}",
+      "sessionCount": "{count, plural, one {# сесія} few {# сесії} many {# сесій} other {# сесій}}",
+      "editAria": "Редагувати відображуване ім'я"
+    },
+    "online": {
+      "onlineNow": "Онлайн зараз",
+      "lastSeen": "Останній візит {relative}",
+      "neverSeen": "Ніколи не бачили",
+      "tooltipLast": "Остання подія {time}",
+      "tooltipNone": "Подій ще немає"
+    },
+    "stats": {
+      "sessions": "Сесії",
+      "activeTime": "Час активності",
+      "avgSession": "Середня сесія",
+      "events": "Події",
+      "uniquePages": "Унікальні сторінки",
+      "topPage": "Топ-сторінка",
+      "dash": "—",
+      "noSessions": "немає сесій",
+      "across": "серед {count}",
+      "topPageSub": "найбільше часу проведено"
+    },
+    "activityChart": {
+      "title": "Активність",
+      "empty": "Активності у цьому діапазоні немає.",
+      "ariaLabel": "Гістограма активності: {events} подій у {buckets} інтервалах, пік {peak}.",
+      "bucketAria": "{range}: {count, plural, one {# подія} few {# події} many {# подій} other {# подій}}",
+      "tooltipEvents": "{count, plural, one {# подія} few {# події} many {# подій} other {# подій}}"
+    },
+    "pages": {
+      "title": "Сторінки",
+      "empty": "Відвідувань сторінок у цьому діапазоні немає.",
+      "countLabel": "{visible} / {total} унікальних",
+      "colNum": "№",
+      "colPage": "Сторінка",
+      "colTime": "Час",
+      "colShare": "Частка",
+      "colVisits": "Відвідувань",
+      "showMore": "Показати більше ({count})",
+      "showLess": "Показати менше (−{count})"
+    },
+    "timeline": {
+      "title": "Таймлайн сесій",
+      "empty": "У цьому діапазоні сесій немає.",
+      "summary": "{count, plural, one {# сесія} few {# сесії} many {# сесій} other {# сесій}} · {lanes, plural, one {# рядок} few {# рядки} many {# рядків} other {# рядків}} · {range}",
+      "ariaLabel": "Таймлайн сесій: {count, plural, one {# сесія} few {# сесії} many {# сесій} other {# сесій}} у {lanes, plural, one {# рядку} few {# рядках} many {# рядках} other {# рядках}}.",
+      "sessionAria": "Сесія {id}, {duration}",
+      "ongoing": "триває",
+      "lessThanSecond": "<1с",
+      "clickToReplay": "Клікніть, щоб переглянути",
+      "sliceCount": "{count, plural, one {# сегмент} few {# сегменти} many {# сегментів} other {# сегментів}}"
+    },
+    "sessions": {
+      "title": "Сесії",
+      "empty": "Для цього користувача не записано сесій.",
+      "colSession": "Сесія",
+      "colStarted": "Початок",
+      "colDuration": "Тривалість",
+      "colEvents": "Події",
+      "colSlices": "Сегменти",
+      "loadMore": "Завантажити ще",
+      "loading": "Завантаження…"
+    },
+    "traits": {
+      "title": "Traits",
+      "keyCount": "{count, plural, one {# ключ} few {# ключі} many {# ключів} other {# ключів}}",
+      "hideJson": "Сховати JSON",
+      "showAll": "Показати всі ({count})",
+      "showJson": "Показати JSON",
+      "copyAria": "Скопіювати traits як JSON",
+      "copyJson": "Копіювати JSON",
+      "copied": "Скопійовано",
+      "toastCopySuccess": "JSON traits скопійовано в буфер обміну",
+      "toastCopyError": "Не вдалося скопіювати в буфер обміну"
+    },
+    "displayName": {
+      "title": "Відображуване ім'я",
+      "description": "Оберіть, як цей користувач відображатиметься в дашборді. Нижні записи застосовуються тільки коли вище нічого не задано.",
+      "custom": {
+        "heading": "Власне ім'я",
+        "description": "Буквальне відображуване ім'я для цього користувача. Має пріоритет над усім іншим.",
+        "placeholder": "напр. Alice Johnson",
+        "set": "Встановити",
+        "reset": "Скинути"
+      },
+      "local": {
+        "heading": "Ключ trait (цей користувач)",
+        "description": "Оберіть ключ з <code></code> цього користувача. Відображуване ім'я буде значенням <codeValue></codeValue>.",
+        "placeholder": "напр. email",
+        "set": "Встановити",
+        "reset": "Скинути",
+        "available": "Доступні: "
+      },
+      "project": {
+        "heading": "Ключ trait (за замовчуванням для проекту)",
+        "description": "Застосовується до <strong></strong> у <projectName></projectName>, де немає локального перевизначення. Оберіть ключ, який є у більшості користувачів (напр. <code></code>).",
+        "placeholder": "напр. email",
+        "set": "Встановити",
+        "reset": "Скинути"
+      }
+    },
+    "notFound": {
+      "title": "Користувача не знайдено",
+      "description": "Цього відстеженого користувача могли видалити, або у вас немає доступу до проекту, якому він належить.",
+      "backButton": "До списку користувачів"
+    },
+    "error": {
+      "backButton": "До списку користувачів",
+      "tryAgain": "Спробувати ще раз",
+      "errorId": "ID помилки: {id}"
+    }
+  }
+}

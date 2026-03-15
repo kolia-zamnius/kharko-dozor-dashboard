@@ -1,0 +1,21 @@
+{
+  "spinner": {
+    "loading": "Завантаження"
+  },
+  "dialog": {
+    "close": "Закрити"
+  },
+  "sheet": {
+    "close": "Закрити"
+  },
+  "pagination": {
+    "previous": "Назад",
+    "next": "Далі",
+    "previousAriaLabel": "Перейти на попередню сторінку",
+    "nextAriaLabel": "Перейти на наступну сторінку",
+    "more": "Більше сторінок"
+  },
+  "breadcrumb": {
+    "more": "Більше"
+  }
+}
