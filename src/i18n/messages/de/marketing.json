@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "title": "Kharko Dozor — Open-Source Session-Replay",
+    "description": "Plattform zur Aufzeichnung und Wiedergabe von Browser-Sessions. Kostenlos und Open Source, für immer."
+  },
+  "header": {
+    "signIn": "Anmelden",
+    "signUp": "Loslegen",
+    "dashboard": "Zum Dashboard",
+    "localeAria": "Sprache ändern"
+  },
+  "hero": {
+    "eyebrow": "Open Source · MIT",
+    "headline": "Sehen Sie, wie Ihre Nutzer Ihr Produkt wirklich verwenden",
+    "subheadline": "Kharko Dozor zeichnet echte Browser-Sessions mit rrweb auf und lässt Sie diese pixelgenau wiedergeben. Self-hosted, Framework-agnostisch, für immer kostenlos.",
+    "ctaPrimary": "SDK installieren",
+    "ctaSecondary": "Auf GitHub ansehen"
+  },
+  "features": {
+    "heading": "Was es kann",
+    "subheading": "Aufgebaut auf rrweb, entwickelt für Teams, die ihre Nutzer verstehen möchten, ohne Daten an Drittanbieter zu übermitteln.",
+    "sessionReplay": {
+      "title": "Pixelgenaue Session-Wiedergabe",
+      "description": "Jede DOM-Mutation, Mausbewegung und Eingabe wird erfasst und in einem isolierten iFrame rekonstruiert. Scrubben, Leerlauf überspringen, seitenweise springen — der Replay-Player behandelt lange Sessions als erstklassige Objekte."
+    },
+    "trackedUsers": {
+      "title": "Getrackte Nutzer und Traits",
+      "description": "Verknüpfen Sie Sessions mit Ihren Endnutzern über einen einfachen `identify()`-Aufruf. Traits, Aktivitäts-Zeitleisten und pro Nutzer ihre Session-Historie — alles aus Ihren eigenen SDK-Payloads abgeleitet."
+    },
+    "slices": {
+      "title": "Slices für lange Sessions",
+      "description": "Sessions werden bei Navigation oder Inaktivität automatisch geteilt, jeder Slice ist unabhängig abspielbar. Kein Scrubben mehr durch einen 40-Minuten-Tab, der im Hintergrund offen war."
+    },
+    "privacy": {
+      "title": "Ihre Daten, Ihre Datenbank",
+      "description": "Keine Drittanbieter-Prozessoren, keine versteckte Telemetrie. Richten Sie das SDK auf Ihr eigenes Dashboard, hosten Sie auf Ihrem eigenen Postgres, besitzen Sie jedes Byte."
+    }
+  },
+  "installation": {
+    "heading": "In unter einer Minute installiert",
+    "subheading": "Zwei Pakete auf npm — wählen Sie das, das zu Ihrem Stack passt. Vollständige Anleitungen finden Sie im SDK-Repository.",
+    "stepsLabel": "Schnellschritte",
+    "step1": "Erstellen Sie ein Projekt im Dashboard und kopieren Sie den Public Key.",
+    "step2": "Installieren Sie das SDK-Paket, das zu Ihrem Stack passt.",
+    "step3": "Wrappen Sie Ihre App (React) oder rufen Sie `init()` (Vanilla) mit dem Public Key auf.",
+    "tabs": {
+      "react": "React",
+      "vanilla": "Vanilla JS"
+    },
+    "reactInstall": "npm install @kharko/dozor-react",
+    "vanillaInstall": "npm install @kharko/dozor",
+    "copyCommandAria": "Installationsbefehl kopieren",
+    "docsLink": "Vollständige Anleitung auf GitHub",
+    "dashboardLink": "Dashboard öffnen"
+  },
+  "thankAuthor": {
+    "heading": "Dem Autor danken",
+    "subheading": "Kharko Dozor ist ein persönliches Open-Source-Projekt. Es gibt keine kostenpflichtigen Stufen, kein Enterprise-Upsell, keine Monetarisierungspläne. Wenn es Ihnen geholfen hat und Sie sich bedanken möchten, gibt es zwei Wege.",
+    "uahTitle": "Ukraine — Monobank (UAH)",
+    "uahDescription": "Spende mit einem Klick per Monobank-Link. Funktioniert mit jeder Karte, aus jedem Land, ohne Registrierung.",
+    "uahCta": "Über Monobank spenden",
+    "eurTitle": "Europa — Banküberweisung (EUR)",
+    "eurDescription": "SEPA-Überweisung auf das EUR-Konto des Autors. Verwenden Sie diese Daten im Überweisungsformular Ihrer Bank.",
+    "eurIbanLabel": "IBAN",
+    "eurBicLabel": "BIC",
+    "eurReceiverLabel": "Empfänger",
+    "eurCopyAria": "{field} kopieren",
+    "eurCopied": "Kopiert",
+    "otherWays": "Andere Wege, sich zu bedanken — oder möchten Sie aus einem anderen System senden? <contactLink>Kontaktieren Sie mich</contactLink>."
+  },
+  "footer": {
+    "tagline": "Open-Source Session-Replay. Kostenlos für alle, für immer.",
+    "resourcesHeading": "Ressourcen",
+    "resourcesGithub": "GitHub",
+    "resourcesSdk": "SDK (npm)",
+    "resourcesSdkReact": "React-Bindings (npm)",
+    "resourcesDocs": "Dokumentation",
+    "contactHeading": "Kontakt",
+    "contactEmail": "E-Mail",
+    "contactLinkedin": "LinkedIn",
+    "copyright": "© {year} Kolia Zamnyus. Kharko ist ein unabhängiges Open-Source-Projekt."
+  }
+}

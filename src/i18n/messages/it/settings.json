@@ -1,0 +1,331 @@
+{
+  "page": {
+    "userTitle": "Impostazioni utente — Kharko Dozor",
+    "orgsTitle": "Gestisci organizzazioni — Kharko Dozor"
+  },
+  "user": {
+    "heading": "Impostazioni utente",
+    "profile": {
+      "title": "Profilo",
+      "description": "Le tue informazioni personali",
+      "regenerateAvatar": "Rigenera avatar",
+      "nameLabel": "Nome",
+      "namePlaceholder": "Il tuo nome",
+      "saveName": "Salva nome",
+      "emailHeading": "Email",
+      "emailNote": "L'email non può essere modificata. Viene usata come identificativo di accesso.",
+      "avatarFallback": "Utente"
+    },
+    "auth": {
+      "title": "Autenticazione",
+      "description": "Gestisci i metodi di accesso"
+    },
+    "passkeys": {
+      "heading": "Passkeys",
+      "empty": "Ancora nessun passkey registrato.",
+      "addButton": "Aggiungi passkey",
+      "renameAria": "Rinomina passkey",
+      "deleteAria": "Elimina passkey",
+      "renameTitle": "Rinomina passkey",
+      "renameLabel": "Nome",
+      "renamePlaceholder": "es. MacBook Pro",
+      "save": "Salva",
+      "cancel": "Annulla",
+      "deleteTitle": "Eliminare «{name}»?",
+      "deleteDescription": "Questo passkey sarà rimosso permanentemente dal tuo account. Per accedere di nuovo da questo dispositivo, dovrai registrare un nuovo passkey. Questa azione non può essere annullata.",
+      "delete": "Elimina",
+      "deviceTypeMulti": "Multi-dispositivo",
+      "deviceTypeSingle": "Singolo dispositivo"
+    },
+    "accounts": {
+      "heading": "Account collegati",
+      "empty": "Nessun account collegato.",
+      "disconnect": "Scollega",
+      "confirmTitle": "Scollegare {provider}?",
+      "confirmDescription": "Non potrai più accedere con {provider}. Assicurati di avere almeno un altro metodo di accesso (passkey, OTP via email o altro provider OAuth) prima di scollegare, altrimenti potresti perdere l'accesso al tuo account.",
+      "cancel": "Annulla"
+    },
+    "danger": {
+      "title": "Zona di pericolo",
+      "description": "Azioni irreversibili",
+      "body": "Elimina definitivamente il tuo account e tutti i dati associati. Questa azione non può essere annullata.",
+      "deleteButton": "Elimina account",
+      "dialogTitle": "Eliminare account?",
+      "dialogDescription": "Questo eliminerà definitivamente il tuo account, tutte le organizzazioni di cui sei l'unico membro, e ti rimuoverà da tutte le organizzazioni condivise.",
+      "confirmLabel": "Scrivi «delete my account» per confermare",
+      "confirmPlaceholder": "delete my account",
+      "cancel": "Annulla",
+      "confirm": "Elimina account"
+    },
+    "locale": {
+      "title": "Lingua",
+      "description": "Scegli la lingua usata nella dashboard e nelle email.",
+      "selectAria": "Seleziona lingua"
+    }
+  },
+  "mutations": {
+    "user": {
+      "updateProfile": {
+        "success": "Profilo aggiornato",
+        "error": "Impossibile aggiornare il profilo"
+      },
+      "regenerateAvatar": {
+        "success": "Avatar rigenerato",
+        "error": "Impossibile rigenerare l'avatar"
+      },
+      "registerPasskey": {
+        "success": "Passkey registrato",
+        "error": "Registrazione passkey fallita. Riprova."
+      },
+      "renamePasskey": {
+        "success": "Passkey rinominato",
+        "error": "Impossibile rinominare il passkey"
+      },
+      "deletePasskey": {
+        "success": "Passkey eliminato",
+        "error": "Impossibile eliminare il passkey"
+      },
+      "disconnectAccount": {
+        "success": "Account scollegato",
+        "error": "Impossibile scollegare l'account"
+      },
+      "deleteAccount": {
+        "success": "Account eliminato",
+        "error": "Impossibile eliminare l'account"
+      },
+      "updateLocale": {
+        "success": "Lingua aggiornata",
+        "error": "Impossibile aggiornare la lingua"
+      }
+    },
+    "orgs": {
+      "switch": {
+        "error": "Impossibile cambiare organizzazione"
+      },
+      "create": {
+        "success": "Organizzazione creata",
+        "error": "Impossibile creare l'organizzazione"
+      },
+      "update": {
+        "renamed": "Organizzazione aggiornata",
+        "avatarRegenerated": "Avatar rigenerato",
+        "error": "Impossibile aggiornare l'organizzazione"
+      },
+      "delete": {
+        "success": "Organizzazione eliminata",
+        "error": "Impossibile eliminare l'organizzazione"
+      },
+      "invite": {
+        "success": "Invito inviato a {email}",
+        "error": "Impossibile inviare l'invito"
+      },
+      "updateInvite": {
+        "roleChanged": "Ruolo per {email} cambiato a {role, select, OWNER {proprietario} ADMIN {admin} VIEWER {visualizzatore} other {membro}}",
+        "extended": "Invito per {email} prorogato",
+        "error": "Impossibile aggiornare l'invito"
+      },
+      "deleteInvite": {
+        "success": "Invito per {email} revocato",
+        "error": "Impossibile revocare l'invito"
+      },
+      "updateRole": {
+        "success": "Ruolo cambiato a {role, select, OWNER {proprietario} ADMIN {admin} VIEWER {visualizzatore} other {membro}}",
+        "error": "Impossibile aggiornare il ruolo"
+      },
+      "removeMember": {
+        "selfLeftNamed": "Hai lasciato {orgName}",
+        "selfLeftGeneric": "Hai lasciato l'organizzazione",
+        "removed": "Membro rimosso",
+        "error": "Impossibile rimuovere il membro"
+      }
+    },
+    "projects": {
+      "create": {
+        "success": "Chiave API creata",
+        "error": "Impossibile creare la chiave API"
+      },
+      "update": {
+        "success": "Chiave API rinominata",
+        "error": "Impossibile rinominare la chiave API"
+      },
+      "delete": {
+        "success": "Chiave API eliminata",
+        "error": "Impossibile eliminare la chiave API"
+      },
+      "regenerateKey": {
+        "success": "Chiave API rigenerata",
+        "error": "Impossibile rigenerare la chiave"
+      },
+      "updateDisplayNameTrait": {
+        "set": "Predefinito del progetto salvato",
+        "cleared": "Predefinito del progetto rimosso",
+        "error": "Impossibile aggiornare l'impostazione del nome visualizzato del progetto"
+      }
+    },
+    "invites": {
+      "accept": {
+        "success": "Ti sei unito a {organizationName}",
+        "error": "Impossibile accettare l'invito"
+      },
+      "decline": {
+        "success": "Invito a {organizationName} rifiutato",
+        "error": "Impossibile rifiutare l'invito"
+      }
+    }
+  },
+  "orgs": {
+    "heading": "Gestisci organizzazioni",
+    "invitations": {
+      "title": "I miei inviti",
+      "empty": "Non hai inviti in attesa. Quando qualcuno ti invita a un'organizzazione, apparirà qui.",
+      "col": {
+        "organization": "Organizzazione",
+        "role": "Ruolo",
+        "invitedBy": "Invitato da",
+        "actions": "Azioni"
+      },
+      "accept": {
+        "triggerAria": "Accetta invito a {orgName}",
+        "trigger": "Accetta",
+        "dialogTitle": "Unirsi a {orgName}?",
+        "dialogDescription": "Sarai aggiunto come <role></role> e avrai accesso a tutti i progetti di questa organizzazione.",
+        "cancel": "Annulla",
+        "confirm": "Unisciti"
+      },
+      "decline": {
+        "triggerAria": "Rifiuta invito a {orgName}",
+        "trigger": "Rifiuta",
+        "dialogTitle": "Rifiutare invito a {orgName}?",
+        "dialogDescription": "L'invito sarà rimosso dal tuo elenco. Se cambi idea, un admin dovrà inviartene uno nuovo.",
+        "cancel": "Annulla",
+        "confirm": "Rifiuta invito"
+      }
+    },
+    "card": {
+      "badgePersonal": "Personale",
+      "badgeTeam": "Team",
+      "personalDescription": "Il tuo spazio personale — i progetti qui sono visibili solo a te.",
+      "createdOn": "Creata {date}",
+      "editAria": "Modifica organizzazione",
+      "deleteAria": "Elimina organizzazione",
+      "leaveAria": "Lascia organizzazione"
+    },
+    "edit": {
+      "title": "Modifica organizzazione",
+      "regenerateAvatar": "Rigenera avatar",
+      "nameLabel": "Nome",
+      "namePlaceholder": "Nome dell'organizzazione",
+      "cancel": "Annulla",
+      "save": "Salva"
+    },
+    "delete": {
+      "title": "Eliminare {orgName}?",
+      "description": "Questo eliminerà definitivamente l'organizzazione, rimuoverà tutti i membri e annullerà tutti gli inviti in attesa. Questa azione non può essere annullata.",
+      "confirmLabel": "Scrivi «delete organization» per confermare",
+      "confirmPlaceholder": "delete organization",
+      "cancel": "Annulla",
+      "confirm": "Elimina organizzazione"
+    },
+    "leave": {
+      "title": "Lasciare {orgName}?",
+      "description": "Perderai l'accesso a tutti i progetti e dati di questa organizzazione. Potrai rientrare solo se qualcuno ti invita di nuovo.",
+      "cancel": "Annulla",
+      "confirm": "Lascia organizzazione"
+    },
+    "members": {
+      "triggerAria": "Gestisci membri",
+      "countLabel": "{count, plural, one {# membro} other {# membri}}",
+      "dialogTitle": "Membri — {orgName}",
+      "empty": "Nessun membro trovato.",
+      "roleAria": "Ruolo",
+      "selfSuffix": "(tu)",
+      "unnamed": "Senza nome",
+      "unknownFallback": "Membro",
+      "removeAria": "Rimuovi membro",
+      "leaveAria": "Lascia organizzazione",
+      "removeTitle": "Rimuovere {memberName}?",
+      "removeDescription": "{memberName} perderà l'accesso a tutti i progetti e dati di questa organizzazione. Puoi invitarlo nuovamente in qualsiasi momento.",
+      "leaveTitle": "Lasciare {orgName}?",
+      "leaveDescription": "Perderai l'accesso a tutti i progetti e dati di questa organizzazione. Potrai rientrare solo se qualcuno ti invita di nuovo.",
+      "cancel": "Annulla",
+      "confirmRemove": "Rimuovi membro",
+      "confirmLeave": "Lascia organizzazione"
+    },
+    "invite": {
+      "triggerAria": "Invita membro",
+      "trigger": "Invita",
+      "dialogTitle": "Invita in {orgName}",
+      "emailLabel": "Indirizzo email",
+      "emailPlaceholder": "collega@esempio.com",
+      "roleLabel": "Ruolo",
+      "submit": "Invia invito",
+      "expiryNote": "Gli inviti scadono dopo {days} giorni. Inviare di nuovo la stessa email aggiorna l'invito esistente — non serve revocarlo manualmente.",
+      "pending": {
+        "heading": "Inviti in attesa",
+        "errorTitle": "Impossibile caricare gli inviti in attesa",
+        "errorDescription": "Qualcosa è andato storto. Riprova.",
+        "empty": "Nessun invito in attesa. Gli inviti inviati appariranno qui finché non vengono accettati o scadono.",
+        "col": {
+          "email": "Email",
+          "role": "Ruolo",
+          "expires": "Scade",
+          "invitedBy": "Invitato da",
+          "actions": "Azioni"
+        },
+        "expiresRelative": "scade {relative}",
+        "roleAria": "Ruolo per {email}",
+        "extendAria": "Proroga invito per {email}",
+        "revokeAria": "Revoca invito per {email}",
+        "extendTooltip": "Proroga scadenza",
+        "revokeTooltip": "Revoca invito"
+      }
+    },
+    "roles": {
+      "owner": {
+        "label": "Proprietario",
+        "description": "Controllo completo: gestisci membri, modifica, elimina"
+      },
+      "admin": {
+        "label": "Admin",
+        "description": "Modifica impostazioni, invita membri"
+      },
+      "viewer": {
+        "label": "Visualizzatore",
+        "description": "Visualizza progetti e dati"
+      }
+    },
+    "apiKeys": {
+      "heading": "Chiavi API",
+      "empty": "Ancora nessuna chiave API.",
+      "emptyHint": "Clicca «Aggiungi chiave» per crearne una.",
+      "addButton": "Aggiungi chiave",
+      "createTitle": "Crea chiave API",
+      "createNameLabel": "Nome",
+      "createNamePlaceholder": "Production",
+      "createCancel": "Annulla",
+      "createConfirm": "Crea",
+      "copyAria": "Copia chiave API",
+      "copySuccess": "Chiave copiata negli appunti",
+      "copyError": "Impossibile copiare la chiave",
+      "regenerateAria": "Rigenera chiave",
+      "regenerateTitle": "Rigenerare la chiave {name}?",
+      "regenerateDescription": "La chiave precedente diventerà immediatamente non valida. Qualsiasi SDK che usa la vecchia chiave smetterà di inviare dati finché non lo aggiorni con quella nuova.",
+      "regenerateCancel": "Annulla",
+      "regenerateConfirm": "Rigenera",
+      "deleteAria": "Elimina chiave",
+      "deleteTitle": "Eliminare {name}?",
+      "deleteDescriptionPrefix": "Questo eliminerà definitivamente la chiave API e ",
+      "deleteDescriptionStrong": "tutte le sessioni, gli utenti e le registrazioni",
+      "deleteDescriptionSuffix": " collegate a essa. Questa azione non può essere annullata.",
+      "deleteCancel": "Annulla",
+      "deleteConfirm": "Elimina"
+    },
+    "create": {
+      "title": "Crea una nuova organizzazione",
+      "description": "Le organizzazioni di team permettono di collaborare con altri",
+      "nameLabel": "Nome dell'organizzazione",
+      "namePlaceholder": "Il mio team",
+      "submit": "Crea"
+    }
+  }
+}

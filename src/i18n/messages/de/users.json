@@ -1,0 +1,211 @@
+{
+  "page": {
+    "title": "Benutzer — Kharko Dozor"
+  },
+  "mutations": {
+    "updateDisplayName": {
+      "customNameSet": "Benutzerdefinierter Name gespeichert",
+      "customNameCleared": "Benutzerdefinierter Name gelöscht",
+      "traitKeySet": "Trait-Schlüssel gespeichert",
+      "traitKeyCleared": "Trait-Schlüssel gelöscht",
+      "generic": "Anzeigename aktualisiert",
+      "error": "Anzeigename konnte nicht aktualisiert werden"
+    }
+  },
+  "list": {
+    "heading": "Benutzer",
+    "subtitle": "Getrackte Benutzer, die Ihr SDK projektübergreifend identifiziert hat.",
+    "liveAnnounceFiltered": "Zeige {count, plural, one {# Benutzer} other {# Benutzer}} (gefiltert).",
+    "liveAnnounce": "Zeige {count, plural, one {# Benutzer} other {# Benutzer}}.",
+    "stats": {
+      "totalTracked": "Getrackt insgesamt",
+      "onlineNow": "Jetzt online",
+      "active24h": "Aktiv in 24h",
+      "newThisWeek": "Neu diese Woche"
+    },
+    "search": {
+      "placeholder": "Benutzer suchen...",
+      "ariaLabel": "Getrackte Benutzer suchen",
+      "clearAria": "Suche löschen"
+    },
+    "projectFilter": {
+      "label": "Projekt",
+      "empty": "Keine Projekte"
+    },
+    "statusFilter": {
+      "label": "Status"
+    },
+    "empty": {
+      "withFiltersTitle": "Keine Benutzer entsprechen Ihren Filtern",
+      "withFiltersBody": "Versuchen Sie, Suche, Projekt oder Statusfilter anzupassen.",
+      "noUsersTitle": "Noch keine getrackten Benutzer",
+      "noUsersBody": "Benutzer erscheinen hier, wenn Ihr Tracker-SDK <code></code> aufruft."
+    },
+    "table": {
+      "colUser": "Benutzer",
+      "colProject": "Projekt",
+      "colStatus": "Status",
+      "colLastSeen": "Zuletzt gesehen",
+      "colSessions": "Sitzungen",
+      "colActive7d": "Aktiv 7T",
+      "emptyDash": "—"
+    },
+    "loadMore": "Mehr laden"
+  },
+  "status": {
+    "ONLINE": {
+      "label": "Online",
+      "description": "Aktiv in den letzten 2 Minuten"
+    },
+    "ACTIVE_24H": {
+      "label": "Aktiv",
+      "description": "Aktivität in den letzten 24 Stunden"
+    },
+    "IDLE_7D": {
+      "label": "Inaktiv",
+      "description": "Zuletzt gesehen innerhalb der letzten 7 Tage"
+    },
+    "DORMANT": {
+      "label": "Ruhend",
+      "description": "Keine Aktivität seit mehr als 7 Tagen"
+    }
+  },
+  "activity": {
+    "6h": {
+      "label": "Letzte 6 Stunden",
+      "shortLabel": "6h"
+    },
+    "24h": {
+      "label": "Letzte 24 Stunden",
+      "shortLabel": "24h"
+    },
+    "7d": {
+      "label": "Letzte 7 Tage",
+      "shortLabel": "7T"
+    }
+  },
+  "errorContext": {
+    "list": "Benutzerliste",
+    "detail": "Benutzer"
+  },
+  "detail": {
+    "page": {
+      "title": "Benutzer — Kharko Dozor"
+    },
+    "rangeSelectorAria": "Aktivitätszeitraum auswählen",
+    "header": {
+      "prefix": "Getrackter Benutzer · ID ",
+      "firstSeen": "Erstmals gesehen {date}",
+      "sessionCount": "{count, plural, one {# Sitzung} other {# Sitzungen}}",
+      "editAria": "Anzeigename bearbeiten"
+    },
+    "online": {
+      "onlineNow": "Jetzt online",
+      "lastSeen": "Zuletzt gesehen {relative}",
+      "neverSeen": "Nie gesehen",
+      "tooltipLast": "Letztes Ereignis {time}",
+      "tooltipNone": "Noch keine Ereignisse"
+    },
+    "stats": {
+      "sessions": "Sitzungen",
+      "activeTime": "Aktive Zeit",
+      "avgSession": "Ø Sitzung",
+      "events": "Ereignisse",
+      "uniquePages": "Eindeutige Seiten",
+      "topPage": "Top-Seite",
+      "dash": "—",
+      "noSessions": "keine Sitzungen",
+      "across": "über {count}",
+      "topPageSub": "meiste Zeit verbracht"
+    },
+    "activityChart": {
+      "title": "Aktivität",
+      "empty": "Keine Aktivität in diesem Zeitraum.",
+      "ariaLabel": "Aktivitätshistogramm: {events} Ereignisse über {buckets} Intervalle, Spitze {peak}.",
+      "bucketAria": "{range}: {count, plural, one {# Ereignis} other {# Ereignisse}}",
+      "tooltipEvents": "{count, plural, one {# Ereignis} other {# Ereignisse}}"
+    },
+    "pages": {
+      "title": "Seiten",
+      "empty": "Keine Seitenbesuche in diesem Zeitraum.",
+      "countLabel": "{visible} / {total} eindeutig",
+      "colNum": "#",
+      "colPage": "Seite",
+      "colTime": "Zeit",
+      "colShare": "Anteil",
+      "colVisits": "Besuche",
+      "showMore": "Mehr anzeigen ({count})",
+      "showLess": "Weniger anzeigen (−{count})"
+    },
+    "timeline": {
+      "title": "Sitzungszeitachse",
+      "empty": "Keine Sitzungen in diesem Zeitraum.",
+      "summary": "{count, plural, one {# Sitzung} other {# Sitzungen}} · {lanes, plural, one {# Spur} other {# Spuren}} · {range}",
+      "ariaLabel": "Sitzungszeitachse: {count, plural, one {# Sitzung} other {# Sitzungen}} über {lanes, plural, one {# Spur} other {# Spuren}}.",
+      "sessionAria": "Sitzung {id}, {duration}",
+      "ongoing": "läuft",
+      "lessThanSecond": "<1s",
+      "clickToReplay": "Klicken zum Wiedergeben",
+      "sliceCount": "{count, plural, one {# Segment} other {# Segmente}}"
+    },
+    "sessions": {
+      "title": "Sitzungen",
+      "empty": "Keine Sitzungen für diesen Benutzer aufgezeichnet.",
+      "colSession": "Sitzung",
+      "colStarted": "Gestartet",
+      "colDuration": "Dauer",
+      "colEvents": "Ereignisse",
+      "colSlices": "Segmente",
+      "loadMore": "Mehr laden",
+      "loading": "Wird geladen…"
+    },
+    "traits": {
+      "title": "Traits",
+      "keyCount": "{count, plural, one {# Schlüssel} other {# Schlüssel}}",
+      "hideJson": "JSON ausblenden",
+      "showAll": "Alle anzeigen ({count})",
+      "showJson": "JSON anzeigen",
+      "copyAria": "Traits als JSON kopieren",
+      "copyJson": "JSON kopieren",
+      "copied": "Kopiert",
+      "toastCopySuccess": "Traits-JSON in Zwischenablage kopiert",
+      "toastCopyError": "Kopieren in Zwischenablage fehlgeschlagen"
+    },
+    "displayName": {
+      "title": "Anzeigename",
+      "description": "Wählen Sie, wie dieser Benutzer im Dashboard erscheint. Tiefere Einträge gelten nur, wenn nichts darüber gesetzt ist.",
+      "custom": {
+        "heading": "Benutzerdefinierter Name",
+        "description": "Wörtlicher Anzeigename für diesen Benutzer. Hat Vorrang vor allem anderen.",
+        "placeholder": "z. B. Alice Johnson",
+        "set": "Setzen",
+        "reset": "Zurücksetzen"
+      },
+      "local": {
+        "heading": "Trait-Schlüssel (dieser Benutzer)",
+        "description": "Wählen Sie einen Schlüssel aus den <code></code> dieses Benutzers. Der Anzeigename ist der Wert von <codeValue></codeValue>.",
+        "placeholder": "z. B. email",
+        "set": "Setzen",
+        "reset": "Zurücksetzen",
+        "available": "Verfügbar: "
+      },
+      "project": {
+        "heading": "Trait-Schlüssel (Projektstandard)",
+        "description": "Gilt für <strong></strong> in <projectName></projectName> ohne lokale Überschreibung. Wählen Sie einen Schlüssel, den die meisten Benutzer haben (z. B. <code></code>).",
+        "placeholder": "z. B. email",
+        "set": "Setzen",
+        "reset": "Zurücksetzen"
+      }
+    },
+    "notFound": {
+      "title": "Benutzer nicht gefunden",
+      "description": "Dieser getrackte Benutzer wurde möglicherweise gelöscht oder Sie haben keinen Zugriff auf das zugehörige Projekt.",
+      "backButton": "Zurück zu Benutzern"
+    },
+    "error": {
+      "backButton": "Zurück zu Benutzern",
+      "tryAgain": "Erneut versuchen",
+      "errorId": "Fehler-ID: {id}"
+    }
+  }
+}

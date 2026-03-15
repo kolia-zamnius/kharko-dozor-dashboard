@@ -1,0 +1,62 @@
+{
+  "generic": {
+    "unknown": "Algo salió mal",
+    "unknownDescription": "Ha ocurrido un error inesperado. Inténtalo de nuevo o recarga la página."
+  },
+  "apiKinds": {
+    "notFoundTitle": "{context} no encontrado",
+    "notFoundDescription": "El recurso puede haber sido eliminado o el enlace puede estar obsoleto.",
+    "permissionTitle": "No tienes permiso",
+    "permissionDescription": "Pide acceso al propietario de la organización o cambia a una organización que tenga estos datos.",
+    "authTitle": "Sesión expirada",
+    "authDescription": "Serás redirigido al inicio de sesión.",
+    "rateLimitTitle": "Demasiadas solicitudes",
+    "rateLimitDescription": "Espera un momento e inténtalo de nuevo.",
+    "validationTitle": "Solicitud no válida",
+    "validationDescriptionFallback": "Revisa los datos del formulario e inténtalo de nuevo.",
+    "conflictTitle": "Conflicto",
+    "conflictDescription": "Los datos cambiaron mientras trabajabas — recarga para ver el estado actual.",
+    "serverTitle": "Error del servidor",
+    "serverDescription": "No se pudo cargar {context}. Probablemente es un problema temporal.",
+    "networkTitle": "Error de red",
+    "networkDescription": "Comprueba tu conexión e inténtalo de nuevo."
+  },
+  "validation": {
+    "required": "Obligatorio",
+    "invalidType": "Se esperaba: {expected}",
+    "tooSmall": {
+      "string": "Debe tener al menos {minimum, plural, one {# carácter} other {# caracteres}}",
+      "number": "Debe ser al menos {minimum}",
+      "array": "Debe tener al menos {minimum, plural, one {# elemento} other {# elementos}}",
+      "file": "El archivo es demasiado pequeño",
+      "generic": "Valor demasiado pequeño"
+    },
+    "tooBig": {
+      "string": "Debe tener como máximo {maximum, plural, one {# carácter} other {# caracteres}}",
+      "number": "Debe ser como máximo {maximum}",
+      "array": "Debe tener como máximo {maximum, plural, one {# elemento} other {# elementos}}",
+      "file": "El archivo es demasiado grande",
+      "generic": "Valor demasiado grande"
+    },
+    "invalidFormat": {
+      "email": "Dirección de correo no válida",
+      "url": "URL no válida",
+      "uuid": "UUID no válido",
+      "id": "ID no válido",
+      "datetime": "Fecha/hora no válida",
+      "ip": "Dirección IP no válida",
+      "regex": "Formato no válido",
+      "startsWith": "Debe empezar con «{prefix}»",
+      "endsWith": "Debe terminar con «{suffix}»",
+      "includes": "Debe contener «{includes}»",
+      "generic": "Formato no válido"
+    },
+    "notMultipleOf": "Debe ser múltiplo de {divisor}",
+    "unrecognizedKeys": "{count, plural, one {Clave no reconocida} other {Claves no reconocidas}}: {keys}",
+    "invalidUnion": "Entrada no válida",
+    "invalidKey": "Clave no válida",
+    "invalidElement": "Elemento no válido",
+    "invalidValue": "Debe ser uno de: {options}",
+    "custom": "Entrada no válida"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "generic": {
+    "unknown": "Etwas ist schiefgelaufen",
+    "unknownDescription": "Ein unerwarteter Fehler ist aufgetreten. Versuchen Sie es erneut oder laden Sie die Seite neu."
+  },
+  "apiKinds": {
+    "notFoundTitle": "{context} nicht gefunden",
+    "notFoundDescription": "Die Ressource wurde möglicherweise gelöscht oder der Link ist veraltet.",
+    "permissionTitle": "Keine Berechtigung",
+    "permissionDescription": "Bitten Sie einen Organisationsbesitzer um Zugriff oder wechseln Sie zu einer Organisation, die diese Daten hat.",
+    "authTitle": "Sitzung abgelaufen",
+    "authDescription": "Sie werden zur Anmeldung weitergeleitet.",
+    "rateLimitTitle": "Zu viele Anfragen",
+    "rateLimitDescription": "Warten Sie einen Moment und versuchen Sie es erneut.",
+    "validationTitle": "Ungültige Anfrage",
+    "validationDescriptionFallback": "Überprüfen Sie die Formulareingaben und versuchen Sie es erneut.",
+    "conflictTitle": "Konflikt",
+    "conflictDescription": "Die Daten haben sich während Ihrer Arbeit geändert — laden Sie neu, um den aktuellen Stand zu sehen.",
+    "serverTitle": "Serverfehler",
+    "serverDescription": "{context} konnte nicht geladen werden. Dies ist wahrscheinlich ein vorübergehendes Problem.",
+    "networkTitle": "Netzwerkfehler",
+    "networkDescription": "Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+  },
+  "validation": {
+    "required": "Pflichtfeld",
+    "invalidType": "Erwartet: {expected}",
+    "tooSmall": {
+      "string": "Mindestens {minimum, plural, one {# Zeichen} other {# Zeichen}} erforderlich",
+      "number": "Muss mindestens {minimum} sein",
+      "array": "Mindestens {minimum, plural, one {# Element} other {# Elemente}} erforderlich",
+      "file": "Datei ist zu klein",
+      "generic": "Wert ist zu klein"
+    },
+    "tooBig": {
+      "string": "Höchstens {maximum, plural, one {# Zeichen} other {# Zeichen}} erlaubt",
+      "number": "Muss höchstens {maximum} sein",
+      "array": "Höchstens {maximum, plural, one {# Element} other {# Elemente}} erlaubt",
+      "file": "Datei ist zu groß",
+      "generic": "Wert ist zu groß"
+    },
+    "invalidFormat": {
+      "email": "Ungültige E-Mail-Adresse",
+      "url": "Ungültige URL",
+      "uuid": "Ungültige UUID",
+      "id": "Ungültige ID",
+      "datetime": "Ungültiges Datum/Uhrzeit",
+      "ip": "Ungültige IP-Adresse",
+      "regex": "Ungültiges Format",
+      "startsWith": "Muss mit „{prefix}“ beginnen",
+      "endsWith": "Muss mit „{suffix}“ enden",
+      "includes": "Muss „{includes}“ enthalten",
+      "generic": "Ungültiges Format"
+    },
+    "notMultipleOf": "Muss ein Vielfaches von {divisor} sein",
+    "unrecognizedKeys": "Unbekannte {count, plural, one {Schlüssel} other {Schlüssel}}: {keys}",
+    "invalidUnion": "Ungültige Eingabe",
+    "invalidKey": "Ungültiger Schlüssel",
+    "invalidElement": "Ungültiges Element",
+    "invalidValue": "Muss eines der folgenden sein: {options}",
+    "custom": "Ungültige Eingabe"
+  }
+}

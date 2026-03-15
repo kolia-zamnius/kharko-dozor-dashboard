@@ -1,0 +1,62 @@
+{
+  "generic": {
+    "unknown": "Qualcosa è andato storto",
+    "unknownDescription": "Si è verificato un errore imprevisto. Riprova o ricarica la pagina."
+  },
+  "apiKinds": {
+    "notFoundTitle": "{context} non trovato",
+    "notFoundDescription": "La risorsa potrebbe essere stata eliminata o il collegamento potrebbe essere obsoleto.",
+    "permissionTitle": "Non hai l'autorizzazione",
+    "permissionDescription": "Chiedi l'accesso al proprietario dell'organizzazione o passa a un'organizzazione che ha questi dati.",
+    "authTitle": "Sessione scaduta",
+    "authDescription": "Verrai reindirizzato all'accesso.",
+    "rateLimitTitle": "Troppe richieste",
+    "rateLimitDescription": "Aspetta un momento e riprova.",
+    "validationTitle": "Richiesta non valida",
+    "validationDescriptionFallback": "Controlla i dati del modulo e riprova.",
+    "conflictTitle": "Conflitto",
+    "conflictDescription": "I dati sono cambiati mentre lavoravi — ricarica per vedere lo stato attuale.",
+    "serverTitle": "Errore del server",
+    "serverDescription": "Impossibile caricare {context}. Probabilmente è un problema temporaneo.",
+    "networkTitle": "Errore di rete",
+    "networkDescription": "Controlla la connessione e riprova."
+  },
+  "validation": {
+    "required": "Obbligatorio",
+    "invalidType": "Atteso: {expected}",
+    "tooSmall": {
+      "string": "Deve contenere almeno {minimum, plural, one {# carattere} other {# caratteri}}",
+      "number": "Deve essere almeno {minimum}",
+      "array": "Deve contenere almeno {minimum, plural, one {# elemento} other {# elementi}}",
+      "file": "Il file è troppo piccolo",
+      "generic": "Valore troppo piccolo"
+    },
+    "tooBig": {
+      "string": "Deve contenere al massimo {maximum, plural, one {# carattere} other {# caratteri}}",
+      "number": "Deve essere al massimo {maximum}",
+      "array": "Deve contenere al massimo {maximum, plural, one {# elemento} other {# elementi}}",
+      "file": "Il file è troppo grande",
+      "generic": "Valore troppo grande"
+    },
+    "invalidFormat": {
+      "email": "Indirizzo email non valido",
+      "url": "URL non valido",
+      "uuid": "UUID non valido",
+      "id": "ID non valido",
+      "datetime": "Data/ora non valida",
+      "ip": "Indirizzo IP non valido",
+      "regex": "Formato non valido",
+      "startsWith": "Deve iniziare con «{prefix}»",
+      "endsWith": "Deve terminare con «{suffix}»",
+      "includes": "Deve contenere «{includes}»",
+      "generic": "Formato non valido"
+    },
+    "notMultipleOf": "Deve essere un multiplo di {divisor}",
+    "unrecognizedKeys": "{count, plural, one {Chiave non riconosciuta} other {Chiavi non riconosciute}}: {keys}",
+    "invalidUnion": "Input non valido",
+    "invalidKey": "Chiave non valida",
+    "invalidElement": "Elemento non valido",
+    "invalidValue": "Deve essere uno di: {options}",
+    "custom": "Input non valido"
+  }
+}

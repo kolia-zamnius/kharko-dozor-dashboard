@@ -1,0 +1,211 @@
+{
+  "page": {
+    "title": "Usuarios — Kharko Dozor"
+  },
+  "mutations": {
+    "updateDisplayName": {
+      "customNameSet": "Nombre personalizado guardado",
+      "customNameCleared": "Nombre personalizado borrado",
+      "traitKeySet": "Clave de trait guardada",
+      "traitKeyCleared": "Clave de trait borrada",
+      "generic": "Nombre a mostrar actualizado",
+      "error": "No se pudo actualizar el nombre a mostrar"
+    }
+  },
+  "list": {
+    "heading": "Usuarios",
+    "subtitle": "Usuarios rastreados identificados por tu SDK en todos los proyectos.",
+    "liveAnnounceFiltered": "Mostrando {count, plural, one {# usuario} other {# usuarios}} (filtrado).",
+    "liveAnnounce": "Mostrando {count, plural, one {# usuario} other {# usuarios}}.",
+    "stats": {
+      "totalTracked": "Total rastreados",
+      "onlineNow": "En línea ahora",
+      "active24h": "Activos 24h",
+      "newThisWeek": "Nuevos esta semana"
+    },
+    "search": {
+      "placeholder": "Buscar usuarios...",
+      "ariaLabel": "Buscar usuarios rastreados",
+      "clearAria": "Borrar búsqueda"
+    },
+    "projectFilter": {
+      "label": "Proyecto",
+      "empty": "Sin proyectos"
+    },
+    "statusFilter": {
+      "label": "Estado"
+    },
+    "empty": {
+      "withFiltersTitle": "Ningún usuario coincide con tus filtros",
+      "withFiltersBody": "Prueba a ajustar tu búsqueda, proyecto o filtros de estado.",
+      "noUsersTitle": "Aún no hay usuarios rastreados",
+      "noUsersBody": "Los usuarios aparecerán aquí cuando tu SDK llame a <code></code>."
+    },
+    "table": {
+      "colUser": "Usuario",
+      "colProject": "Proyecto",
+      "colStatus": "Estado",
+      "colLastSeen": "Visto por última vez",
+      "colSessions": "Sesiones",
+      "colActive7d": "Activo 7d",
+      "emptyDash": "—"
+    },
+    "loadMore": "Cargar más"
+  },
+  "status": {
+    "ONLINE": {
+      "label": "En línea",
+      "description": "Activo en los últimos 2 minutos"
+    },
+    "ACTIVE_24H": {
+      "label": "Activo",
+      "description": "Tuvo actividad en las últimas 24 horas"
+    },
+    "IDLE_7D": {
+      "label": "Inactivo",
+      "description": "Visto por última vez en los últimos 7 días"
+    },
+    "DORMANT": {
+      "label": "Latente",
+      "description": "Sin actividad durante más de 7 días"
+    }
+  },
+  "activity": {
+    "6h": {
+      "label": "Últimas 6 horas",
+      "shortLabel": "6h"
+    },
+    "24h": {
+      "label": "Últimas 24 horas",
+      "shortLabel": "24h"
+    },
+    "7d": {
+      "label": "Últimos 7 días",
+      "shortLabel": "7d"
+    }
+  },
+  "errorContext": {
+    "list": "Lista de usuarios",
+    "detail": "Usuario"
+  },
+  "detail": {
+    "page": {
+      "title": "Usuario — Kharko Dozor"
+    },
+    "rangeSelectorAria": "Seleccionar rango de actividad",
+    "header": {
+      "prefix": "Usuario rastreado · ID ",
+      "firstSeen": "Primera vez visto {date}",
+      "sessionCount": "{count, plural, one {# sesión} other {# sesiones}}",
+      "editAria": "Editar nombre a mostrar"
+    },
+    "online": {
+      "onlineNow": "En línea ahora",
+      "lastSeen": "Visto por última vez {relative}",
+      "neverSeen": "Nunca visto",
+      "tooltipLast": "Último evento {time}",
+      "tooltipNone": "Aún no hay eventos"
+    },
+    "stats": {
+      "sessions": "Sesiones",
+      "activeTime": "Tiempo activo",
+      "avgSession": "Sesión media",
+      "events": "Eventos",
+      "uniquePages": "Páginas únicas",
+      "topPage": "Página principal",
+      "dash": "—",
+      "noSessions": "sin sesiones",
+      "across": "entre {count}",
+      "topPageSub": "más tiempo pasado"
+    },
+    "activityChart": {
+      "title": "Actividad",
+      "empty": "Sin actividad en este rango.",
+      "ariaLabel": "Histograma de actividad: {events} eventos en {buckets} intervalos, pico {peak}.",
+      "bucketAria": "{range}: {count, plural, one {# evento} other {# eventos}}",
+      "tooltipEvents": "{count, plural, one {# evento} other {# eventos}}"
+    },
+    "pages": {
+      "title": "Páginas",
+      "empty": "Sin visitas de página en este rango.",
+      "countLabel": "{visible} / {total} únicas",
+      "colNum": "#",
+      "colPage": "Página",
+      "colTime": "Tiempo",
+      "colShare": "Cuota",
+      "colVisits": "Visitas",
+      "showMore": "Mostrar más ({count})",
+      "showLess": "Mostrar menos (−{count})"
+    },
+    "timeline": {
+      "title": "Cronología de sesiones",
+      "empty": "Sin sesiones en este rango.",
+      "summary": "{count, plural, one {# sesión} other {# sesiones}} · {lanes, plural, one {# fila} other {# filas}} · {range}",
+      "ariaLabel": "Cronología de sesiones: {count, plural, one {# sesión} other {# sesiones}} en {lanes, plural, one {# fila} other {# filas}}.",
+      "sessionAria": "Sesión {id}, {duration}",
+      "ongoing": "en curso",
+      "lessThanSecond": "<1s",
+      "clickToReplay": "Clic para reproducir",
+      "sliceCount": "{count, plural, one {# segmento} other {# segmentos}}"
+    },
+    "sessions": {
+      "title": "Sesiones",
+      "empty": "No se registraron sesiones para este usuario.",
+      "colSession": "Sesión",
+      "colStarted": "Iniciada",
+      "colDuration": "Duración",
+      "colEvents": "Eventos",
+      "colSlices": "Segmentos",
+      "loadMore": "Cargar más",
+      "loading": "Cargando…"
+    },
+    "traits": {
+      "title": "Traits",
+      "keyCount": "{count, plural, one {# clave} other {# claves}}",
+      "hideJson": "Ocultar JSON",
+      "showAll": "Mostrar todo ({count})",
+      "showJson": "Mostrar JSON",
+      "copyAria": "Copiar traits como JSON",
+      "copyJson": "Copiar JSON",
+      "copied": "Copiado",
+      "toastCopySuccess": "JSON de traits copiado al portapapeles",
+      "toastCopyError": "No se pudo copiar al portapapeles"
+    },
+    "displayName": {
+      "title": "Nombre a mostrar",
+      "description": "Elige cómo aparece este usuario en el panel. Las entradas inferiores solo se aplican cuando no hay nada establecido arriba.",
+      "custom": {
+        "heading": "Nombre personalizado",
+        "description": "Nombre a mostrar literal para este usuario. Tiene prioridad sobre todo lo demás.",
+        "placeholder": "p. ej. Alice Johnson",
+        "set": "Establecer",
+        "reset": "Restablecer"
+      },
+      "local": {
+        "heading": "Clave de trait (este usuario)",
+        "description": "Elige una clave de los <code></code> de este usuario. El nombre a mostrar será el valor de <codeValue></codeValue>.",
+        "placeholder": "p. ej. email",
+        "set": "Establecer",
+        "reset": "Restablecer",
+        "available": "Disponibles: "
+      },
+      "project": {
+        "heading": "Clave de trait (predeterminada del proyecto)",
+        "description": "Se aplica a <strong></strong> en <projectName></projectName> que no tenga una anulación local. Elige una clave que la mayoría de usuarios tengan (p. ej. <code></code>).",
+        "placeholder": "p. ej. email",
+        "set": "Establecer",
+        "reset": "Restablecer"
+      }
+    },
+    "notFound": {
+      "title": "Usuario no encontrado",
+      "description": "Este usuario rastreado puede haber sido eliminado o no tienes acceso al proyecto al que pertenece.",
+      "backButton": "Volver a usuarios"
+    },
+    "error": {
+      "backButton": "Volver a usuarios",
+      "tryAgain": "Reintentar",
+      "errorId": "ID de error: {id}"
+    }
+  }
+}
