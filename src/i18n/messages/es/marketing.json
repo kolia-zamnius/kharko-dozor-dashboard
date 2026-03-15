@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "title": "Kharko Dozor — reproducción de sesiones open source",
+    "description": "Plataforma de grabación y reproducción de sesiones para la web. Gratuita y open source, para siempre."
+  },
+  "header": {
+    "signIn": "Iniciar sesión",
+    "signUp": "Empezar",
+    "dashboard": "Ir al panel",
+    "localeAria": "Cambiar idioma"
+  },
+  "hero": {
+    "eyebrow": "Open source · MIT",
+    "headline": "Observa cómo tus usuarios realmente usan tu producto",
+    "subheadline": "Kharko Dozor graba sesiones reales del navegador con rrweb y te permite reproducirlas con precisión píxel a píxel. Self-hosted, agnóstico al framework, gratis para siempre.",
+    "ctaPrimary": "Instalar SDK",
+    "ctaSecondary": "Ver en GitHub"
+  },
+  "features": {
+    "heading": "Qué hace",
+    "subheading": "Construido sobre rrweb, diseñado para equipos que quieren entender a sus usuarios sin enviar los datos a un proveedor externo.",
+    "sessionReplay": {
+      "title": "Reproducción píxel a píxel",
+      "description": "Cada mutación del DOM, movimiento del ratón y evento de entrada se captura y se reconstruye en un iframe aislado. Avanza, salta inactividad, navega por páginas — el reproductor trata las sesiones largas como objetos de primera clase."
+    },
+    "trackedUsers": {
+      "title": "Usuarios rastreados y traits",
+      "description": "Vincula las sesiones a tus usuarios finales con una simple llamada `identify()`. Traits, líneas de tiempo de actividad e historial de sesiones por usuario — todo derivado de tus propios payloads del SDK."
+    },
+    "slices": {
+      "title": "Slices para sesiones largas",
+      "description": "Las sesiones se dividen automáticamente al navegar o durante pausas, cada slice es reproducible de forma independiente. Se acabó el scrub de una pestaña de 40 minutos que estuvo abierta en segundo plano."
+    },
+    "privacy": {
+      "title": "Tus datos, tu base de datos",
+      "description": "Sin procesadores externos, sin telemetría oculta. Apunta el SDK a tu propio panel, aloja en tu propio Postgres, controla cada byte."
+    }
+  },
+  "installation": {
+    "heading": "Instala en menos de un minuto",
+    "subheading": "Dos paquetes en npm — elige el que encaje con tu stack. Las guías completas viven en el repositorio del SDK.",
+    "stepsLabel": "Pasos rápidos",
+    "step1": "Crea un proyecto en el panel y copia la clave pública.",
+    "step2": "Instala el paquete del SDK que se ajuste a tu stack.",
+    "step3": "Envuelve tu app (React) o llama a `init()` (vanilla) con la clave pública.",
+    "tabs": {
+      "react": "React",
+      "vanilla": "Vanilla JS"
+    },
+    "reactInstall": "npm install @kharko/dozor-react",
+    "vanillaInstall": "npm install @kharko/dozor",
+    "copyCommandAria": "Copiar comando de instalación",
+    "docsLink": "Lee la guía completa en GitHub",
+    "dashboardLink": "Abrir el panel"
+  },
+  "thankAuthor": {
+    "heading": "Agradece al autor",
+    "subheading": "Kharko Dozor es un proyecto personal open source. No hay planes de pago, ni upsell empresarial, ni planes de monetización. Si te ayudó y quieres decir gracias, aquí tienes dos formas.",
+    "uahTitle": "Ucrania — Monobank (UAH)",
+    "uahDescription": "Donación de un toque mediante enlace de Monobank. Funciona con cualquier tarjeta, desde cualquier país, sin registro.",
+    "uahCta": "Donar vía Monobank",
+    "eurTitle": "Europa — transferencia bancaria (EUR)",
+    "eurDescription": "Transferencia SEPA a la cuenta en EUR del autor. Utiliza estos datos en el formulario de transferencia de tu banco.",
+    "eurIbanLabel": "IBAN",
+    "eurBicLabel": "BIC",
+    "eurReceiverLabel": "Destinatario",
+    "eurCopyAria": "Copiar {field}",
+    "eurCopied": "Copiado",
+    "otherWays": "Otras formas de agradecer — ¿quieres enviar desde otra vía? <contactLink>Ponte en contacto</contactLink>."
+  },
+  "footer": {
+    "tagline": "Reproducción de sesiones open source. Gratis para todos, para siempre.",
+    "resourcesHeading": "Recursos",
+    "resourcesGithub": "GitHub",
+    "resourcesSdk": "SDK (npm)",
+    "resourcesSdkReact": "Bindings de React (npm)",
+    "resourcesDocs": "Documentación",
+    "contactHeading": "Contacto",
+    "contactEmail": "Email",
+    "contactLinkedin": "LinkedIn",
+    "copyright": "© {year} Kolia Zamnyus. Kharko es un proyecto open source independiente."
+  }
+}

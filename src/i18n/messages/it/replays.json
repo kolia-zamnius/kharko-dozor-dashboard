@@ -1,0 +1,116 @@
+{
+  "page": {
+    "listTitle": "Registrazioni — Kharko Dozor",
+    "detailTitle": "Registrazione — Kharko Dozor"
+  },
+  "mutations": {
+    "deleteSession": {
+      "success": "Sessione eliminata",
+      "error": "Impossibile eliminare la sessione"
+    }
+  },
+  "errorContext": {
+    "list": "Elenco registrazioni",
+    "detail": "Registrazione"
+  },
+  "list": {
+    "heading": "Registrazioni",
+    "subtitle": "Sessioni utente registrate in tutti i progetti.",
+    "liveAnnounce": "Mostrate {count, plural, one {# sessione} other {# sessioni}}.",
+    "liveAnnounceFiltered": "Mostrate {count, plural, one {# sessione} other {# sessioni}} (filtrate).",
+    "stats": {
+      "totalSessions": "Sessioni totali",
+      "totalDuration": "Durata totale",
+      "avgDuration": "Durata media",
+      "activeToday": "Attivi oggi",
+      "dash": "—"
+    },
+    "search": {
+      "placeholder": "Cerca per ID sessione...",
+      "ariaLabel": "Cerca sessioni",
+      "clearAria": "Cancella ricerca"
+    },
+    "projectFilter": {
+      "label": "Progetto",
+      "empty": "Nessun progetto"
+    },
+    "dateRangeFilter": {
+      "default": "Data"
+    },
+    "empty": {
+      "withFiltersTitle": "Nessuna sessione corrisponde ai filtri",
+      "withFiltersBody": "Prova ad adattare la ricerca, il progetto o l'intervallo di date.",
+      "noSessionsTitle": "Ancora nessuna sessione registrata",
+      "noSessionsBody": "Le sessioni appariranno qui quando il tuo SDK inizia a registrare. Installa <code></code> per iniziare."
+    },
+    "table": {
+      "colSession": "Sessione",
+      "colUser": "Utente",
+      "colProject": "Progetto",
+      "colPages": "Pagine",
+      "colDuration": "Durata",
+      "colDate": "Data",
+      "emptyDash": "—"
+    },
+    "rowMenu": {
+      "triggerAria": "Azioni sessione",
+      "delete": "Elimina sessione"
+    },
+    "deleteDialog": {
+      "title": "Elimina sessione",
+      "description": "Questa sessione e tutti gli eventi registrati saranno eliminati permanentemente. Questa azione non può essere annullata.",
+      "cancel": "Annulla",
+      "confirm": "Elimina"
+    },
+    "loadMore": "Carica altro"
+  },
+  "dateRange": {
+    "today": "Oggi",
+    "7d": "Ultimi 7 giorni",
+    "30d": "Ultimi 30 giorni",
+    "90d": "Ultimi {days, plural, one {# giorno} other {# giorni}}"
+  },
+  "detail": {
+    "missingTitle": "Sessione non trovata",
+    "missingDescription": "Questa sessione potrebbe essere stata eliminata o non hai accesso a essa.",
+    "anonymous": "Anonimo",
+    "copyIdSuccess": "ID sessione copiato",
+    "refreshButton": {
+      "reload": "Ricarica",
+      "reloading": "Ricaricamento",
+      "ariaReloading": "Ricaricamento sessione",
+      "ariaReload": "Ricarica sessione"
+    },
+    "updateTooltip": {
+      "newSlices": "{count, plural, one {# nuovo segmento} other {# nuovi segmenti}}",
+      "newEvents": "{count, plural, one {# nuovo evento} other {# nuovi eventi}}",
+      "ended": "la sessione è terminata",
+      "suffix": "Clic per ricaricare"
+    },
+    "player": {
+      "empty": "Nessun evento registrato in questa sessione.",
+      "control": {
+        "play": "Riproduci",
+        "pause": "Pausa",
+        "backFive": "Indietro di 5 secondi",
+        "forwardFive": "Avanti di 5 secondi",
+        "skipIdleAria": "Salta periodi di inattività",
+        "skipIdle": "Salta inattivo",
+        "autoPlayAria": "Riproduci automaticamente il prossimo segmento",
+        "autoPlay": "Auto",
+        "consoleAria": "Attiva/disattiva pannello console",
+        "console": "Console"
+      },
+      "console": {
+        "title": "Console",
+        "empty": "Nessun log in questo momento."
+      },
+      "slicePicker": {
+        "reasonInit": "Inizio",
+        "reasonIdle": "Dopo inattività",
+        "reasonNavigation": "Navigazione",
+        "tooltip": "{reason} · {pathname} · {duration} · {events} eventi"
+      }
+    }
+  }
+}

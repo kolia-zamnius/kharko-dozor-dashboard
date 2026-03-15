@@ -1,0 +1,9 @@
+{
+  "subject": "Foi convidado para {orgName} — Kharko Dozor",
+  "brand": "Kharko Dozor",
+  "title": "Foi convidado",
+  "body": "<strong>{inviterName}</strong> convida-o a juntar-se a <strong>{orgName}</strong> como <strong>{role, select, OWNER {Proprietário} ADMIN {Admin} VIEWER {Visualizador} other {Membro}}</strong>.",
+  "cta": "Ver convite",
+  "footer": "Este convite expira em {days, plural, one {# dia} other {# dias}}. Se não o esperava, pode ignorá-lo.",
+  "tagline": "Kharko Dozor — gravação e reprodução de sessões"
+}

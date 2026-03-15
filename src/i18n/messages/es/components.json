@@ -1,0 +1,21 @@
+{
+  "spinner": {
+    "loading": "Cargando"
+  },
+  "dialog": {
+    "close": "Cerrar"
+  },
+  "sheet": {
+    "close": "Cerrar"
+  },
+  "pagination": {
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "previousAriaLabel": "Ir a la página anterior",
+    "nextAriaLabel": "Ir a la página siguiente",
+    "more": "Más páginas"
+  },
+  "breadcrumb": {
+    "more": "Más"
+  }
+}

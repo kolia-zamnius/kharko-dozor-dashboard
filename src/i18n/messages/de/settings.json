@@ -1,0 +1,331 @@
+{
+  "page": {
+    "userTitle": "Benutzereinstellungen — Kharko Dozor",
+    "orgsTitle": "Organisationen verwalten — Kharko Dozor"
+  },
+  "user": {
+    "heading": "Benutzereinstellungen",
+    "profile": {
+      "title": "Profil",
+      "description": "Ihre persönlichen Daten",
+      "regenerateAvatar": "Avatar neu generieren",
+      "nameLabel": "Name",
+      "namePlaceholder": "Ihr Name",
+      "saveName": "Name speichern",
+      "emailHeading": "E-Mail",
+      "emailNote": "E-Mail kann nicht geändert werden. Sie wird als Anmelde-ID verwendet.",
+      "avatarFallback": "Benutzer"
+    },
+    "auth": {
+      "title": "Authentifizierung",
+      "description": "Anmeldemethoden verwalten"
+    },
+    "passkeys": {
+      "heading": "Passkeys",
+      "empty": "Noch keine Passkeys registriert.",
+      "addButton": "Passkey hinzufügen",
+      "renameAria": "Passkey umbenennen",
+      "deleteAria": "Passkey löschen",
+      "renameTitle": "Passkey umbenennen",
+      "renameLabel": "Name",
+      "renamePlaceholder": "z. B. MacBook Pro",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "deleteTitle": "„{name}“ löschen?",
+      "deleteDescription": "Dieser Passkey wird dauerhaft aus Ihrem Konto entfernt. Um sich von diesem Gerät erneut anzumelden, müssen Sie einen neuen Passkey registrieren. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "delete": "Löschen",
+      "deviceTypeMulti": "Mehrere Geräte",
+      "deviceTypeSingle": "Einzelgerät"
+    },
+    "accounts": {
+      "heading": "Verknüpfte Konten",
+      "empty": "Keine Konten verknüpft.",
+      "disconnect": "Trennen",
+      "confirmTitle": "{provider} trennen?",
+      "confirmDescription": "Sie können sich nicht mehr über {provider} anmelden. Stellen Sie sicher, dass Sie mindestens eine andere Anmeldemethode haben (Passkey, E-Mail OTP oder anderer OAuth-Anbieter), bevor Sie trennen, sonst könnten Sie den Zugriff auf Ihr Konto verlieren.",
+      "cancel": "Abbrechen"
+    },
+    "danger": {
+      "title": "Gefahrenzone",
+      "description": "Unwiderrufliche Aktionen",
+      "body": "Ihr Konto und alle zugehörigen Daten dauerhaft löschen. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteButton": "Konto löschen",
+      "dialogTitle": "Konto löschen?",
+      "dialogDescription": "Dies löscht dauerhaft Ihr Konto, alle Organisationen, in denen Sie das einzige Mitglied sind, und entfernt Sie aus allen geteilten Organisationen.",
+      "confirmLabel": "Geben Sie „delete my account“ ein, um zu bestätigen",
+      "confirmPlaceholder": "delete my account",
+      "cancel": "Abbrechen",
+      "confirm": "Konto löschen"
+    },
+    "locale": {
+      "title": "Sprache",
+      "description": "Wählen Sie die Sprache, die im Dashboard und in E-Mails verwendet wird.",
+      "selectAria": "Sprache auswählen"
+    }
+  },
+  "mutations": {
+    "user": {
+      "updateProfile": {
+        "success": "Profil aktualisiert",
+        "error": "Profil konnte nicht aktualisiert werden"
+      },
+      "regenerateAvatar": {
+        "success": "Avatar neu generiert",
+        "error": "Avatar konnte nicht neu generiert werden"
+      },
+      "registerPasskey": {
+        "success": "Passkey registriert",
+        "error": "Passkey-Registrierung fehlgeschlagen. Bitte erneut versuchen."
+      },
+      "renamePasskey": {
+        "success": "Passkey umbenannt",
+        "error": "Passkey konnte nicht umbenannt werden"
+      },
+      "deletePasskey": {
+        "success": "Passkey gelöscht",
+        "error": "Passkey konnte nicht gelöscht werden"
+      },
+      "disconnectAccount": {
+        "success": "Konto getrennt",
+        "error": "Konto konnte nicht getrennt werden"
+      },
+      "deleteAccount": {
+        "success": "Konto gelöscht",
+        "error": "Konto konnte nicht gelöscht werden"
+      },
+      "updateLocale": {
+        "success": "Sprache aktualisiert",
+        "error": "Sprache konnte nicht aktualisiert werden"
+      }
+    },
+    "orgs": {
+      "switch": {
+        "error": "Organisation konnte nicht gewechselt werden"
+      },
+      "create": {
+        "success": "Organisation erstellt",
+        "error": "Organisation konnte nicht erstellt werden"
+      },
+      "update": {
+        "renamed": "Organisation aktualisiert",
+        "avatarRegenerated": "Avatar neu generiert",
+        "error": "Organisation konnte nicht aktualisiert werden"
+      },
+      "delete": {
+        "success": "Organisation gelöscht",
+        "error": "Organisation konnte nicht gelöscht werden"
+      },
+      "invite": {
+        "success": "Einladung an {email} gesendet",
+        "error": "Einladung konnte nicht gesendet werden"
+      },
+      "updateInvite": {
+        "roleChanged": "Rolle für {email} geändert zu {role, select, OWNER {Besitzer} ADMIN {Admin} VIEWER {Betrachter} other {Mitglied}}",
+        "extended": "Einladung für {email} verlängert",
+        "error": "Einladung konnte nicht aktualisiert werden"
+      },
+      "deleteInvite": {
+        "success": "Einladung für {email} widerrufen",
+        "error": "Einladung konnte nicht widerrufen werden"
+      },
+      "updateRole": {
+        "success": "Rolle geändert zu {role, select, OWNER {Besitzer} ADMIN {Admin} VIEWER {Betrachter} other {Mitglied}}",
+        "error": "Rolle konnte nicht aktualisiert werden"
+      },
+      "removeMember": {
+        "selfLeftNamed": "Sie haben {orgName} verlassen",
+        "selfLeftGeneric": "Sie haben die Organisation verlassen",
+        "removed": "Mitglied entfernt",
+        "error": "Mitglied konnte nicht entfernt werden"
+      }
+    },
+    "projects": {
+      "create": {
+        "success": "API-Schlüssel erstellt",
+        "error": "API-Schlüssel konnte nicht erstellt werden"
+      },
+      "update": {
+        "success": "API-Schlüssel umbenannt",
+        "error": "API-Schlüssel konnte nicht umbenannt werden"
+      },
+      "delete": {
+        "success": "API-Schlüssel gelöscht",
+        "error": "API-Schlüssel konnte nicht gelöscht werden"
+      },
+      "regenerateKey": {
+        "success": "API-Schlüssel neu generiert",
+        "error": "Schlüssel konnte nicht neu generiert werden"
+      },
+      "updateDisplayNameTrait": {
+        "set": "Projektstandard gespeichert",
+        "cleared": "Projektstandard gelöscht",
+        "error": "Projekt-Anzeigenamen-Einstellung konnte nicht aktualisiert werden"
+      }
+    },
+    "invites": {
+      "accept": {
+        "success": "{organizationName} beigetreten",
+        "error": "Einladung konnte nicht angenommen werden"
+      },
+      "decline": {
+        "success": "Einladung zu {organizationName} abgelehnt",
+        "error": "Einladung konnte nicht abgelehnt werden"
+      }
+    }
+  },
+  "orgs": {
+    "heading": "Organisationen verwalten",
+    "invitations": {
+      "title": "Meine Einladungen",
+      "empty": "Sie haben keine ausstehenden Einladungen. Wenn Sie jemand zu einer Organisation einlädt, wird es hier angezeigt.",
+      "col": {
+        "organization": "Organisation",
+        "role": "Rolle",
+        "invitedBy": "Eingeladen von",
+        "actions": "Aktionen"
+      },
+      "accept": {
+        "triggerAria": "Einladung zu {orgName} annehmen",
+        "trigger": "Annehmen",
+        "dialogTitle": "{orgName} beitreten?",
+        "dialogDescription": "Sie werden als <role></role> hinzugefügt und erhalten Zugriff auf alle Projekte dieser Organisation.",
+        "cancel": "Abbrechen",
+        "confirm": "Beitreten"
+      },
+      "decline": {
+        "triggerAria": "Einladung zu {orgName} ablehnen",
+        "trigger": "Ablehnen",
+        "dialogTitle": "Einladung zu {orgName} ablehnen?",
+        "dialogDescription": "Die Einladung wird aus Ihrer Liste entfernt. Wenn Sie es sich anders überlegen, muss Ihnen ein Admin eine neue senden.",
+        "cancel": "Abbrechen",
+        "confirm": "Einladung ablehnen"
+      }
+    },
+    "card": {
+      "badgePersonal": "Persönlich",
+      "badgeTeam": "Team",
+      "personalDescription": "Ihr persönlicher Bereich — Projekte hier sind nur für Sie sichtbar.",
+      "createdOn": "Erstellt {date}",
+      "editAria": "Organisation bearbeiten",
+      "deleteAria": "Organisation löschen",
+      "leaveAria": "Organisation verlassen"
+    },
+    "edit": {
+      "title": "Organisation bearbeiten",
+      "regenerateAvatar": "Avatar neu generieren",
+      "nameLabel": "Name",
+      "namePlaceholder": "Organisationsname",
+      "cancel": "Abbrechen",
+      "save": "Speichern"
+    },
+    "delete": {
+      "title": "{orgName} löschen?",
+      "description": "Dies löscht die Organisation dauerhaft, entfernt alle Mitglieder und storniert alle ausstehenden Einladungen. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "confirmLabel": "Geben Sie „delete organization“ ein, um zu bestätigen",
+      "confirmPlaceholder": "delete organization",
+      "cancel": "Abbrechen",
+      "confirm": "Organisation löschen"
+    },
+    "leave": {
+      "title": "{orgName} verlassen?",
+      "description": "Sie verlieren den Zugriff auf alle Projekte und Daten in dieser Organisation. Sie können nur wieder beitreten, wenn Sie erneut eingeladen werden.",
+      "cancel": "Abbrechen",
+      "confirm": "Organisation verlassen"
+    },
+    "members": {
+      "triggerAria": "Mitglieder verwalten",
+      "countLabel": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
+      "dialogTitle": "Mitglieder — {orgName}",
+      "empty": "Keine Mitglieder gefunden.",
+      "roleAria": "Rolle",
+      "selfSuffix": "(Sie)",
+      "unnamed": "Unbenannt",
+      "unknownFallback": "Mitglied",
+      "removeAria": "Mitglied entfernen",
+      "leaveAria": "Organisation verlassen",
+      "removeTitle": "{memberName} entfernen?",
+      "removeDescription": "{memberName} verliert den Zugriff auf alle Projekte und Daten in dieser Organisation. Sie können jederzeit wieder einladen.",
+      "leaveTitle": "{orgName} verlassen?",
+      "leaveDescription": "Sie verlieren den Zugriff auf alle Projekte und Daten in dieser Organisation. Sie können nur wieder beitreten, wenn Sie erneut eingeladen werden.",
+      "cancel": "Abbrechen",
+      "confirmRemove": "Mitglied entfernen",
+      "confirmLeave": "Organisation verlassen"
+    },
+    "invite": {
+      "triggerAria": "Mitglied einladen",
+      "trigger": "Einladen",
+      "dialogTitle": "Zu {orgName} einladen",
+      "emailLabel": "E-Mail-Adresse",
+      "emailPlaceholder": "kollege@example.com",
+      "roleLabel": "Rolle",
+      "submit": "Einladung senden",
+      "expiryNote": "Einladungen laufen nach {days} Tagen ab. Erneutes Einreichen derselben E-Mail aktualisiert die bestehende Einladung — manueller Widerruf ist nicht nötig.",
+      "pending": {
+        "heading": "Ausstehende Einladungen",
+        "errorTitle": "Ausstehende Einladungen konnten nicht geladen werden",
+        "errorDescription": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+        "empty": "Keine ausstehenden Einladungen. Von Ihnen gesendete Einladungen erscheinen hier, bis sie angenommen werden oder ablaufen.",
+        "col": {
+          "email": "E-Mail",
+          "role": "Rolle",
+          "expires": "Läuft ab",
+          "invitedBy": "Eingeladen von",
+          "actions": "Aktionen"
+        },
+        "expiresRelative": "läuft ab {relative}",
+        "roleAria": "Rolle für {email}",
+        "extendAria": "Einladung für {email} verlängern",
+        "revokeAria": "Einladung für {email} widerrufen",
+        "extendTooltip": "Ablauf verlängern",
+        "revokeTooltip": "Einladung widerrufen"
+      }
+    },
+    "roles": {
+      "owner": {
+        "label": "Besitzer",
+        "description": "Volle Kontrolle: Mitglieder verwalten, bearbeiten, löschen"
+      },
+      "admin": {
+        "label": "Admin",
+        "description": "Einstellungen bearbeiten, Mitglieder einladen"
+      },
+      "viewer": {
+        "label": "Betrachter",
+        "description": "Projekte und Daten ansehen"
+      }
+    },
+    "apiKeys": {
+      "heading": "API-Schlüssel",
+      "empty": "Noch keine API-Schlüssel.",
+      "emptyHint": "Klicken Sie auf „Schlüssel hinzufügen“, um einen zu erstellen.",
+      "addButton": "Schlüssel hinzufügen",
+      "createTitle": "API-Schlüssel erstellen",
+      "createNameLabel": "Name",
+      "createNamePlaceholder": "Production",
+      "createCancel": "Abbrechen",
+      "createConfirm": "Erstellen",
+      "copyAria": "API-Schlüssel kopieren",
+      "copySuccess": "Schlüssel in Zwischenablage kopiert",
+      "copyError": "Schlüssel konnte nicht kopiert werden",
+      "regenerateAria": "Schlüssel neu generieren",
+      "regenerateTitle": "Schlüssel {name} neu generieren?",
+      "regenerateDescription": "Der vorherige Schlüssel wird sofort ungültig. Alle SDK-Instanzen, die den alten Schlüssel verwenden, hören auf, Daten zu senden, bis Sie sie mit dem neuen aktualisieren.",
+      "regenerateCancel": "Abbrechen",
+      "regenerateConfirm": "Neu generieren",
+      "deleteAria": "Schlüssel löschen",
+      "deleteTitle": "{name} löschen?",
+      "deleteDescriptionPrefix": "Dies löscht dauerhaft den API-Schlüssel und ",
+      "deleteDescriptionStrong": "alle Sitzungen, Benutzer und Aufzeichnungen",
+      "deleteDescriptionSuffix": ", die damit verknüpft sind. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteCancel": "Abbrechen",
+      "deleteConfirm": "Löschen"
+    },
+    "create": {
+      "title": "Neue Organisation erstellen",
+      "description": "Team-Organisationen ermöglichen Zusammenarbeit mit anderen",
+      "nameLabel": "Organisationsname",
+      "namePlaceholder": "Mein Team",
+      "submit": "Erstellen"
+    }
+  }
+}

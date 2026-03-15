@@ -1,0 +1,116 @@
+{
+  "page": {
+    "listTitle": "Grabaciones — Kharko Dozor",
+    "detailTitle": "Grabación — Kharko Dozor"
+  },
+  "mutations": {
+    "deleteSession": {
+      "success": "Sesión eliminada",
+      "error": "No se pudo eliminar la sesión"
+    }
+  },
+  "errorContext": {
+    "list": "Lista de grabaciones",
+    "detail": "Grabación"
+  },
+  "list": {
+    "heading": "Grabaciones",
+    "subtitle": "Sesiones de usuarios grabadas en todos los proyectos.",
+    "liveAnnounce": "Mostrando {count, plural, one {# sesión} other {# sesiones}}.",
+    "liveAnnounceFiltered": "Mostrando {count, plural, one {# sesión} other {# sesiones}} (filtrado).",
+    "stats": {
+      "totalSessions": "Sesiones totales",
+      "totalDuration": "Duración total",
+      "avgDuration": "Duración media",
+      "activeToday": "Activos hoy",
+      "dash": "—"
+    },
+    "search": {
+      "placeholder": "Buscar por ID de sesión...",
+      "ariaLabel": "Buscar sesiones",
+      "clearAria": "Borrar búsqueda"
+    },
+    "projectFilter": {
+      "label": "Proyecto",
+      "empty": "Sin proyectos"
+    },
+    "dateRangeFilter": {
+      "default": "Fecha"
+    },
+    "empty": {
+      "withFiltersTitle": "Ninguna sesión coincide con tus filtros",
+      "withFiltersBody": "Prueba a ajustar tu búsqueda, proyecto o rango de fechas.",
+      "noSessionsTitle": "Aún no hay sesiones grabadas",
+      "noSessionsBody": "Las sesiones aparecerán aquí cuando tu SDK empiece a grabar. Instala <code></code> para empezar."
+    },
+    "table": {
+      "colSession": "Sesión",
+      "colUser": "Usuario",
+      "colProject": "Proyecto",
+      "colPages": "Páginas",
+      "colDuration": "Duración",
+      "colDate": "Fecha",
+      "emptyDash": "—"
+    },
+    "rowMenu": {
+      "triggerAria": "Acciones de sesión",
+      "delete": "Eliminar sesión"
+    },
+    "deleteDialog": {
+      "title": "Eliminar sesión",
+      "description": "Esto eliminará permanentemente esta sesión y todos sus eventos grabados. Esta acción no se puede deshacer.",
+      "cancel": "Cancelar",
+      "confirm": "Eliminar"
+    },
+    "loadMore": "Cargar más"
+  },
+  "dateRange": {
+    "today": "Hoy",
+    "7d": "Últimos 7 días",
+    "30d": "Últimos 30 días",
+    "90d": "Últimos {days, plural, one {# día} other {# días}}"
+  },
+  "detail": {
+    "missingTitle": "Sesión no encontrada",
+    "missingDescription": "Esta sesión puede haber sido eliminada o no tienes acceso a ella.",
+    "anonymous": "Anónimo",
+    "copyIdSuccess": "ID de sesión copiado",
+    "refreshButton": {
+      "reload": "Recargar",
+      "reloading": "Recargando",
+      "ariaReloading": "Recargando sesión",
+      "ariaReload": "Recargar sesión"
+    },
+    "updateTooltip": {
+      "newSlices": "{count, plural, one {# segmento nuevo} other {# segmentos nuevos}}",
+      "newEvents": "{count, plural, one {# evento nuevo} other {# eventos nuevos}}",
+      "ended": "la sesión ha terminado",
+      "suffix": "Clic para recargar"
+    },
+    "player": {
+      "empty": "No se grabaron eventos en esta sesión.",
+      "control": {
+        "play": "Reproducir",
+        "pause": "Pausa",
+        "backFive": "Retroceder 5 segundos",
+        "forwardFive": "Avanzar 5 segundos",
+        "skipIdleAria": "Saltar periodos de inactividad",
+        "skipIdle": "Saltar inactivo",
+        "autoPlayAria": "Reproducir automáticamente el siguiente segmento",
+        "autoPlay": "Auto",
+        "consoleAria": "Alternar panel de consola",
+        "console": "Consola"
+      },
+      "console": {
+        "title": "Consola",
+        "empty": "No hay registros en este momento."
+      },
+      "slicePicker": {
+        "reasonInit": "Inicio",
+        "reasonIdle": "Tras inactividad",
+        "reasonNavigation": "Navegación",
+        "tooltip": "{reason} · {pathname} · {duration} · {events} eventos"
+      }
+    }
+  }
+}

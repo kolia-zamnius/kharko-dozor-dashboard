@@ -1,0 +1,116 @@
+{
+  "page": {
+    "listTitle": "Aufzeichnungen — Kharko Dozor",
+    "detailTitle": "Aufzeichnung — Kharko Dozor"
+  },
+  "mutations": {
+    "deleteSession": {
+      "success": "Sitzung gelöscht",
+      "error": "Sitzung konnte nicht gelöscht werden"
+    }
+  },
+  "errorContext": {
+    "list": "Aufzeichnungsliste",
+    "detail": "Aufzeichnung"
+  },
+  "list": {
+    "heading": "Aufzeichnungen",
+    "subtitle": "Aufgezeichnete Benutzersitzungen über alle Projekte.",
+    "liveAnnounce": "Zeige {count, plural, one {# Sitzung} other {# Sitzungen}}.",
+    "liveAnnounceFiltered": "Zeige {count, plural, one {# Sitzung} other {# Sitzungen}} (gefiltert).",
+    "stats": {
+      "totalSessions": "Sitzungen gesamt",
+      "totalDuration": "Gesamtdauer",
+      "avgDuration": "Ø Dauer",
+      "activeToday": "Heute aktiv",
+      "dash": "—"
+    },
+    "search": {
+      "placeholder": "Nach Sitzungs-ID suchen...",
+      "ariaLabel": "Sitzungen suchen",
+      "clearAria": "Suche löschen"
+    },
+    "projectFilter": {
+      "label": "Projekt",
+      "empty": "Keine Projekte"
+    },
+    "dateRangeFilter": {
+      "default": "Datum"
+    },
+    "empty": {
+      "withFiltersTitle": "Keine Sitzungen entsprechen Ihren Filtern",
+      "withFiltersBody": "Versuchen Sie, Suche, Projekt oder Datumsbereich anzupassen.",
+      "noSessionsTitle": "Noch keine aufgezeichneten Sitzungen",
+      "noSessionsBody": "Sitzungen erscheinen hier, wenn Ihr Tracker-SDK aufzuzeichnen beginnt. Installieren Sie <code></code>, um zu starten."
+    },
+    "table": {
+      "colSession": "Sitzung",
+      "colUser": "Benutzer",
+      "colProject": "Projekt",
+      "colPages": "Seiten",
+      "colDuration": "Dauer",
+      "colDate": "Datum",
+      "emptyDash": "—"
+    },
+    "rowMenu": {
+      "triggerAria": "Sitzungsaktionen",
+      "delete": "Sitzung löschen"
+    },
+    "deleteDialog": {
+      "title": "Sitzung löschen",
+      "description": "Diese Sitzung und alle aufgezeichneten Ereignisse werden dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "cancel": "Abbrechen",
+      "confirm": "Löschen"
+    },
+    "loadMore": "Mehr laden"
+  },
+  "dateRange": {
+    "today": "Heute",
+    "7d": "Letzte 7 Tage",
+    "30d": "Letzte 30 Tage",
+    "90d": "Letzte {days, plural, one {# Tag} other {# Tage}}"
+  },
+  "detail": {
+    "missingTitle": "Sitzung nicht gefunden",
+    "missingDescription": "Diese Sitzung wurde möglicherweise gelöscht oder Sie haben keinen Zugriff darauf.",
+    "anonymous": "Anonym",
+    "copyIdSuccess": "Sitzungs-ID kopiert",
+    "refreshButton": {
+      "reload": "Neu laden",
+      "reloading": "Wird geladen",
+      "ariaReloading": "Sitzung wird neu geladen",
+      "ariaReload": "Sitzung neu laden"
+    },
+    "updateTooltip": {
+      "newSlices": "{count, plural, one {# neues Segment} other {# neue Segmente}}",
+      "newEvents": "{count, plural, one {# neues Ereignis} other {# neue Ereignisse}}",
+      "ended": "Sitzung beendet",
+      "suffix": "Klicken zum Neuladen"
+    },
+    "player": {
+      "empty": "Keine Ereignisse in dieser Sitzung aufgezeichnet.",
+      "control": {
+        "play": "Abspielen",
+        "pause": "Pause",
+        "backFive": "5 Sekunden zurück",
+        "forwardFive": "5 Sekunden vor",
+        "skipIdleAria": "Leerlaufphasen überspringen",
+        "skipIdle": "Leerlauf überspringen",
+        "autoPlayAria": "Nächstes Segment automatisch abspielen",
+        "autoPlay": "Auto",
+        "consoleAria": "Konsolen-Panel umschalten",
+        "console": "Konsole"
+      },
+      "console": {
+        "title": "Konsole",
+        "empty": "Keine Logs an diesem Zeitpunkt."
+      },
+      "slicePicker": {
+        "reasonInit": "Start",
+        "reasonIdle": "Nach Leerlauf",
+        "reasonNavigation": "Navigation",
+        "tooltip": "{reason} · {pathname} · {duration} · {events} Ereignisse"
+      }
+    }
+  }
+}

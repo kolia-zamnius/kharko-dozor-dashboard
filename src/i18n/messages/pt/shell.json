@@ -1,0 +1,30 @@
+{
+  "brand": "Kharko",
+  "nav": {
+    "users": "Utilizadores",
+    "replays": "Gravações"
+  },
+  "identity": {
+    "userFallbackName": "Utilizador",
+    "personalSpace": "Espaço pessoal",
+    "ownerLabel": "Proprietário"
+  },
+  "avatarDropdown": {
+    "ariaLabel": "Menu da conta"
+  },
+  "drawer": {
+    "openMenu": "Abrir menu",
+    "openMenuWithInvites": "Abrir menu — {count, plural, one {# convite pendente} other {# convites pendentes}}",
+    "title": "Menu"
+  },
+  "actions": {
+    "switchOrg": "Mudar de organização",
+    "manageOrgs": "Gerir organizações",
+    "userSettings": "Definições do utilizador",
+    "signOut": "Terminar sessão"
+  },
+  "theme": {
+    "light": "Modo claro",
+    "dark": "Modo escuro"
+  }
+}
