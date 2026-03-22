@@ -1,0 +1,199 @@
+"use client";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/overlays/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
+import { Badge } from "@/components/ui/primitives/badge";
+import { useSwitchOrgMutation } from "@/api-client/organizations/mutations";
+import { useOrganizationsQuery } from "@/api-client/organizations/queries";
+import { useUserInvitesQuery } from "@/api-client/user-invites/queries";
+import { useRouter } from "@/i18n/navigation";
+import { useFormatters } from "@/lib/use-formatters";
+import {
+  ArrowsClockwiseIcon,
+  CheckIcon,
+  GearSixIcon,
+  MoonIcon,
+  SignOutIcon,
+  SunIcon,
+  UsersThreeIcon,
+} from "@phosphor-icons/react";
+import { useTranslations } from "next-intl";
+import { signOut, useSession } from "next-auth/react";
+import { useTheme } from "next-themes";
+import { useOptimistic, useTransition } from "react";
+import { DoubleAvatar } from "./double-avatar";
+
+/**
+ * Desktop account menu triggered from the navbar's avatar.
+ *
+ * @remarks
+ * Four concerns live here — in this order because it matches the
+ * reading order in the menu itself:
+ *   1. Identity block — user + active-org header cards (two rows so
+ *      the admin sees their current context without opening a sub-
+ *      menu).
+ *   2. Org switcher sub-menu — every membership as a row with
+ *      `CheckIcon` on the active one. Uses `useSwitchOrgMutation`
+ *      which updates `User.activeOrganizationId` server-side and
+ *      invalidates the org scope in the TanStack cache.
+ *   3. Settings deep-links (`/settings/organizations`,
+ *      `/settings/user`). Pending-invite count renders as a
+ *      destructive badge on the organizations link so the signal
+ *      surfaces without a dedicated inbox.
+ *   4. Theme toggle + sign-out. `onSelect={(e) => e.preventDefault()}`
+ *      on the theme item so clicking it doesn't close the menu — the
+ *      admin may want to fine-tune and keep browsing.
+ *
+ * Organizations + invites are read through classic (non-Suspense)
+ * hooks because the navbar renders before any page-level Suspense
+ * boundary — we tolerate the in-flight `undefined` with `?.`.
+ */
+export function AvatarDropdown() {
+  const t = useTranslations("shell");
+  const { formatRole } = useFormatters();
+  const { data: session } = useSession();
+  const user = session?.user;
+  const router = useRouter();
+  const { data: orgs = [] } = useOrganizationsQuery();
+  const { data: invites = [] } = useUserInvitesQuery();
+  const switchOrg = useSwitchOrgMutation();
+  const { resolvedTheme, setTheme } = useTheme();
+
+  const activeOrgId = user?.activeOrganizationId ?? null;
+  // Optimistic active-org id — `useOptimistic` renders the picked org as
+  // active the moment the admin clicks a switcher item, then
+  // auto-reverts to the session value when the transition completes
+  // (either because `update({})` inside `useSwitchOrgMutation.onSuccess`
+  // pulled in a fresh JWT, or because the mutation failed and rolled
+  // back). Keeps the checkmark + identity card feeling instant even
+  // though the Auth.js session refetch takes a beat.
+  const [optimisticActiveOrgId, setOptimisticActiveOrgId] = useOptimistic(activeOrgId);
+  const [, startTransition] = useTransition();
+  const activeOrg = orgs.find((o) => o.id === optimisticActiveOrgId) ?? null;
+  const inviteCount = invites.length;
+
+  const toggleTheme = () => setTheme(resolvedTheme === "dark" ? "light" : "dark");
+
+  const handleSwitchOrg = (orgId: string) => {
+    startTransition(async () => {
+      setOptimisticActiveOrgId(orgId);
+      try {
+        await switchOrg.mutateAsync(orgId);
+      } catch {
+        // `useOptimistic` auto-reverts when the transition ends;
+        // the toast is fired by the global `MutationCache.onError`.
+      }
+    });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className="cursor-pointer rounded-full outline-none focus-visible:ring-0"
+        aria-label={t("avatarDropdown.ariaLabel")}
+      >
+        <DoubleAvatar user={user} orgImage={activeOrg?.image ?? undefined} hasNotification={inviteCount > 0} />
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-72">
+        <div className="space-y-3 p-3">
+          <div className="flex items-center gap-3">
+            <Avatar size="sm">
+              {user?.image ? <AvatarImage src={user.image} alt={user.name || ""} /> : null}
+              <AvatarFallback />
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{user?.name || t("identity.userFallbackName")}</p>
+              <p className="text-muted-foreground truncate text-xs">{user?.email}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Avatar size="sm">
+              {activeOrg?.image ? <AvatarImage src={activeOrg.image} alt={activeOrg.name} /> : null}
+              <AvatarFallback />
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{activeOrg?.name ?? t("identity.personalSpace")}</p>
+              <p className="text-muted-foreground truncate text-xs">
+                {activeOrg ? formatRole(activeOrg.role) : t("identity.ownerLabel")}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <ArrowsClockwiseIcon />
+            <span>{t("actions.switchOrg")}</span>
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-64">
+            {orgs.map((org) => {
+              const isActive = org.id === optimisticActiveOrgId;
+              return (
+                <DropdownMenuItem
+                  key={org.id}
+                  disabled={isActive}
+                  onSelect={() => handleSwitchOrg(org.id)}
+                  className="gap-3"
+                >
+                  <Avatar size="sm" className="shrink-0">
+                    {org.image ? <AvatarImage src={org.image} alt={org.name} /> : null}
+                    <AvatarFallback />
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm">{org.name}</p>
+                    <p className="text-muted-foreground truncate text-xs">{formatRole(org.role)}</p>
+                  </div>
+                  {isActive && <CheckIcon className="shrink-0" />}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
+        <DropdownMenuItem onSelect={() => router.push("/settings/organizations")}>
+          <UsersThreeIcon />
+          <span>{t("actions.manageOrgs")}</span>
+          {inviteCount > 0 && (
+            <Badge variant="destructive" className="ml-auto">
+              {inviteCount}
+            </Badge>
+          )}
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onSelect={() => router.push("/settings/user")}>
+          <GearSixIcon />
+          <span>{t("actions.userSettings")}</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={toggleTheme}>
+          <SunIcon className="hidden dark:block" />
+          <MoonIcon className="block dark:hidden" />
+          <span className="hidden dark:inline">{t("theme.light")}</span>
+          <span className="inline dark:hidden">{t("theme.dark")}</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onSelect={() => signOut()} variant="destructive">
+          <SignOutIcon />
+          <span>{t("actions.signOut")}</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
