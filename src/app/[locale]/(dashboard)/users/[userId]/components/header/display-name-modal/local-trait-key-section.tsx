@@ -1,0 +1,98 @@
+import { useTranslations } from "next-intl";
+
+import { Input } from "@/components/ui/forms/input";
+import { Button } from "@/components/ui/primitives/button";
+import { useUpdateTrackedUserDisplayNameMutation } from "@/api-client/tracked-users/mutations";
+import type { TrackedUserDetail } from "@/api-client/tracked-users/types";
+import { useServerSyncedInput } from "./use-server-synced-input";
+
+type LocalTraitKeySectionProps = {
+  user: TrackedUserDetail;
+};
+
+/**
+ * Priority-2 editor: per-user trait lookup. When set, the display-name
+ * resolver reads `traits[traitKey]` from this specific user's traits.
+ * Shown below the custom-name section (overridden by priority-1).
+ *
+ * Renders a click-to-fill hint listing the trait keys the current user
+ * actually has — saves admins from having to type `email` or `name` by
+ * hand. Hint disappears when the traits object is empty.
+ */
+export function LocalTraitKeySection({ user }: LocalTraitKeySectionProps) {
+  const t = useTranslations("users.detail.displayName.local");
+  const mutation = useUpdateTrackedUserDisplayNameMutation();
+  const serverValue = user.displayNameTraitKey ?? "";
+  const [value, setValue] = useServerSyncedInput(serverValue);
+
+  const trimmed = value.trim();
+  const canSet = trimmed.length > 0 && trimmed !== serverValue;
+  const canReset = serverValue.length > 0;
+  const busy = mutation.isPending;
+
+  // Surface the user's actual trait keys as quick-fill chips. Filter out
+  // null/empty values so we don't advertise keys whose value would still
+  // fall through the resolver chain anyway.
+  const availableKeys =
+    user.traits && typeof user.traits === "object"
+      ? Object.keys(user.traits).filter((k) => user.traits?.[k] != null && user.traits[k] !== "")
+      : [];
+
+  function handleSet() {
+    if (!canSet) return;
+    mutation.mutate({ userId: user.id, traitKey: trimmed });
+  }
+
+  function handleReset() {
+    if (!canReset) return;
+    mutation.mutate({ userId: user.id, traitKey: null });
+  }
+
+  return (
+    <section className="space-y-2">
+      <div>
+        <h3 className="text-sm font-medium">{t("heading")}</h3>
+        <p className="text-muted-foreground text-xs">
+          {t.rich("description", {
+            code: () => <code className="font-mono">traits</code>,
+            codeValue: () => <code className="font-mono">traits[key]</code>,
+          })}
+        </p>
+      </div>
+      <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+        <Input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={t("placeholder")}
+          disabled={busy}
+          maxLength={60}
+        />
+        <Button size="sm" onClick={handleSet} disabled={!canSet || busy}>
+          {t("set")}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={handleReset} disabled={!canReset || busy}>
+          {t("reset")}
+        </Button>
+      </div>
+
+      {availableKeys.length > 0 && (
+        <p className="text-muted-foreground text-xs">
+          {t("available")}
+          {availableKeys.map((k, i) => (
+            <span key={k}>
+              {i > 0 && ", "}
+              <button
+                type="button"
+                onClick={() => setValue(k)}
+                disabled={busy}
+                className="cursor-pointer font-mono underline-offset-2 hover:underline disabled:pointer-events-none"
+              >
+                {k}
+              </button>
+            </span>
+          ))}
+        </p>
+      )}
+    </section>
+  );
+}
