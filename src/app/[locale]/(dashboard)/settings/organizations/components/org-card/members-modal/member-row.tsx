@@ -1,0 +1,78 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/forms/select";
+import type { Organization, OrganizationMember } from "@/api-client/organizations/types";
+import { useTranslations } from "next-intl";
+import { ROLE_OPTIONS } from "../../role-options";
+import { MemberRemoveDialog } from "./member-remove-dialog";
+
+type Props = {
+  org: Organization;
+  member: OrganizationMember;
+  isOwner: boolean;
+  isSelf: boolean;
+  isOnlyMember: boolean;
+  onRoleChange: (member: OrganizationMember, role: Organization["role"]) => void;
+  /** Called after a successful self-leave so the parent members modal can close itself. */
+  onLeaveSuccess: () => void;
+  /** True while a role-change mutation is in flight (disables the role Select). */
+  isRolePending: boolean;
+};
+
+export function MemberRow({
+  org,
+  member,
+  isOwner,
+  isSelf,
+  isOnlyMember,
+  onRoleChange,
+  onLeaveSuccess,
+  isRolePending,
+}: Props) {
+  const t = useTranslations("settings.orgs.members");
+  const tRoles = useTranslations("settings.orgs.roles");
+  return (
+    <div className="flex items-center gap-3">
+      <Avatar size="sm" className="shrink-0">
+        <AvatarImage src={member.user.image} alt={member.user.name ?? t("unknownFallback")} />
+        <AvatarFallback>{(member.user.name ?? "?").charAt(0)}</AvatarFallback>
+      </Avatar>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">
+          {member.user.name ?? t("unnamed")}{" "}
+          {isSelf && <span className="text-muted-foreground">{t("selfSuffix")}</span>}
+        </p>
+        <p className="text-muted-foreground truncate text-xs">{member.user.email}</p>
+      </div>
+
+      {isOwner && !isSelf ? (
+        <Select
+          value={member.role}
+          onValueChange={(value) => {
+            if (value !== member.role) onRoleChange(member, value as Organization["role"]);
+          }}
+          disabled={isRolePending}
+        >
+          <SelectTrigger aria-label={t("roleAria")} className="w-32 shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ROLE_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {tRoles(`${opt.key}.label`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <span className="text-muted-foreground shrink-0 text-sm">
+          {tRoles(`${ROLE_OPTIONS.find((o) => o.value === member.role)?.key ?? "viewer"}.label`)}
+        </span>
+      )}
+
+      {(isOwner || isSelf) && !isOnlyMember && (
+        <MemberRemoveDialog org={org} member={member} isSelf={isSelf} onLeaveSuccess={onLeaveSuccess} />
+      )}
+    </div>
+  );
+}
