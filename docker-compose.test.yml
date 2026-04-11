@@ -1,0 +1,34 @@
+# Optional local-only Postgres for tests.
+#
+# Not used by `npm test` by default — Testcontainers spins up its own
+# container per run via Docker. Exposed here as an escape hatch for devs
+# who want a long-lived, always-on Postgres they can inspect via `psql`
+# or a GUI while iterating on a suite.
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up -d
+#   # (then point Testcontainers at the existing container by setting
+#   #  TESTCONTAINERS_HOST_OVERRIDE or swap to direct-URL mode — left as
+#   #  a Wave-5 polish task)
+#
+# Kept here as documentation + for CI debugging sessions that need to
+# reach the same Postgres image version.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      # Data lives in RAM — faster, and we never want test DB bytes to
+      # survive a reboot.
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d test"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
