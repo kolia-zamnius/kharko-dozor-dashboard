@@ -1,0 +1,212 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kharko Dozor SDK API",
+    "version": "1.0.0",
+    "description": "Public contract for the @kharko/dozor SDK. Generated from the repo's zod schemas; committed for PR-time diffing."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/api/ingest": {
+      "post": {
+        "summary": "Submit a batch of rrweb events from the SDK",
+        "description": "Public-key authenticated. Always returns 204 on success. Accepts gzipped payloads via Content-Encoding: gzip.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-dozor-public-key",
+            "required": true,
+            "description": "Project public key (dp_<32hex>)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "content-encoding",
+            "required": false,
+            "description": "Set to 'gzip' when body is compressed",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  },
+                  "events": {
+                    "maxItems": 500,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "number"
+                        },
+                        "data": {},
+                        "timestamp": {
+                          "type": "number"
+                        },
+                        "sliceIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "data",
+                        "timestamp"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "referrer": {
+                        "type": "string"
+                      },
+                      "userAgent": {
+                        "type": "string"
+                      },
+                      "screenWidth": {
+                        "type": "number"
+                      },
+                      "screenHeight": {
+                        "type": "number"
+                      },
+                      "language": {
+                        "type": "string"
+                      },
+                      "userIdentity": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          },
+                          "traits": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {}
+                          }
+                        },
+                        "required": [
+                          "userId"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "url",
+                      "referrer",
+                      "userAgent",
+                      "screenWidth",
+                      "screenHeight",
+                      "language"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "pageViews": {
+                    "type": "array",
+                    "items": {}
+                  },
+                  "sliceMarkers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "index": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "reason": {
+                          "type": "string",
+                          "enum": [
+                            "init",
+                            "idle",
+                            "navigation"
+                          ]
+                        },
+                        "startedAt": {
+                          "type": "number"
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "pathname": {
+                          "type": "string"
+                        },
+                        "viewportWidth": {
+                          "type": "number"
+                        },
+                        "viewportHeight": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "index",
+                        "reason",
+                        "startedAt",
+                        "url",
+                        "pathname"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "sessionId",
+                  "events"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Batch accepted — no response body"
+          },
+          "400": {
+            "description": "Malformed batch (zod validation failure)"
+          },
+          "401": {
+            "description": "Missing or invalid X-Dozor-Public-Key header"
+          }
+        }
+      },
+      "options": {
+        "summary": "CORS preflight",
+        "description": "Always returns 204 with CORS headers. No authentication required — browsers send this before the POST.",
+        "responses": {
+          "204": {
+            "description": "Preflight OK"
+          }
+        }
+      }
+    }
+  }
+}
