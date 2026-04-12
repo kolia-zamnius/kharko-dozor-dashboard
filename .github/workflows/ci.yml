@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs when a new commit lands on the same PR so
+# fast-follow pushes don't pay for stale work.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Principle of least privilege — every job is read-only on the repo,
+# nothing writes back (no comments, no status reports beyond the
+# built-in check-run summary).
+permissions:
+  contents: read
+
+jobs:
+  # Lint + type-check + `next build`. Independent of the test jobs so a
+  # slow build never blocks test feedback and vice versa.
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Restore Next.js build cache between runs — Turbopack / SWC
+      # output keyed on source files + lockfile, so a cache hit makes
+      # `next build` an incremental recompile instead of cold. Keyed
+      # mainly on lockfile: a dep change invalidates (correct); code
+      # changes still reuse compiled framework chunks.
+      - name: Restore Next.js cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
+            nextjs-${{ runner.os }}-
+
+      - run: npm run lint
+      - run: npm run type-check
+      - run: npm run build
+
+  # Colocated `src/**/*.test.ts` — pure functions + HOFs with Prisma
+  # module-mocked. No Docker, finishes in seconds. The fastest feedback
+  # loop for a contributor touching pure logic.
+  unit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run test:unit
+
+  # SDK wire contract — OpenAPI 3.1 snapshot derived from the ingest
+  # zod schema, diffed against the committed `openapi.snapshot.json`.
+  # No Docker, sub-second runtime. Breaking wire-format changes surface
+  # as a JSON diff in the PR.
+  contract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run test:contract
+
+  # Route-level integration tests against a real Postgres 17 spun up by
+  # Testcontainers. GitHub Actions `ubuntu-latest` ships with Docker
+  # preinstalled, so no service-container YAML is needed. Runs separate
+  # from unit/contract so a slow integration run doesn't delay the
+  # fast-feedback jobs.
+  integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Pre-pull Postgres so Testcontainers doesn't spend test time on
+      # the image download the first run. Subsequent runs hit the
+      # Docker layer cache automatically.
+      - name: Pre-pull Postgres image
+        run: docker pull postgres:17-alpine
+
+      - run: npm run test:integration
