@@ -58,6 +58,18 @@ Canonical schema lives in [`src/server/env.ts`](./src/server/env.ts) (zod-valida
 | `GMAIL_APP_PASSWORD`    | **yes**                 | Gmail App Password (16 lowercase letters, no spaces)              |
 | `CRON_SECRET`           | **yes in prod**         | Shared bearer for `Authorization: Bearer …` on `/api/cron/*`      |
 | `VERCEL_URL`            | auto (Vercel)           | Fallback base URL when `APP_URL` isn't set                        |
+| `SENTRY_DSN`            | recommended in prod     | Paste from [sentry.io](https://sentry.io) → your project → Client Keys (DSN). Unset = Sentry no-ops; logs still go to stdout via pino |
+| `LOG_LEVEL`             | optional                | pino level (`fatal`/`error`/`warn`/`info`/`debug`/`trace`/`silent`). Defaults: `debug` in dev, `info` in prod, `silent` in tests |
+
+#### Sentry — where to put the DSN
+
+Do **not** commit `SENTRY_DSN` to any committed file (`.env.example`, `.env.test`). Even though the DSN looks "public", any actor with it can flood your error quota. The right places:
+
+- **Vercel** (production): Project Settings → Environment Variables → add `SENTRY_DSN`, scope to **Production** only (Preview / Development would generate noise from your own experiments).
+- **`.env.local`** (gitignored): only if you want local dev errors to land in Sentry — usually you don't.
+- **`.env.example`** / **`.env.test`**: leave empty. The code no-ops cleanly when DSN is absent.
+
+A `console.warn` fires at boot if `NODE_ENV=production` and `SENTRY_DSN` is unset, so you can't silently lose error reporting after a Vercel env change.
 
 ### Database
 

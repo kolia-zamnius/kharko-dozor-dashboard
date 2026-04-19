@@ -11,8 +11,9 @@ import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
 import { assertInviteRateLimit, bumpInviteRateLimit } from "@/server/invite-rate-limit";
-import { devLog } from "@/server/dev-log";
+import { logger } from "@/server/logger";
 import { sendMail } from "@/server/mailer";
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { inviteEmailHtml } from "./_helpers/invite-email";
@@ -148,8 +149,16 @@ export const POST = withAuth<Params>(async (req, user, { orgId }) => {
       t,
     }),
   })
-    .then(() => devLog("[invite-email] sent", { email: body.email }))
-    .catch((err) => console.error("[invite-email] delivery failed:", err));
+    .then(() => logger.info({ email: body.email }, "invite-email:sent"))
+    .catch((err: unknown) => {
+      // Fire-and-forget delivery — the route already returned 200, the
+      // user got their "invite sent" toast, but SMTP threw on us. The
+      // catch swallows the error so it never bubbles to onRequestError,
+      // hence the explicit Sentry capture: an unmonitored SMTP outage
+      // would silently let invites pile up un-delivered.
+      logger.error({ err, email: body.email }, "invite-email:delivery_failed");
+      Sentry.captureException(err, { tags: { area: "invite-email" }, extra: { email: body.email } });
+    });
 
   // Always 200 — 201 would only be accurate on the create branch, and
   // the client's `apiFetch` only inspects `res.ok`. Response schema
