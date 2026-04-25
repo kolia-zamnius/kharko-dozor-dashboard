@@ -3,6 +3,7 @@ import { sessionDetailSchema } from "@/api-client/sessions/response-schemas";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 
 type Params = { sessionId: string };
@@ -120,6 +121,12 @@ export const DELETE = withAuth<Params>(async (req, user, { sessionId }) => {
   await requireMember(user.id, session.project.organizationId, "ADMIN");
 
   await prisma.session.delete({ where: { id: sessionId } });
+
+  log.info("session:delete:ok", {
+    sessionId,
+    orgId: session.project.organizationId,
+    byUserId: user.id,
+  });
 
   return new Response(null, { status: 204 });
 });

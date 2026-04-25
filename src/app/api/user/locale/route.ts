@@ -1,6 +1,7 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { updateLocaleSchema } from "@/api-client/user/validators";
 import { prisma } from "@/server/db/client";
+import { log } from "@/server/logger";
 
 /**
  * `PATCH /api/user/locale` — persist the signed-in user's locale preference.
@@ -34,6 +35,8 @@ export const PATCH = withAuth(async (req, user) => {
     where: { id: user.id },
     data: { locale: body.locale },
   });
+
+  log.info("user:locale:change:ok", { userId: user.id, locale: body.locale });
 
   return new Response(null, { status: 204 });
 });

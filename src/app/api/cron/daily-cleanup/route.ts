@@ -1,6 +1,7 @@
 import { ONE_DAY_MS, SESSION_RETENTION_DAYS } from "@/lib/time";
 import { prisma } from "@/server/db/client";
 import { env } from "@/server/env";
+import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -48,9 +49,12 @@ export async function GET(req: Request) {
   if (env.CRON_SECRET) {
     const auth = req.headers.get("authorization");
     if (auth !== `Bearer ${env.CRON_SECRET}`) {
+      log.warn("cron:cleanup:unauthorized", { hasHeader: Boolean(auth) });
       return new NextResponse("Unauthorized", { status: 401 });
     }
   }
+
+  log.info("cron:cleanup:start");
 
   const now = new Date();
   const sessionCutoff = new Date(now.getTime() - SESSION_RETENTION_DAYS * ONE_DAY_MS);
@@ -99,7 +103,7 @@ export async function GET(req: Request) {
     organizations: orgsDeleted,
   });
 
-  console.log("[cron/daily-cleanup]", summary);
+  log.info("cron:cleanup:summary", { summary });
 
   return NextResponse.json(summary);
 }

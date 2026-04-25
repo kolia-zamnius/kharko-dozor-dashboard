@@ -1,6 +1,7 @@
 import { corsPreflightResponse } from "@/app/api/_lib/cors";
 import { withPublicKey } from "@/app/api/_lib/with-public-key";
 import { prisma } from "@/server/db/client";
+import { log } from "@/server/logger";
 
 import { insertEventsAndUpdateAggregates, loadSliceMapForEvents } from "./_helpers/events";
 import { ingestSchema, parseIngestBody } from "./_helpers/parse-body";
@@ -47,6 +48,15 @@ export const POST = withPublicKey(async ({ project, req }) => {
 
   const sliceMap = await loadSliceMapForEvents(session.id, events);
   await insertEventsAndUpdateAggregates(session.id, events, sliceMap);
+
+  log.info("ingest:batch:received", {
+    projectId: project.id,
+    sessionId: session.id,
+    externalId,
+    eventCount: events.length,
+    sliceCount: sliceMarkers?.length ?? 1,
+    hasIdentity: Boolean(metadata?.userIdentity),
+  });
 
   // Fire-and-forget lastUsedAt — a slow or failed update here must
   // never break ingestion.

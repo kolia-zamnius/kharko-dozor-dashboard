@@ -3,43 +3,59 @@ import "server-only";
 import pino, { type Logger } from "pino";
 
 /**
- * Application logger — structured pino instance shared across server code.
+ * Application logger — `log.info(tag, data?)` API over a pino instance.
  *
  * @remarks
- * Three orthogonal concerns the config below addresses:
+ * The shape is deliberately swapped vs pino-native (`pino.info(obj, msg)`):
+ * in our code the **event tag** comes first because that is what the
+ * reader scans for in a wall of dev-mode output. The data object follows
+ * and is merged into pino's structured fields under the hood.
  *
- * ### Levels
- *   - `LOG_LEVEL` env var picks the level (`fatal | error | warn | info |
- *     debug | trace | silent`). Garbage values fall back to a sensible
- *     default per `NODE_ENV` rather than crashing pino on boot.
- *   - Default per env: `silent` in tests (quiet runs), `debug` in dev
- *     (see everything during `npm run dev`), `info` in prod.
+ *   log.info("org:invite:create:ok", { inviteId, email, role, byUserId });
  *
- * ### Pretty-printing
- *   - In dev only, pipe through `pino-pretty` for human-readable colored
- *     output. In prod we keep raw NDJSON so Vercel / Datadog / Axiom
- *     can parse it natively.
- *   - Note: `pino-pretty` is a `devDependencies` entry; the `transport`
- *     option below is gated on `NODE_ENV !== "production"` so prod
- *     bundles never try to require it.
+ * ### Tag convention — `domain:entity:action[:state]`
+ *
+ * The tag answers two questions in one glance:
+ * 1. **Which API?** — `org:invite:create`, `project:key:regenerate`
+ * 2. **What is it doing right now?** — `:start`, `:ok`, `:rate_limited`,
+ *    `:not_found`, `:refresh_in_place`, `:failed`
+ *
+ * Use lowercase + underscores inside segments, `:` between segments.
+ * Examples: `auth:otp:cooldown_blocked`, `org:member:role_change`,
+ * `cron:cleanup:summary`, `ingest:batch:received`.
+ *
+ * ### Data convention — flat, max one nested object
+ *
+ * Top-level keys stay primitive (`userId`, `orgId`, `email`, `role`,
+ * `status`). At most ONE nested object, used for true aggregates only —
+ * e.g. `summary: { invites: 3, sessions: 1 }` for a cron tally. This
+ * keeps `pino-pretty` output readable and dodges `[object Object]`
+ * surprises in any consumer that still uses `console`-style printing.
+ *
+ * Always include actor + target where both apply: `byUserId` (who did it)
+ * and the entity ID being acted on (`orgId`, `projectId`, `inviteId`).
+ *
+ * ### Level guidance
+ *
+ *   - `debug` — verbose dev traces (validation issues, branch decisions);
+ *     stripped in prod by default (`LOG_LEVEL=info`)
+ *   - `info`  — normal business events (created, updated, succeeded)
+ *   - `warn`  — anomalies that are NOT errors (rate-limit hit, fallback
+ *     fired, expired sweep removed N rows)
+ *   - `error` — genuine bugs / 5xx-class failures only
  *
  * ### PII redaction
- *   - Email addresses, secrets, tokens, raw API keys, cookies — anything
- *     that could correlate to a specific human or unlock a session — is
- *     automatically scrubbed from log output **in production** before
- *     serialization. In dev the redaction is off so `npm run dev`
- *     produces useful traces during debugging.
- *   - The redaction list uses pino's path syntax (`*.email`, `email`,
- *     `headers.cookie`, etc.) — extend it as new sensitive shapes show
- *     up in structured logs.
  *
- * Tags / event names go in the **message string** (second arg to log
- * methods); structured fields stay in the first-arg object:
+ * Production-only `redact` paths scrub `email` / `password` / `token` /
+ * `key` / `secret` / cookie / auth headers before serialization. Dev runs
+ * print full traces. Tests are `silent`. Even with the safety net,
+ * **never log API-key plaintext, OTP codes, or session cookies** — keep
+ * those out of the data object in the first place.
  *
- *   logger.info({ email, newCount: count }, "auth:otp_sending");
+ * ### Escape hatch
  *
- * Search for `auth:otp_sending` in logs aggregates by event;
- * `email=…` filters by user. Both reads work without parsing.
+ * `rawLogger` exposes the underlying pino instance for the rare case
+ * something needs `child()`, `fatal`, or `trace`. Default to `log`.
  */
 
 type ValidLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
@@ -58,12 +74,6 @@ function resolveLevel(): ValidLevel {
 
 const isDev = process.env.NODE_ENV === "development";
 
-/**
- * Production-only redaction paths. Empty in dev so `npm run dev` shows
- * full traces — and in tests because the logger is `silent` there
- * regardless. Add an entry here when a new sensitive field shape lands
- * in structured log calls.
- */
 const REDACT_PATHS =
   process.env.NODE_ENV === "production"
     ? [
@@ -71,6 +81,10 @@ const REDACT_PATHS =
         "*.password",
         "token",
         "*.token",
+        "key",
+        "*.key",
+        "secret",
+        "*.secret",
         "headers.cookie",
         "headers.authorization",
         "req.headers.cookie",
@@ -78,12 +92,9 @@ const REDACT_PATHS =
       ]
     : [];
 
-export const logger: Logger = pino({
+const rawLogger: Logger = pino({
   level: resolveLevel(),
   redact: { paths: REDACT_PATHS, censor: "[REDACTED]" },
-  // Pretty-print only in dev. The `pino-pretty` package is a
-  // devDependency — we MUST gate the transport so prod bundles don't
-  // try to require it.
   ...(isDev
     ? {
         transport: {
@@ -93,3 +104,37 @@ export const logger: Logger = pino({
       }
     : {}),
 });
+
+/**
+ * Structured payload for a log event. Flat by convention; one nested
+ * object allowed for aggregates. The `unknown` value type is deliberate
+ * — callers pass through arbitrary error objects, IDs, numbers, etc.
+ */
+export type LogData = Record<string, unknown>;
+
+type Emit = (tag: string, data?: LogData) => void;
+
+function makeEmit(level: "debug" | "info" | "warn" | "error"): Emit {
+  return (tag, data) => {
+    if (data) rawLogger[level](data, tag);
+    else rawLogger[level](tag);
+  };
+}
+
+/**
+ * Primary logging entry point. Always prefer this over `rawLogger`,
+ * `console.log`, or ad-hoc string concat.
+ *
+ * @example
+ * log.info("org:create:ok", { orgId: org.id, name: org.name, byUserId: user.id });
+ * log.warn("auth:otp:rate_limited", { email });
+ * log.error("invite:email:delivery_failed", { err, email });
+ */
+export const log = {
+  debug: makeEmit("debug"),
+  info: makeEmit("info"),
+  warn: makeEmit("warn"),
+  error: makeEmit("error"),
+} as const;
+
+export { rawLogger };

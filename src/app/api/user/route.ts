@@ -3,6 +3,7 @@ import { userProfileSchema } from "@/api-client/user/response-schemas";
 import { deleteAccountSchema, updateProfileSchema } from "@/api-client/user/validators";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 import { transferOrganizationOwnership } from "./_helpers/transfer-ownership";
 
@@ -76,6 +77,8 @@ export const PATCH = withAuth(async (req, user) => {
     data: { name: body.name },
   });
 
+  log.info("user:rename:ok", { userId: user.id, name: body.name });
+
   return new Response(null, { status: 204 });
 });
 
@@ -100,7 +103,7 @@ export const PATCH = withAuth(async (req, user) => {
 export const DELETE = withAuth(async (req, user) => {
   deleteAccountSchema.parse(await req.json());
 
-  await prisma.$transaction(async (tx) => {
+  const summary = await prisma.$transaction(async (tx) => {
     const userOrgs = await tx.organization.findMany({
       where: { memberships: { some: { userId: user.id } } },
       include: {
@@ -123,6 +126,13 @@ export const DELETE = withAuth(async (req, user) => {
     }
 
     await tx.user.delete({ where: { id: user.id } });
+
+    return { soloOrgsDeleted: soloOrgIds.length, sharedOrgsTransferred: sharedOrgs.length };
+  });
+
+  log.info("user:delete:ok", {
+    userId: user.id,
+    summary,
   });
 
   return new Response(null, { status: 204 });

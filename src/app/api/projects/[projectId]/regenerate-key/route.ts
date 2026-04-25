@@ -4,6 +4,7 @@ import { projectSchema } from "@/api-client/projects/response-schemas";
 import { generateApiKey } from "@/server/generate-api-key";
 import { requireProjectMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
+import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 
 type Params = { projectId: string };
@@ -37,6 +38,12 @@ export const POST = withAuth<Params>(async (req, user, { projectId }) => {
       updatedAt: true,
       _count: { select: { sessions: true } },
     },
+  });
+
+  log.info("project:key:regenerate:ok", {
+    projectId,
+    orgId: updated.organizationId,
+    byUserId: user.id,
   });
 
   return NextResponse.json(

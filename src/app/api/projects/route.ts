@@ -5,6 +5,7 @@ import { createProjectSchema } from "@/api-client/projects/validators";
 import { generateApiKey } from "@/server/generate-api-key";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
+import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 
 /**
@@ -87,6 +88,7 @@ export const POST = withAuth(async (req, user) => {
       key: generateApiKey(),
       organizationId: body.organizationId,
     },
+    // NOTE: log AFTER select runs (below); cannot reference `project` here.
     select: {
       id: true,
       name: true,
@@ -96,6 +98,13 @@ export const POST = withAuth(async (req, user) => {
       createdAt: true,
       updatedAt: true,
     },
+  });
+
+  log.info("project:create:ok", {
+    projectId: project.id,
+    name: project.name,
+    orgId: project.organizationId,
+    byUserId: user.id,
   });
 
   return NextResponse.json(

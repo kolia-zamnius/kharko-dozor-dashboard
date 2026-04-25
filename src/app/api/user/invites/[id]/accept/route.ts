@@ -3,6 +3,7 @@ import { withAuth } from "@/app/api/_lib/with-auth";
 import { userInviteAcceptResponseSchema } from "@/api-client/user-invites/response-schemas";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 
 type Params = { id: string };
@@ -46,6 +47,13 @@ export const POST = withAuth<Params>(async (_req, user, { id }) => {
     }),
     prisma.invite.update({ where: { id: invite.id }, data: { status: "ACCEPTED" } }),
   ]);
+
+  log.info("user:invite:accept:ok", {
+    inviteId: invite.id,
+    orgId: invite.organizationId,
+    role: invite.role,
+    userId: user.id,
+  });
 
   return NextResponse.json(
     userInviteAcceptResponseSchema.parse({

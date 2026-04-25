@@ -4,6 +4,7 @@ import { transferOrganizationOwnership } from "@/app/api/user/_helpers/transfer-
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 import { z } from "zod";
 
 type Params = { orgId: string; memberId: string };
@@ -34,6 +35,15 @@ export const PATCH = withAuth<Params>(async (req, user, { orgId, memberId }) => 
   await prisma.membership.update({
     where: { id: memberId },
     data: { role: body.role },
+  });
+
+  log.info("org:member:role_change:ok", {
+    orgId,
+    memberId,
+    targetUserId: target.userId,
+    fromRole: target.role,
+    toRole: body.role,
+    byUserId: user.id,
   });
 
   return new Response(null, { status: 204 });
@@ -116,10 +126,19 @@ export const DELETE = withAuth<Params>(async (req, user, { orgId, memberId }) =>
     });
   } catch (err) {
     if (err instanceof Error && err.message === "LAST_MEMBER") {
+      log.warn("org:member:leave:blocked_last_member", { orgId, byUserId: user.id });
       throw new HttpError(409, "Cannot leave — you are the only member. Delete the organization instead.");
     }
     throw err;
   }
+
+  log.info(isSelf ? "org:member:leave:ok" : "org:member:remove:ok", {
+    orgId,
+    memberId,
+    targetUserId: target.userId,
+    role: target.role,
+    byUserId: user.id,
+  });
 
   return new Response(null, { status: 204 });
 });

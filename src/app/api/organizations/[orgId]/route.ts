@@ -5,6 +5,7 @@ import { updateOrgSchema } from "@/api-client/organizations/validators";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 
 type Params = { orgId: string };
 
@@ -30,6 +31,12 @@ export const PATCH = withAuth<Params>(async (req, user, { orgId }) => {
   }
 
   await prisma.organization.update({ where: { id: orgId }, data });
+
+  log.info("org:update:ok", {
+    orgId,
+    fields: Object.keys(data).join(","),
+    byUserId: user.id,
+  });
 
   return new Response(null, { status: 204 });
 });
@@ -66,7 +73,7 @@ export const DELETE = withAuth<Params>(async (req, user, { orgId }) => {
     throw new HttpError(403, "Cannot delete Personal Space");
   }
 
-  await prisma.$transaction(async (tx) => {
+  const summary = await prisma.$transaction(async (tx) => {
     const affectedUsers = await tx.user.findMany({
       where: { activeOrganizationId: orgId },
       select: { id: true },
@@ -74,8 +81,17 @@ export const DELETE = withAuth<Params>(async (req, user, { orgId }) => {
 
     await Promise.all(affectedUsers.map((u) => switchToPersonalSpace(tx, u.id)));
 
-    await tx.invite.deleteMany({ where: { organizationId: orgId } });
+    const invitesDeleted = await tx.invite.deleteMany({ where: { organizationId: orgId } });
     await tx.organization.delete({ where: { id: orgId } });
+
+    return { affectedUsers: affectedUsers.length, invitesDeleted: invitesDeleted.count };
+  });
+
+  log.info("org:delete:ok", {
+    orgId,
+    byUserId: user.id,
+    affectedUsers: summary.affectedUsers,
+    invitesDeleted: summary.invitesDeleted,
   });
 
   return new Response(null, { status: 204 });

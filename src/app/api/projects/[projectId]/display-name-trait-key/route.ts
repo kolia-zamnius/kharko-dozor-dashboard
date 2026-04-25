@@ -2,6 +2,7 @@ import { withAuth } from "@/app/api/_lib/with-auth";
 import { updateProjectDisplayNameTraitKeySchema } from "@/api-client/projects/validators";
 import { requireProjectMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
+import { log } from "@/server/logger";
 
 type Params = { projectId: string };
 
@@ -25,6 +26,12 @@ export const PATCH = withAuth<Params>(async (req, user, { projectId }) => {
   await prisma.project.update({
     where: { id: projectId },
     data: { defaultDisplayNameTraitKey: body.traitKey },
+  });
+
+  log.info("project:display_name_trait_key:update:ok", {
+    projectId,
+    traitKey: body.traitKey ?? null,
+    byUserId: user.id,
   });
 
   return new Response(null, { status: 204 });
