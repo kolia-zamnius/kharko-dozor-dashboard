@@ -17,8 +17,10 @@ permissions:
   contents: read
 
 jobs:
-  # Lint + type-check + `next build`. Independent of the test jobs so a
-  # slow build never blocks test feedback and vice versa.
+  # Lint + type-check. `next build` is deliberately NOT run here —
+  # Vercel handles production builds on deploy with real env, and
+  # CI doesn't have access to the runtime secrets that `src/server/env.ts`
+  # zod-validates at module load.
   ci:
     runs-on: ubuntu-latest
 
@@ -32,23 +34,8 @@ jobs:
 
       - run: npm ci
 
-      # Restore Next.js build cache between runs — Turbopack / SWC
-      # output keyed on source files + lockfile, so a cache hit makes
-      # `next build` an incremental recompile instead of cold. Keyed
-      # mainly on lockfile: a dep change invalidates (correct); code
-      # changes still reuse compiled framework chunks.
-      - name: Restore Next.js cache
-        uses: actions/cache@v4
-        with:
-          path: .next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.ts', '**/*.tsx') }}
-          restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-
-            nextjs-${{ runner.os }}-
-
       - run: npm run lint
       - run: npm run type-check
-      - run: npm run build
 
   # Colocated `src/**/*.test.ts` — pure functions + HOFs with Prisma
   # module-mocked. No Docker, finishes in seconds. The fastest feedback
