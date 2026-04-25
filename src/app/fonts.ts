@@ -4,11 +4,13 @@ import { Inter, JetBrains_Mono } from "next/font/google";
  * App typography — self-hosted Google fonts loaded via `next/font`.
  *
  * @remarks
- * Both families ship Latin + Cyrillic subsets because the app surfaces
- * Ukrainian-formatted dates (`uk-UA` locale) and Cyrillic user-generated
- * content (tracked-user traits, org names). `display: "swap"` is the
- * correct choice for a session-recording dashboard — FOIT would delay
- * the replay UI on every cold load.
+ * Inter ships Latin + Cyrillic because UI copy is translated into
+ * Ukrainian and the dashboard surfaces Cyrillic user-generated content
+ * (tracked-user traits, org names). JetBrains Mono ships Latin only —
+ * mono is reserved for Latin-only payloads (npm commands, IBAN/BIC,
+ * code snippets, IDs); shipping its Cyrillic subset would be dead
+ * weight on every page. `display: "swap"` avoids FOIT — the replay UI
+ * and marketing hero render immediately on the fallback face.
  *
  * CSS variables (`--font-sans`, `--font-mono`) are exposed through the
  * HTML `className` in the root layout and consumed by Tailwind v4
@@ -21,7 +23,7 @@ export const inter = Inter({
 });
 
 export const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin", "cyrillic"],
+  subsets: ["latin"],
   variable: "--font-mono",
   display: "swap",
 });

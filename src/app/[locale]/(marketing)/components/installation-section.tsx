@@ -1,14 +1,11 @@
-"use client";
-
-import { ArrowSquareOutIcon } from "@phosphor-icons/react";
-import { useTranslations } from "next-intl";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react/dist/ssr";
+import { getTranslations } from "next-intl/server";
 
 import { Button } from "@/components/ui/primitives/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/navigation/tabs";
 import { Link } from "@/i18n/navigation";
 
 import { EXTERNAL_LINKS } from "../lib/external-links";
-import { CopyButton } from "./copy-button";
+import { InstallTabs } from "./install-tabs";
 
 /**
  * Installation / "how to start" section — three numbered steps, a
@@ -16,22 +13,28 @@ import { CopyButton } from "./copy-button";
  * usage sample), and two escape-hatch links (full docs + dashboard).
  *
  * @remarks
- * Each tab shows two blocks: (1) the `npm install` line with a copy
- * button for instant paste, and (2) a multi-line usage snippet that
- * actually demonstrates how to wire the SDK — matches the section's
- * "install in under a minute" promise. Usage snippets are **not**
- * copyable because developers need to adapt the `publicKey` and
- * wrapper placement to their own app; a copy button would falsely
+ * Server Component — heading, steps, and the docs/dashboard buttons
+ * are static markup with server-resolved translations. The interactive
+ * tab widget (Radix Tabs + `CopyButton`) lives in {@link InstallTabs},
+ * a small client island; keeping it isolated stops the surrounding
+ * copy from leaking into the client bundle and shortens the
+ * marketing-page TBT.
+ *
+ * Each tab inside `InstallTabs` shows two blocks: (1) the `npm install`
+ * line with a copy button for instant paste, and (2) a multi-line usage
+ * snippet that actually demonstrates how to wire the SDK — matches the
+ * section's "install in under a minute" promise. Usage snippets are
+ * **not** copyable because developers need to adapt the `publicKey`
+ * and wrapper placement to their own app; a copy button would falsely
  * imply drop-in code.
  *
- * Client Component because Radix Tabs is client-only and the install
- * command's copy button needs clipboard access. Typed `Link` from
- * `@/i18n/navigation` for the dashboard button (locale-aware);
- * docs link stays a plain `<a>` since external URLs don't carry a
- * locale.
+ * Typed `Link` from `@/i18n/navigation` for the dashboard button
+ * (locale-aware); docs link stays a plain `<a>` since external URLs
+ * don't carry a locale. Phosphor icon comes from `/dist/ssr` so it
+ * emits at HTML-response time.
  */
-export function InstallationSection() {
-  const t = useTranslations("marketing.installation");
+export async function InstallationSection() {
+  const t = await getTranslations("marketing.installation");
 
   return (
     <section id="install" className="border-border scroll-mt-16 border-t">
@@ -52,21 +55,7 @@ export function InstallationSection() {
           ))}
         </ol>
 
-        <Tabs defaultValue="react" className="mx-auto mt-10 max-w-2xl">
-          <TabsList className="self-center">
-            <TabsTrigger value="react">{t("tabs.react")}</TabsTrigger>
-            <TabsTrigger value="vanilla">{t("tabs.vanilla")}</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="react" className="space-y-3">
-            <InstallCommand command={t("reactInstall")} copyAria={t("copyCommandAria")} />
-            <UsageSnippet code={REACT_USAGE} />
-          </TabsContent>
-          <TabsContent value="vanilla" className="space-y-3">
-            <InstallCommand command={t("vanillaInstall")} copyAria={t("copyCommandAria")} />
-            <UsageSnippet code={VANILLA_USAGE} />
-          </TabsContent>
-        </Tabs>
+        <InstallTabs />
 
         <div className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-3">
           <Button asChild variant="outline" size="sm">
@@ -83,51 +72,3 @@ export function InstallationSection() {
     </section>
   );
 }
-
-/**
- * Single-line install command with a copy button. The command is
- * verbatim across locales (npm package paths are universal), but the
- * surrounding chrome — including the copy-button aria-label — still
- * flows through translations so screen-reader users hear the action
- * in their UI language.
- */
-function InstallCommand({ command, copyAria }: { command: string; copyAria: string }) {
-  return (
-    <div className="border-border bg-muted/40 flex items-center gap-2 rounded-lg border p-1 pl-4">
-      <code className="text-foreground flex-1 truncate font-mono text-sm">
-        <span className="text-muted-foreground select-none">$ </span>
-        {command}
-      </code>
-      <CopyButton value={command} label={copyAria} />
-    </div>
-  );
-}
-
-/**
- * Multi-line usage code block. No copy button — developers must adapt
- * the `publicKey` and wrapper placement, and a one-click copy would
- * ship broken code.
- */
-function UsageSnippet({ code }: { code: string }) {
-  return (
-    <pre className="border-border bg-muted/40 overflow-x-auto rounded-lg border p-4 font-mono text-sm leading-relaxed">
-      <code className="text-foreground">{code}</code>
-    </pre>
-  );
-}
-
-const REACT_USAGE = `import { DozorProvider } from "@kharko/dozor-react";
-
-export default function App() {
-  return (
-    <DozorProvider publicKey={process.env.NEXT_PUBLIC_DOZOR_KEY!}>
-      <YourApp />
-    </DozorProvider>
-  );
-}`;
-
-const VANILLA_USAGE = `import { init } from "@kharko/dozor";
-
-init({
-  publicKey: "dp_...",
-});`;

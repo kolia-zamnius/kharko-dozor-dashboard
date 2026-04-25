@@ -24,7 +24,7 @@ export async function MarketingFooter() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.6fr_1fr_1fr]">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Image src="/assets/logo.svg" alt="" width={24} height={24} />
+            <Image src="/assets/logo.svg" alt="" aria-hidden="true" width={24} height={24} />
             <span className="text-sm font-semibold tracking-tight">Kharko Dozor</span>
           </div>
           <p className="text-muted-foreground max-w-sm text-sm">{t("tagline")}</p>
