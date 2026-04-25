@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Navbar } from "./components/navbar";
-import { SessionQueryProviders } from "@/app/_providers/session-query";
 
 /**
  * Dashboard layout — wraps every authenticated route under `(dashboard)`.
@@ -14,18 +13,6 @@ import { SessionQueryProviders } from "@/app/_providers/session-query";
  * Marking the layout dynamic is the semantic truth of what these
  * routes ARE, not a workaround.
  *
- * `<SessionQueryProviders>` is the route-group-scoped twin of the
- * stable root providers in `src/app/_providers/stable.tsx`. TanStack
- * Query's `QueryClientProvider` and Auth.js's `SessionProvider` both
- * mount here — the marketing landing and the auth pages don't consume
- * them, so paying their ~40 KB hydration cost globally was wasted
- * weight on the public Lighthouse run. A locale change inside the
- * dashboard preserves the same layout instance, so the query cache
- * and session state survive the navigation; the (auth) ↔ (dashboard)
- * transition flows through Auth.js `signIn` / `signOut`, which
- * triggers a full reload, so the providers re-mount there only on a
- * fresh page load.
- *
  * The skip-to-content anchor is the a11y baseline for keyboard users
  * — first focusable element in the tab order, visually hidden until
  * focused, jumps straight past the navbar to the main content. The
@@ -36,7 +23,7 @@ export const dynamic = "force-dynamic";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <SessionQueryProviders>
+    <>
       <a
         href="#main-content"
         className="bg-background text-foreground ring-ring sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:outline-none"
@@ -47,6 +34,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <main id="main-content" className="container mx-auto p-3">
         {children}
       </main>
-    </SessionQueryProviders>
+    </>
   );
 }
