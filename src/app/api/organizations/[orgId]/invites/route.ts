@@ -11,8 +11,9 @@ import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
 import { assertInviteRateLimit, bumpInviteRateLimit } from "@/server/invite-rate-limit";
-import { devLog } from "@/server/dev-log";
+import { log } from "@/server/logger";
 import { sendMail } from "@/server/mailer";
+import * as Sentry from "@sentry/nextjs";
 import { NextResponse } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { inviteEmailHtml } from "./_helpers/invite-email";
@@ -121,6 +122,15 @@ export const POST = withAuth<Params>(async (req, user, { orgId }) => {
     inviterId: user.id,
   });
 
+  log.info("org:invite:create_or_refresh:ok", {
+    orgId,
+    inviteId: invite.id,
+    email: invite.email,
+    role: invite.role,
+    expiresAt: invite.expiresAt.toISOString(),
+    byUserId: user.id,
+  });
+
   // Count this send against today's quota. Bumped AFTER the invite
   // row landed (and before the fire-and-forget email — we've done
   // real work at this point) so a DB failure above doesn't burn a
@@ -148,8 +158,16 @@ export const POST = withAuth<Params>(async (req, user, { orgId }) => {
       t,
     }),
   })
-    .then(() => devLog("[invite-email] sent", { email: body.email }))
-    .catch((err) => console.error("[invite-email] delivery failed:", err));
+    .then(() => log.info("org:invite:email:sent", { email: body.email }))
+    .catch((err: unknown) => {
+      // Fire-and-forget delivery — the route already returned 200, the
+      // user got their "invite sent" toast, but SMTP threw on us. The
+      // catch swallows the error so it never bubbles to onRequestError,
+      // hence the explicit Sentry capture: an unmonitored SMTP outage
+      // would silently let invites pile up un-delivered.
+      log.error("org:invite:email:delivery_failed", { err, email: body.email });
+      Sentry.captureException(err, { tags: { area: "org:invite:email" }, extra: { email: body.email } });
+    });
 
   // Always 200 — 201 would only be accurate on the create branch, and
   // the client's `apiFetch` only inspects `res.ok`. Response schema

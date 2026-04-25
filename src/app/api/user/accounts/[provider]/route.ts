@@ -1,6 +1,7 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 
 type Params = { provider: string };
 
@@ -76,10 +77,18 @@ export const DELETE = withAuth<Params>(async (req, user, { provider }) => {
       const remainingMethods = otherAccountCount + authenticatorCount + (emailOtpAvailable ? 1 : 0);
 
       if (remainingMethods === 0) {
+        log.warn("user:account:unlink:blocked_last_method", { userId: user.id, provider });
         throw new HttpError(409, "Cannot unlink the last login method");
       }
 
       await tx.account.delete({ where: { id: target.id } });
+
+      log.info("user:account:unlink:ok", {
+        userId: user.id,
+        provider,
+        remainingMethods,
+      });
+
       return new Response(null, { status: 204 });
     },
     { isolationLevel: "Serializable" },

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Prisma } from "@/generated/prisma/client";
+import { log } from "@/server/logger";
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -64,11 +65,21 @@ export async function transferOrganizationOwnership(
 
     if (!hasOtherOwner) {
       const successor = await findSuccessor(tx, orgId, departingUserId);
-      if (!successor) return;
+      if (!successor) {
+        log.warn("org:ownership:transfer:no_successor", { orgId, departingUserId });
+        return;
+      }
 
       await tx.membership.update({
         where: { id: successor.id },
         data: { role: "OWNER" },
+      });
+
+      log.info("org:ownership:transfer:ok", {
+        orgId,
+        fromUserId: departingUserId,
+        toUserId: successor.userId,
+        successorPriorRole: successor.role,
       });
     }
   }
@@ -83,6 +94,12 @@ export async function transferOrganizationOwnership(
       await tx.organization.update({
         where: { id: orgId },
         data: { createdById: owner.userId },
+      });
+
+      log.info("org:created_by:reassign:ok", {
+        orgId,
+        fromUserId: departingUserId,
+        toUserId: owner.userId,
       });
     }
   }

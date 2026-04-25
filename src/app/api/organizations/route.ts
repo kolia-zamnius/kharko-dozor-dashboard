@@ -3,6 +3,7 @@ import { orgAvatarUrl } from "@/lib/avatar";
 import { organizationCreatedSchema, organizationListSchema } from "@/api-client/organizations/response-schemas";
 import { createOrgSchema } from "@/api-client/organizations/validators";
 import { prisma } from "@/server/db/client";
+import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 
 /**
@@ -77,6 +78,13 @@ export const POST = withAuth(async (req, user) => {
     });
 
     return created;
+  });
+
+  log.info("org:create:ok", {
+    orgId: org.id,
+    name: org.name,
+    type: org.type,
+    byUserId: user.id,
   });
 
   return NextResponse.json(

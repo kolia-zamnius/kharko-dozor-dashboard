@@ -1,6 +1,7 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 import { z } from "zod";
 
 const switchOrgSchema = z.object({
@@ -36,6 +37,12 @@ export const PATCH = withAuth(async (req, user) => {
       where: { id: user.id },
       data: { activeOrganizationId: organizationId },
     });
+  });
+
+  log.info("org:active:switch:ok", {
+    userId: user.id,
+    fromOrgId: user.activeOrganizationId ?? null,
+    toOrgId: organizationId,
   });
 
   return new Response(null, { status: 204 });

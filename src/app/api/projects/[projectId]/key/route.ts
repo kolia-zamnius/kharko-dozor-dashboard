@@ -3,6 +3,7 @@ import type { ApiKeyPlaintext } from "@/lib/mask-api-key";
 import { projectKeySchema } from "@/api-client/projects/response-schemas";
 import { requireProjectMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
+import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 
 type Params = { projectId: string };
@@ -28,6 +29,12 @@ export const GET = withAuth<Params>(async (req, user, { projectId }) => {
     where: { id: projectId },
     select: { key: true },
   });
+
+  // Audit log of plaintext-key exfiltration. NOTE we log only the
+  // `projectId` and actor — never the key itself (`key` is in pino's
+  // production redact list as a defensive layer, but we don't even
+  // give it the chance).
+  log.info("project:key:fetch:ok", { projectId, byUserId: user.id });
 
   // The sole endpoint that deliberately exfiltrates the plaintext key.
   // Brand the response body so any future server-side transformation

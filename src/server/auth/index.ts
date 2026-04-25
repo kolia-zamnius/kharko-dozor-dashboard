@@ -4,6 +4,7 @@ import { createAuthAdapter } from "@/server/auth/adapter";
 import { authCallbacks } from "@/server/auth/callbacks";
 import { authEvents } from "@/server/auth/events";
 import { createAuthProviders } from "@/server/auth/providers";
+import { log } from "@/server/logger";
 import NextAuth from "next-auth";
 
 /**
@@ -36,7 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // The `experimental-webauthn` warning fires on every request and
       // adds nothing — silence it explicitly so real warnings stand out.
       if (code !== "experimental-webauthn") {
-        console.warn(`[auth][warn][${code}]`);
+        log.warn("auth:nextauth:warn", { code });
       }
     },
   },

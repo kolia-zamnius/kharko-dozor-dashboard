@@ -3,6 +3,7 @@ import { updateDisplayNameSchema } from "@/api-client/tracked-users/validators";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 
 type Params = { userId: string };
 
@@ -39,6 +40,14 @@ export const PATCH = withAuth<Params>(async (req, user, { userId }) => {
   await prisma.trackedUser.update({
     where: { id: userId },
     data,
+  });
+
+  log.info("tracked_user:display_name:update:ok", {
+    trackedUserId: userId,
+    orgId: trackedUser.project.organizationId,
+    customName: body.customName ?? null,
+    traitKey: body.traitKey ?? null,
+    byUserId: user.id,
   });
 
   return new Response(null, { status: 204 });

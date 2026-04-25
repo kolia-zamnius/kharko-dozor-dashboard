@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 
 /**
  * Shared invariants + lazy-expiry helpers for the `Invite` row lifecycle.
@@ -35,7 +36,7 @@ export function expireStaleInvites(expiredIds: readonly string[]): void {
       where: { id: { in: [...expiredIds] } },
       data: { status: "EXPIRED" },
     })
-    .catch((err) => console.error("[invites] failed to expire stale rows", err));
+    .catch((err: unknown) => log.error("org:invite:expire_sweep:failed", { err }));
 }
 
 /** Minimal shape needed by {@link assertInviteUsableForUser}. */

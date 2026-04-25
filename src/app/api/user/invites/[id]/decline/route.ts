@@ -3,6 +3,7 @@ import { withAuth } from "@/app/api/_lib/with-auth";
 import { userInviteDeclineResponseSchema } from "@/api-client/user-invites/response-schemas";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 
 type Params = { id: string };
@@ -30,5 +31,8 @@ export const POST = withAuth<Params>(async (_req, user, { id }) => {
   if (!invite) throw new HttpError(404, "This invitation is invalid or has already been used.");
 
   await prisma.invite.delete({ where: { id: invite.id } });
+
+  log.info("user:invite:decline:ok", { inviteId: invite.id, userId: user.id });
+
   return NextResponse.json(userInviteDeclineResponseSchema.parse({ ok: true }));
 });
