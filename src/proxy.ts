@@ -42,9 +42,11 @@ import { auth } from "@/server/auth";
  *
  * Root (`/`) is deliberately absent from this guard chain — it hosts
  * the public marketing landing (`(marketing)/page.tsx`) that both
- * anonymous and authenticated visitors can reach. The header CTA on
- * that page reads session-side and points authed users at the
- * dashboard, so there's no need for a proxy-level redirect.
+ * anonymous and authenticated visitors can reach. The header CTA pair
+ * ("Sign in" / "Get started") renders identically for every visitor
+ * — a logged-in user who clicks either gets a single-hop redirect to
+ * `/users` from the auth-page guard further down, which keeps the
+ * marketing tree fully statically generatable.
  *
  *   7. `intlMiddleware(request)` — final fallthrough. next-intl rewrites
  *      the URL to its `[locale]/…` internal form, sets

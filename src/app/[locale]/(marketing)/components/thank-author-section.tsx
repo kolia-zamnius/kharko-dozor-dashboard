@@ -1,7 +1,5 @@
-"use client";
-
-import { ArrowSquareOutIcon, BankIcon, HeartIcon } from "@phosphor-icons/react";
-import { useTranslations } from "next-intl";
+import { ArrowSquareOutIcon, BankIcon, HeartIcon } from "@phosphor-icons/react/dist/ssr";
+import { getTranslations } from "next-intl/server";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card";
 import { Button } from "@/components/ui/primitives/button";
@@ -14,14 +12,22 @@ import { CopyButton } from "./copy-button";
  * European SEPA EUR) plus a pointer to the footer for anything else.
  *
  * @remarks
- * Client Component because the EUR card relies on clipboard copy.
+ * Server Component — every visible element is static markup with
+ * server-resolved translations. The only interactive surface is the
+ * EUR-row clipboard button, which lives in its own `CopyButton` client
+ * island; keeping the section server-rendered eliminates the
+ * surrounding copy and card chrome from the client bundle and
+ * shortens the marketing-page TBT.
+ *
  * Account identifiers (IBAN / BIC / receiver / Monobank link) live in
  * {@link EXTERNAL_LINKS.donations} — they are not translated because
  * they're immutable wire strings. Only the surrounding copy in
- * `marketing.thankAuthor.*` is localised.
+ * `marketing.thankAuthor.*` is localised. Phosphor icons come from the
+ * `/dist/ssr` entry so they emit at HTML-response time without a
+ * client-side hydration cost.
  */
-export function ThankAuthorSection() {
-  const t = useTranslations("marketing.thankAuthor");
+export async function ThankAuthorSection() {
+  const t = await getTranslations("marketing.thankAuthor");
   const { monobank, eur } = EXTERNAL_LINKS.donations;
 
   const eurRows: ReadonlyArray<{ labelKey: "eurIbanLabel" | "eurBicLabel" | "eurReceiverLabel"; value: string }> = [
@@ -66,20 +72,31 @@ export function ThankAuthorSection() {
               <CardDescription>{t("eurDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <dl className="space-y-2">
+              {/* Plain rows rather than `<dl>/<dt>/<dd>` — axe/Lighthouse
+                  reject `<dl>` whose row containers hold anything besides
+                  `<dt>/<dd>` (the `<CopyButton>` sibling triggers
+                  `definition-list` / `dlitem` failures), and the visual
+                  label-value pairing is conveyed clearly by layout
+                  alone. The label is associated with the value through
+                  proximity + the per-row `aria-label` on the copy button
+                  ("Copy IBAN" etc.), so screen-reader users still hear
+                  the field name when they reach the action. */}
+              <ul className="space-y-2">
                 {eurRows.map(({ labelKey, value }) => (
-                  <div
+                  <li
                     key={labelKey}
                     className="border-border bg-muted/40 flex items-center gap-2 rounded-md border p-1.5 pl-3"
                   >
                     <div className="min-w-0 flex-1">
-                      <dt className="text-muted-foreground text-xs">{t(labelKey)}</dt>
-                      <dd className="text-foreground truncate font-mono text-sm tabular-nums md:text-base">{value}</dd>
+                      <span className="text-muted-foreground block text-xs">{t(labelKey)}</span>
+                      <span className="text-foreground block truncate font-mono text-sm tabular-nums md:text-base">
+                        {value}
+                      </span>
                     </div>
                     <CopyButton value={value} label={t("eurCopyAria", { field: t(labelKey) })} />
-                  </div>
+                  </li>
                 ))}
-              </dl>
+              </ul>
             </CardContent>
           </Card>
         </div>
@@ -89,7 +106,7 @@ export function ThankAuthorSection() {
             contactLink: (chunks) => (
               <a
                 href={`mailto:${EXTERNAL_LINKS.contact.email}`}
-                className="text-foreground underline-offset-4 hover:underline"
+                className="text-foreground underline underline-offset-4"
               >
                 {chunks}
               </a>

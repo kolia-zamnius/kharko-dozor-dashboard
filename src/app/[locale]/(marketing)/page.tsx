@@ -38,7 +38,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations({ locale, namespace: "marketing.meta" });
   const baseUrl = getAppUrl();
-  const urlFor = (l: Locale) => (l === DEFAULT_LOCALE ? baseUrl : `${baseUrl}/${l}`);
+  // Trailing slash on the default locale matches the actual served URL
+  // (`<base>/` after locale-prefix stripping). Without it the `<link
+  // rel="canonical">` value diverges from the document URL the browser
+  // and search engines see, and the Lighthouse `canonical` audit fails
+  // with "Points to another hreflang location" because the canonical
+  // also appears verbatim as the `en` hreflang alternate.
+  const urlFor = (l: Locale) => (l === DEFAULT_LOCALE ? `${baseUrl}/` : `${baseUrl}/${l}`);
 
   return {
     title: t("title"),

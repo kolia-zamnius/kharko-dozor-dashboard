@@ -19,6 +19,11 @@ import { cn } from "@/lib/cn";
  * surfaces sonner toasts. When a second marketing consumer needs a
  * different UX, the options diverge; until then, one button covers
  * both installation snippets and the bank-details card.
+ *
+ * Sized `icon` (32×32) rather than `icon-sm` (28×28) to clear
+ * Lighthouse's mobile tap-target threshold — the marketing surface is
+ * the only place these copy affordances render, so the larger hit area
+ * costs nothing elsewhere in the app.
  */
 export function CopyButton({
   value,
@@ -50,7 +55,7 @@ export function CopyButton({
     <Button
       type="button"
       variant="ghost"
-      size="icon-sm"
+      size="icon"
       aria-label={label}
       onClick={handleCopy}
       className={cn("shrink-0", className)}

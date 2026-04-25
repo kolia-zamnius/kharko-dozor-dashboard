@@ -1,9 +1,6 @@
 "use client";
 
 import { Toaster } from "@/components/ui/feedback/sonner";
-import { getQueryClient } from "@/lib/query-client";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 
 /**
@@ -12,12 +9,16 @@ import { ThemeProvider } from "next-themes";
  * (`src/app/layout.tsx`) so that switching `/en` ↔ `/uk` doesn't
  * tear any of these down:
  *
- *   - `QueryClientProvider` — TanStack Query cache root.
- *   - `SessionProvider`     — Auth.js session context.
- *   - `ThemeProvider`       — `next-themes` class-based dark mode.
- *   - `<Toaster />`         — sonner toast outlet. Mutations surface
- *                             success/error messages through the global
- *                             `MutationCache` handler in `query-client.ts`.
+ *   - `ThemeProvider` — `next-themes` class-based dark mode.
+ *   - `<Toaster />`   — sonner toast outlet. Mutations surface
+ *                       success/error messages through the global
+ *                       `MutationCache` handler in `query-client.ts`,
+ *                       and the auth pages emit OTP / sign-in toasts
+ *                       via `toast()` directly.
+ *
+ * Both surfaces (every route group) need these — the marketing
+ * landing has the theme toggle, every flow can surface a toast — so
+ * they sit at the top of the tree regardless of route.
  *
  * @remarks
  * Keeping `ThemeProvider` above the `[locale]` segment is load-bearing
@@ -27,6 +28,14 @@ import { ThemeProvider } from "next-themes";
  * every time that element is torn down and recreated on the client.
  * Mounting the provider once — outside the segment that re-renders on
  * locale change — means the warning never fires.
+ *
+ * Heavy client providers — `QueryClientProvider`, `SessionProvider` —
+ * used to live here too. They were lifted into
+ * {@link ./session-query.tsx} and now mount only inside the
+ * `(dashboard)` route group, where every page actually consumes them.
+ * The marketing landing is fully static and the auth pages reach
+ * `signIn` / `toast()` without provider context, so paying ~40 KB of
+ * client JS for them globally was wasted weight on Lighthouse mobile.
  *
  * i18n is deliberately **not** set up here. `NextIntlClientProvider`
  * and the imperative-translator / Zod-error-map bridges that depend on
@@ -52,25 +61,14 @@ import { ThemeProvider } from "next-themes";
  *      bypassing React reconciliation for the script.
  *   3. React 19 relaxes the `<script>`-in-tree warning.
  *
- * Collapse path: move `I18nBridge`'s three effects back into this
- * component, drop the sibling file, and delete the `_providers/`
- * folder in favour of a single `src/app/providers.tsx`. Route group
- * imports update atomically.
- *
  * HeroUI used to live here (`RouterProvider`, `Toast.Provider`) but was
  * removed — the dashboard is fully on Radix + Tailwind + sonner now.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
-  const queryClient = getQueryClient();
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <SessionProvider>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-          <Toaster position="top-center" richColors />
-        </ThemeProvider>
-      </SessionProvider>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      {children}
+      <Toaster position="top-center" richColors />
+    </ThemeProvider>
   );
 }

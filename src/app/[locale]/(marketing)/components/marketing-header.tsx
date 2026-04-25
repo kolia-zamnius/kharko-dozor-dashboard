@@ -4,7 +4,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/primitives/button";
 import type { Locale } from "@/i18n/config";
 import { Link } from "@/i18n/navigation";
-import { auth } from "@/server/auth";
 
 import { LocaleSelectCompact } from "./locale-select-compact";
 import { ThemeToggle } from "./theme-toggle";
@@ -14,18 +13,21 @@ import { ThemeToggle } from "./theme-toggle";
  * dashboard navbar for the `/` landing surface.
  *
  * @remarks
- * Renders on the server so the Sign-in / Dashboard CTA resolves
- * authoritatively on first paint without a hydration flash. Uses
- * the typed `Link` from `@/i18n/navigation` for both the logo (→ `/`)
- * and the CTA so locale prefixes stay consistent.
+ * Pure Server Component with **no per-request data**. The CTA pair
+ * ("Sign in" + "Get started") is the same for every visitor regardless
+ * of session state — the marketing surface is overwhelmingly an
+ * anonymous-prospect funnel, and the proxy already redirects authed
+ * users away from `/sign-in` and `/sign-up` to the dashboard
+ * (`src/proxy.ts:74-75`). A returning logged-in visitor who clicks
+ * "Sign in" gets a single-hop bounce to `/users`; the gain in
+ * exchange is making the entire marketing tree statically
+ * generatable, which slashes TTFB and lets Lighthouse mobile LCP
+ * clear the 90 threshold.
  *
- * The locale picker is a small Client Component — that keeps the
- * rest of the header in the Server Component graph, so the session
- * read doesn't leak into the client bundle.
+ * The locale picker is a small Client Component — that keeps the rest
+ * of the header in the Server Component graph.
  */
 export async function MarketingHeader() {
-  const session = await auth();
-  const isAuthenticated = !!session?.user;
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations("marketing.header");
 
@@ -39,20 +41,12 @@ export async function MarketingHeader() {
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <LocaleSelectCompact currentLocale={locale} />
-        {isAuthenticated ? (
-          <Button asChild size="sm">
-            <Link href="/users">{t("dashboard")}</Link>
-          </Button>
-        ) : (
-          <>
-            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-              <Link href="/sign-in">{t("signIn")}</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link href="/sign-up">{t("signUp")}</Link>
-            </Button>
-          </>
-        )}
+        <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+          <Link href="/sign-in">{t("signIn")}</Link>
+        </Button>
+        <Button asChild size="sm">
+          <Link href="/sign-up">{t("signUp")}</Link>
+        </Button>
       </div>
     </header>
   );
