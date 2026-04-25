@@ -1,6 +1,7 @@
 import "server-only";
 import { orgAvatarUrl } from "@/lib/avatar";
 import { prisma } from "@/server/db/client";
+import { log } from "@/server/logger";
 import type { NextAuthConfig } from "next-auth";
 import { randomUUID } from "node:crypto";
 
@@ -23,9 +24,12 @@ export const authEvents: NextAuthConfig["events"] = {
     const existing = await prisma.organization.findFirst({
       where: { createdById: userId, type: "PERSONAL" },
     });
-    if (existing) return;
+    if (existing) {
+      log.debug("auth:create_user:personal_space_exists", { userId });
+      return;
+    }
 
-    await prisma.organization.create({
+    const personalOrg = await prisma.organization.create({
       data: {
         name: "Personal Space",
         type: "PERSONAL",
@@ -35,6 +39,12 @@ export const authEvents: NextAuthConfig["events"] = {
           create: { userId, role: "OWNER" },
         },
       },
+    });
+
+    log.info("auth:create_user:ok", {
+      userId,
+      personalOrgId: personalOrg.id,
+      email: user.email ?? null,
     });
   },
 };

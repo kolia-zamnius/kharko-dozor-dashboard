@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/server/db/client";
+import { log } from "@/server/logger";
 import type { IngestEvent, IngestMetadata } from "./parse-body";
 
 /**
@@ -78,6 +79,12 @@ export async function upsertSessionAndLinkTrackedUser(
       select: { id: true },
     });
     sessionUpdate.trackedUserId = trackedUser.id;
+    log.debug("ingest:tracked_user:linked", {
+      projectId,
+      sessionId: session.id,
+      trackedUserId: trackedUser.id,
+      externalUserId: userId,
+    });
   }
 
   await prisma.session.update({ where: { id: session.id }, data: sessionUpdate });

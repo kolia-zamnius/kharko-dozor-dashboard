@@ -5,6 +5,7 @@ import { INVITE_EXPIRY_DAYS } from "@/api-client/organizations/constants";
 import { ONE_DAY_MS } from "@/lib/time";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
+import { log } from "@/server/logger";
 
 type Params = {
   orgId: string;
@@ -46,13 +47,21 @@ export async function refreshOrCreatePendingInvite({ orgId, email, role, inviter
   const expiresAt = new Date(Date.now() + INVITE_EXPIRY_DAYS * ONE_DAY_MS);
 
   if (existingPending) {
-    return prisma.invite.update({
+    const refreshed = await prisma.invite.update({
       where: { id: existingPending.id },
       data: { role, expiresAt, invitedById: inviterId },
     });
+    log.debug("org:invite:refresh:ok", {
+      orgId,
+      inviteId: refreshed.id,
+      email,
+      fromRole: existingPending.role,
+      toRole: role,
+    });
+    return refreshed;
   }
 
-  return prisma.invite.create({
+  const created = await prisma.invite.create({
     data: {
       email,
       role,
@@ -62,4 +71,6 @@ export async function refreshOrCreatePendingInvite({ orgId, email, role, inviter
       invitedById: inviterId,
     },
   });
+  log.debug("org:invite:create:ok", { orgId, inviteId: created.id, email, role });
+  return created;
 }
