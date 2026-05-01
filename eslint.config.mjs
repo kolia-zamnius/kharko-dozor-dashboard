@@ -39,7 +39,7 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/switch-exhaustiveness-check": "error",
     },
   },
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/generated/**"]),
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/generated/**", ".source/**"]),
 ]);
 
 export default eslintConfig;
