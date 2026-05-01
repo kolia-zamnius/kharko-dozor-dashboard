@@ -1,4 +1,4 @@
-// Kharko Dozor — Prisma Schema
+// Dozor — Prisma Schema
 //
 // Single source of truth for the database shape. All server queries go
 // through the generated client at `src/generated/prisma/`; migrations
