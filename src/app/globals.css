@@ -1,6 +1,32 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/*
+ * Fumadocs UI — neutral palette + layout preset.
+ *
+ * `neutral.css` is Fumadocs's polished default theme (the look you see
+ * on fumadocs.dev itself); `preset.css` ships pre-compiled Tailwind
+ * output for the docs/notebook/home/flux layouts plus typography +
+ * animations. Both must live alongside `@import "tailwindcss"` in the
+ * same Tailwind context — splitting across files makes Tailwind drop
+ * the `@theme` / `@plugin` directives silently and the docs zone
+ * renders unstyled.
+ *
+ * Deliberately NOT `shadcn.css`: that variant maps Fumadocs tokens
+ * onto our existing minimalist shadcn palette, which makes the docs
+ * surface look stark vs the dense styling Fumadocs ships by default.
+ * Docs zone visually diverges from dashboard a touch (warmer neutral
+ * grey, denser typography) — accepted trade-off in exchange for the
+ * "polished out of the box" experience.
+ *
+ * No `@source` directive needed: Fumadocs preset.css imports the
+ * `generated/*.css` files which already contain every utility class
+ * the UI components reference. Tailwind doesn't need to scan
+ * `node_modules/fumadocs-ui/dist/**` itself.
+ */
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
 @custom-variant dark (&:is(.dark *));
 
 /* ── Custom data-* variants (vendored from shadcn/tailwind.css) ── */

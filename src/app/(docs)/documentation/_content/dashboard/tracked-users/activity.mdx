@@ -1,0 +1,96 @@
+---
+title: Activity, timeline, status
+---
+
+The user detail page (`/users/{trackedUserId}`) ships an activity
+view that summarises what the user did over a configurable window.
+Four chart surfaces share one rolling-window range:
+
+- **Activity histogram** — events per time bucket
+- **Page distribution** — top pathnames
+- **Sessions timeline** — lane-packed Gantt of sessions in the window
+- **Online indicator** — live "is this user active right now?" badge
+
+## Range picker
+
+Three presets: `6h` / `24h` / `7d`. Default is `24h`. The pick drives:
+
+- `GET /api/tracked-users/{userId}/activity?range=…` — histogram + page distribution + KPI summary in one response (three SQL queries `Promise.all`-d server-side)
+- `GET /api/tracked-users/{userId}/timeline?range=…` — sessions for the timeline chart
+
+The server computes `from = now - windowMs` itself — sending raw ISO
+from the client would shift the TanStack Query key on every render
+and break cache dedup. Both endpoints are `Cache-Control: no-store`.
+
+## Activity histogram
+
+Bar chart of total events per time bucket. Bucket size + count scale
+with range:
+
+| Range | Bucket | Buckets shown |
+| --- | --- | --- |
+| `6h` | 5 minutes | 72 |
+| `24h` | 15 minutes | 96 |
+| `7d` | 1 hour | 168 |
+
+Each bucket also carries a `byPage` array — the top pathnames that
+contributed events in that bucket — so hover surfaces the breakdown.
+
+The histogram (and the rest of the activity bundle) auto-refreshes
+every **30 s** via `pollingOptions(USER_PAGE_POLL_INTERVAL_MS)`. No
+manual refresh.
+
+`date_bin()` snaps each event to a fixed grid anchored at
+`2020-01-01` — bucket boundaries stay stable across consecutive
+requests 200 ms apart, preventing "shimmering" bars and TanStack
+cache misses.
+
+## Page distribution
+
+Top pathnames the user visited in the window, ordered by total active
+time on each page (`SUM(slice.duration) DESC`):
+
+- **Pathname** — the URL path (without origin / search).
+- **Duration** — sum of slice durations on that path.
+- **Share** — fraction of total active time across all pages (`0..1`).
+- **Visits** — distinct slice count for the path.
+
+`share` is computed against the **full distribution total**, not the
+displayed slice — so "Show more" / "Show less" doesn't shift
+percentages.
+
+## Sessions timeline
+
+A lane-packed Gantt chart of sessions in the window. Concurrent
+sessions stack into parallel rows via greedy interval scheduling, so
+the chart uses the minimum number of lanes vertically.
+
+- Each bar is a `<Link>` to `/replays/{sessionId}` — clicking opens
+  the player at the session's first slice.
+- **Still-open sessions** (`endedAt: null`) extend to the right edge
+  and render in **emerald**, the only colour signal in the chart so
+  "this user is live right now" jumps out.
+- A session is included if it overlaps the window even partially:
+  `startedAt <= to AND (endedAt >= from OR endedAt IS NULL)`.
+
+## Online indicator
+
+A small dot on the user detail header. Backed by
+`GET /api/tracked-users/{userId}/status`:
+
+- **Online** — `MAX(Session.endedAt)` within `ONLINE_THRESHOLD_MS`
+  (**2 minutes**).
+- **Offline** — otherwise (including users with no events ever).
+
+The endpoint is intentionally lightweight — `MAX(Session.endedAt)`
+keyed on the indexed `trackedUserId`, no `Event` scan. `Session.endedAt`
+is bumped on every ingest batch, so it's always current.
+
+`Cache-Control: no-store` plus polling every **30 s**
+(`STATUS_POLL_INTERVAL_MS`) keeps the indicator fresh without burning
+DB cycles.
+
+## See also
+
+- [Display-name overrides](/documentation/dashboard/tracked-users/display-name) — how the resolver picks what to render in the User column / detail header.
+- [Resources → Architecture](/documentation/resources/architecture) — the polling pattern.

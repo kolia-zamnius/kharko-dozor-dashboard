@@ -1,0 +1,110 @@
+---
+title: useDozor()
+---
+
+`useDozor()` returns the recorder instance with reactive state
+properties. Call it from any component below `<DozorProvider>` to
+read state or invoke methods.
+
+```tsx
+import { useDozor } from "@kharko/dozor-react";
+
+function MyComponent() {
+  const dozor = useDozor();
+
+  // dozor.state, dozor.isRecording, dozor.bufferSize — reactive
+  // dozor.hold(), dozor.release(), dozor.identify() — methods
+
+  return null;
+}
+```
+
+The hook **throws** if called outside a `<DozorProvider>` — it's not
+expected to be used optionally. If you need optional integration,
+guard at the provider level.
+
+## State shape
+
+All state properties are reactive — they update via
+`useSyncExternalStore` whenever the recorder fires a change
+notification.
+
+| Property | Type | Notes |
+| --- | --- | --- |
+| `state` | `"not_initialized" \| "idle" \| "recording" \| "paused"` | Includes `"not_initialized"` (only meaningful when [`options` was omitted](/documentation/sdk/dozor-react/provider#deferring-initialisation) from the provider). After `stop()` / `cancel()` the recorder returns to `"idle"` — there is no terminal `"stopped"` variant. |
+| `sessionId` | `string \| null` | `null` before `init()` and after `stop()` / `cancel()` until the next `start()`. |
+| `isRecording` | `boolean` | Convenience for `state === "recording"`. |
+| `isPaused` | `boolean` | `true` whenever `state === "paused"` — covers both manual `pause()` and auto-pause from tab visibility. |
+| `isHeld` | `boolean` | True between `hold()` and `release()`. |
+| `userId` | `string \| null` | From `identify()`, `null` otherwise. |
+| `bufferSize` | `number` | Reflects the value at the last state-change notification — does **not** update in real-time as rrweb emits. |
+
+Note on `bufferSize` cadence: the underlying SDK fires state-change
+notifications on lifecycle transitions (start, pause, hold, etc.),
+not on every captured event. So `bufferSize` is "fresh enough for a
+status indicator" but not "frame-perfect". If you genuinely need
+per-event granularity, subscribe via `dozor.subscribe()` directly.
+
+## Method shape
+
+Same surface as the core SDK — see
+[Methods](/documentation/sdk/dozor/methods) for full descriptions:
+
+`init` (manual-init flows) · `start` · `pause` · `resume` · `stop` ·
+`cancel` · `hold` · `release` · `identify`
+
+## Common patterns
+
+### Status indicator
+
+```tsx
+function RecordingBadge() {
+  const dozor = useDozor();
+
+  if (!dozor.isRecording) return null;
+
+  return (
+    <span className="badge">
+      ● Recording — {dozor.bufferSize} events
+    </span>
+  );
+}
+```
+
+### Wire identify into your auth
+
+```tsx
+function IdentifyOnLogin() {
+  const dozor = useDozor();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      dozor.identify(user.id, { email: user.email, plan: user.plan });
+    }
+  }, [user, dozor]);
+
+  return null;
+}
+```
+
+### Conditional recording
+
+```tsx
+function CheckoutFlow() {
+  const dozor = useDozor();
+  // Provider was set up with `options.hold: true` — buffer fills,
+  // nothing ships yet.
+  return (
+    <>
+      <button onClick={() => { submitOrder(); dozor.release(); }}>
+        Complete purchase
+      </button>
+      <button onClick={() => dozor.cancel()}>Leave</button>
+    </>
+  );
+}
+```
+
+See [Recipes](/documentation/sdk/recipes) for more patterns.
+

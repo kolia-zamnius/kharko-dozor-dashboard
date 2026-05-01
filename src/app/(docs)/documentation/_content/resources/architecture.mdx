@@ -1,0 +1,314 @@
+---
+title: Architecture
+---
+
+For the auth-specific architecture (JWT, providers, callbacks, locale routing) see [Authentication & sessions](/documentation/resources/authentication).
+
+## Tech stack
+
+| Layer | Choice | Notes |
+| --- | --- | --- |
+| Framework | Next.js 16 (App Router, Turbopack) | `proxy.ts` middleware, async params, `instrumentation.ts` for Sentry boot |
+| Language | TypeScript 6 (strict + `noUncheckedIndexedAccess`) | type-aware ESLint catches floating promises, missing switch branches, type-only imports |
+| UI | Radix Primitives + `cva` + Tailwind v4 | shadcn-derived layer for now; Phosphor icons (`Regular` weight) |
+| Auth | Auth.js v5 + custom Prisma adapter | JWT sessions; Google OAuth + GitHub OAuth + Email OTP (Nodemailer/Gmail SMTP) + Passkeys |
+| Database | PostgreSQL 17 via Neon serverless + `@prisma/adapter-neon` | Prisma migrations workflow — see below |
+| ORM | Prisma 7 | Generated client at `src/generated/prisma/` |
+| Server state | TanStack Query 5 | Suspense + classic twins, hierarchical key factories per feature |
+| Client state | Zustand 5 | Colocated next to feature when state crosses sibling components |
+| Forms | React Hook Form 7 + Zod 4 | Native `z.toJSONSchema` |
+| i18n | next-intl 4 | Six locales (en, uk, de, es, pt, it); locale stored in `User.locale`, JWT-cached |
+| Logging | pino 10 (`@/server/logger`) | Tag-first format: `domain:entity:action[:state]` |
+| Errors | Sentry via `instrumentation.ts::onRequestError` | DSN unset = no-op; only unhandled errors reach Sentry |
+| Tests | Vitest 3 + Testcontainers (Postgres 17) + fast-check | Three projects: `unit` / `contract` / `integration` |
+
+## Repo layout
+
+```
+src/
+  app/
+    [locale]/             — locale-bound surfaces (auth, dashboard, marketing)
+      (auth)/             — sign-in / sign-up wizards
+      (dashboard)/        — users, replays, settings (protected)
+      (marketing)/        — public landing /, locale-aware
+    (docs)/               — docs zone, OUTSIDE [locale]/, English-only
+      documentation/
+        [...slug]/        — Fumadocs renderer
+        _content/         — colocated MDX (sections as root folders)
+    _providers/           — stable.tsx (locale-stable) + i18n-bridge.tsx (locale-reactive)
+    api/                  — REST routes + _lib/ + per-feature _helpers/
+    layout.tsx            — non-localised root (html/body, stable providers)
+    global-not-found.tsx  — bypasses [locale]/ pipeline
+  api-client/             — feature-based client data layer
+  components/ui/          — categorised primitives (primitives, layout, forms, ...)
+  i18n/                   — config, routing, request, navigation, messages/{locale}/
+  lib/                    — client-safe shared kernel
+  server/                 — server-only (`import "server-only"` in every file)
+  proxy.ts                — auth + locale guard chain
+prisma/schema.prisma
+.source/                  — Fumadocs MDX codegen (gitignored)
+```
+
+## Route groups
+
+App Router segments are organised as **zones** (route groups):
+
+- **`(auth)`** — sign-in, sign-up wizards. No app chrome; OAuth
+  callbacks go through `/api/auth/callback/*` (proxy bypassed).
+- **`(dashboard)`** — protected surfaces (`/users`, `/replays`,
+  `/settings/*`). Wrapped by a navbar + DemoBanner (when
+  `NEXT_PUBLIC_KHARKO_DEMO_MODE=true`).
+- **`(marketing)`** — public landing at `/`. Static-generatable; same
+  CTAs render for everyone.
+- **`(docs)`** — Fumadocs zone at `/documentation/*`. **Outside the
+  `[locale]/` segment** — English only by design.
+
+Adding a new zone is a new route group + its layout; existing zones
+don't see the new one.
+
+## Server architecture
+
+### HOF boundaries
+
+Every API route handler is wrapped in one of two HOFs:
+
+- **`withAuth`** (`src/app/api/_lib/with-auth.ts`) — for
+  dashboard-facing routes. Resolves the Auth.js session, 401s
+  anonymous requests, awaits async params, and serialises any thrown
+  `HttpError` / `ZodError` into a structured JSON response.
+- **`withPublicKey`** — twin HOF for SDK-facing ingest routes.
+  Validates the `X-Dozor-Public-Key` header, identifies the project,
+  rejects unknown keys, and applies CORS headers.
+
+Inside the handler body, you `throw new HttpError(status, message)`
+and let the HOF serialise it. **No `try/catch` in handler bodies.**
+
+```ts title="src/app/api/projects/[id]/route.ts"
+export const PATCH = withAuth(async (req, user, { id }) => {
+  const project = await db.project.findUnique({ where: { id } });
+  if (!project) throw new HttpError(404, "Project not found");
+  await requireMember(user.id, project.organizationId, "ADMIN");
+  // ... edit logic
+  return Response.json({ ok: true });
+});
+```
+
+`HttpError` and `ZodError` are converted by the HOFs and never reach
+Sentry. Genuine bugs (Prisma errors, network failures) re-throw and
+land in the standard Next.js error boundary; `instrumentation.ts`
+forwards them to Sentry from there.
+
+### `_lib/` and `_helpers/`
+
+- **`src/app/api/_lib/`** — cross-feature server helpers (`with-auth`,
+  `with-public-key`, `localize-zod-error`, `pagination`, `cors`,
+  `invite-lifecycle`, `constants`).
+- **`src/app/api/<feature>/_helpers/`** — single-feature decomposition.
+  E.g. `ingest/_helpers/{parse-body,session-upsert,slice-markers,events}`
+  — heavy routes split into focused units; the route handler is a
+  thin composition.
+
+The `_` prefix opts these directories out of Next.js route resolution,
+so a file at `_lib/route.ts` won't accidentally become a real URL.
+
+### Permissions
+
+`requireMember(userId, orgId, minRole)` and `requireProjectMember(...)`
+in `src/server/auth/permissions.ts` are the **single source of truth**
+for RBAC. They throw `HttpError(403)` on failure. The role rank table
+is `as const satisfies Record<Role, number>` so adding a Prisma
+`Role` variant is a compile error, not a silent runtime undefined.
+
+The capability matrix is mirrored in
+`tests/integration/permissions-matrix.test.ts` — drift between the
+helper and the test fails specifically.
+
+## Client architecture
+
+### Feature layer
+
+Every domain has a parallel pair of folders:
+
+- **`src/app/api/<feature>/`** — server routes
+- **`src/api-client/<feature>/`** — client-side reads/writes of those
+  routes
+
+Each `api-client/<feature>/` ships:
+
+```
+keys.ts          — hierarchical TanStack key factory
+queries.ts       — `queryOptions` + `useXxxQuery` + `useXxxSuspenseQuery`
+mutations.ts     — `useXxxMutation` with optimistic patches when relevant
+types.ts         — TypeScript types
+validators.ts    — Zod schemas shared with the server
+domain.ts        — pure isomorphic domain logic
+index.ts         — barrel export
+```
+
+**Zero raw `queryKey: [...]` arrays anywhere in the codebase** — every
+read, every invalidate, goes through `keys.<feature>.<scope>(args)`.
+
+### Top-level data utilities
+
+- **`fetch.ts`** — single `apiFetch()` function. Handles same-origin
+  paths, server-side absolute URL prepending (via the `globalThis`
+  bridge registered by `fetch-server-bridge.ts`), and gzip headers.
+- **`error.ts`** — `ApiError` + discriminated `ApiErrorKind` via
+  `classifyHttpStatus`. Auth-kind errors auto-redirect through the
+  `QueryCache.onError` handler in `lib/query-client.ts` — no per-page
+  401 boilerplate.
+- **`routes.ts`** — typed URL builder.
+- **`polling.ts`** — `pollingOptions(ms)` returning `{ staleTime: ms/2,
+  refetchInterval: ms }`.
+
+### Server vs client components
+
+- **Server Components** for initial fetch (read directly from Prisma /
+  `apiFetch` in async server functions). Hydrated state seeds TanStack
+  Query.
+- **Client Components** for interactive surfaces (forms, modals,
+  real-time state).
+- **Server Actions** are used only for auth validation (CSRF, cookie
+  handling) — not for business data. Business mutations go through API
+  routes + TanStack mutations.
+
+## Observability
+
+### pino logger
+
+```ts
+import { log } from "@/server/logger";
+
+log.info("org:invite:create_or_refresh:ok", { byUserId, orgId, inviteId });
+log.warn("auth:otp:cooldown_blocked", { email, retryAfter });
+```
+
+Tag format: `domain:entity:action[:state]`, lowercase + underscores
+inside segments, `:` between. Tag is **first** so the reader scans
+events at a glance; structured data follows.
+
+Levels:
+
+- `debug` — verbose dev traces (stripped in prod)
+- `info` — normal business events
+- `warn` — anomalies that aren't errors (rate-limit hits, sweeps)
+- `error` — genuine bugs / 5xx
+
+Pino redacts sensitive fields by default in production
+(`email`/`password`/`token`/`key`/`secret`/`headers.cookie`/`headers.authorization`).
+
+### Sentry filtering
+
+Architectural, not list-based: `HttpError` + `ZodError` are converted
+by the HOFs before they reach Sentry. Only genuinely unhandled errors
+flow through `instrumentation.ts::onRequestError`.
+
+DSN unset → Sentry no-ops. `console.warn` at boot if
+`NODE_ENV=production` and DSN missing (single warning at startup, not
+per-request noise).
+
+## Database
+
+### Prisma 7 + Neon
+
+Generated client at `src/generated/prisma/`. Schema at
+`prisma/schema.prisma`. The production code path uses Neon's
+serverless adapter (`@prisma/adapter-neon`, HTTP/WebSocket transport)
+— that's what the demo runs on, what the deploy recipe assumes, what
+the `createPrismaClient()` factory wires in.
+
+Tests use `@prisma/adapter-pg` directly via Testcontainers — vanilla
+TCP Postgres in a throwaway container. See `tests/helpers/db.ts`.
+
+Self-hosters who don't want Neon: swap `PrismaNeon` → `PrismaPg` in
+`src/server/db/client.ts` (about 5 lines). The dashboard deliberately
+doesn't ship a runtime conditional for this — keeping the production
+code path single-line beats supporting a config switch nobody asked
+for.
+
+### Migration workflow
+
+Schema changes are committed as Prisma migrations under
+`prisma/migrations/<timestamp>_<name>/migration.sql`. The initial
+baseline is `prisma/migrations/20260426165206_init/`, generated from
+the live schema with `prisma migrate diff --from-empty --to-schema`
+when the project moved off the earlier `db push`-only workflow.
+
+Standard flow for a schema change:
+
+1. Edit `prisma/schema.prisma`.
+2. Run `npx prisma migrate dev --name <descriptive-name>` against
+   your dev DB. Prisma creates the migration file, applies it, and
+   regenerates the client.
+3. Commit both the schema change and the new migration directory in
+   the same PR.
+4. On deploy, the operator runs `npx prisma migrate deploy` against
+   production before the new code hits live traffic.
+
+`migrate deploy` is the non-interactive production variant — it
+replays unapplied migrations in order, never creates new ones, never
+prompts. Idempotent on an already up-to-date DB.
+
+Tests bypass migrations and use `prisma db push` against ephemeral
+Testcontainers databases (`tests/setup/global-setup.ts`). A throwaway
+DB doesn't need migration history; `db push` is faster.
+
+### Daily cleanup cron
+
+`/api/cron/daily-cleanup` runs at **03:30 UTC daily** (configured in
+`vercel.json`). Sweeps in this order:
+
+1. Expired invites (older than `INVITE_EXPIRY_DAYS = 3` days)
+2. Sessions older than `SESSION_RETENTION_DAYS = 90` days
+3. Orphaned tracked users (no live sessions for 90 days)
+4. Empty organisations (with the `activeOrganizationId` nullify pre-step
+   so users referencing them aren't orphaned)
+
+Bearer-auth via `CRON_SECRET` — Vercel injects the header
+automatically.
+
+## Test suite
+
+Three Vitest projects, split by infrastructure:
+
+- **`unit`** (`src/**/*.test.ts`) — pure functions, no Docker. Fastest.
+- **`contract`** (`tests/contract/**`) — OpenAPI snapshot drift +
+  route-auth-wrapper invariant. No Docker.
+- **`integration`** (`tests/integration/**`) — Testcontainers Postgres
+  17, template-clone per worker for fast parallel runs.
+
+Run individually:
+
+```bash
+npm run test:unit
+npm run test:contract
+npm run test:integration
+```
+
+Frontend tests are deliberately deferred. The contract and integration
+suites cover the API behaviour comprehensively; UI behaviour is
+verified on smoke-test by the author / contributor opening a PR.
+
+## Performance trade-offs
+
+### Marketing landing
+
+Statically generatable end-to-end. No per-request data, no session
+read on `/`, all CTAs render the same for every visitor (the proxy
+handles authed-user redirects for `/sign-in` / `/sign-up` if they
+click). Lighthouse desktop is 100/100/100/100; mobile is 100 a11y /
+BP / SEO.
+
+### Dashboard
+
+`dynamic = "force-dynamic"` on `(dashboard)/layout.tsx` — every
+dashboard page opts out of static prerender. These routes are
+auth-gated, session-dependent, and use `useSuspenseQuery` for client
+data. Marking the layout dynamic is the semantic truth of what these
+pages ARE, not a workaround.
+
+### Docs zone
+
+Rendered by Fumadocs UI — performance is on the framework. We bring
+content; they bring layout/typography/animations.
+

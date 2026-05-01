@@ -1,0 +1,130 @@
+---
+title: Quick start
+---
+
+<Callout type="info">
+  The deployed dashboard is a sandbox for evaluation. For production use, [self-host your own
+  instance](/documentation/self-host).
+</Callout>
+
+## 1. Sign up
+
+Open [`kharko-dozor.vercel.app`][demo] and click **Get started**. Sign in with Google, GitHub, email OTP, or a passkey. A "Personal Space" organisation is auto-created on first sign-in. You'll land in the dashboard with no projects yet.
+
+[demo]: https://kharko-dozor.vercel.app
+
+## 2. Create an API key
+
+**Avatar (top-right) → Manage organizations → Personal Space card (API keys) → Add key**. Give it any name (e.g. `Production`). The dashboard creates the key and shows the plaintext once.
+
+The key looks like `dp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`. Copy it now — plaintext is shown at creation time and via an explicit "show" action only. You can regenerate later if it leaks.
+
+<Callout type="info">
+  **Want to confirm the key works before installing the SDK?** Paste it into the [Playground](/documentation/playground)
+  and click around — a session lands in **Replays** within a minute. Skips the install / wire-up steps below for first
+  evaluation.
+</Callout>
+
+## 3. Install the SDK
+
+```bash tab="Vanilla JS"
+npm install @kharko/dozor
+```
+
+```bash tab="React"
+npm install @kharko/dozor @kharko/dozor-react
+```
+
+React users install both — `@kharko/dozor-react` is a thin Context wrapper around the core SDK.
+
+## 4. Wire it into your app
+
+Two values: `apiKey` (from step 2) and `endpoint`. While you're on the demo, the endpoint is `https://kharko-dozor.vercel.app/api/ingest`.
+
+### Vanilla JS
+
+```ts title="src/main.ts"
+import { Dozor } from "@kharko/dozor";
+
+Dozor.init({
+  apiKey: "dp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  endpoint: "https://kharko-dozor.vercel.app/api/ingest",
+});
+```
+
+Read `apiKey` from an env var rather than hard-coding — that way you can rotate the key in your deploy environment without touching source. `Dozor.init()` returns the recorder singleton and starts capturing; calling it again returns the same instance.
+
+### React
+
+```tsx title="app/layout.tsx"
+import { DozorProvider } from "@kharko/dozor-react";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <DozorProvider
+          options={{
+            apiKey: process.env.NEXT_PUBLIC_DOZOR_KEY!,
+            endpoint: "https://kharko-dozor.vercel.app/api/ingest",
+          }}
+        >
+          {children}
+        </DozorProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+```bash title=".env.local"
+NEXT_PUBLIC_DOZOR_KEY="dp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+The provider initialises on mount and starts capturing. From any descendant, `useDozor()` returns the recorder state + methods.
+
+## 5. Generate traffic
+
+Open your app and click around for 30–60 seconds. The SDK batches events and ships them every 60 seconds (or sooner — buffer fill, tab background, page navigation).
+
+By default: input values are masked with asterisks, console logs are captured, tab-hidden auto-pauses recording. Override via [SDK options](/documentation/sdk/dozor/init#behaviour) if needed.
+
+## 6. Identify the user (optional)
+
+Sessions are anonymous by default. Once your app knows who's logged in, call `dozor.identify()`:
+
+```ts tab="Vanilla JS"
+dozor.identify("user_123", {
+  email: "user@example.com",
+  name: "John Doe",
+  plan: "pro",
+});
+```
+
+```tsx tab="React"
+const dozor = useDozor();
+useEffect(() => {
+  if (user) dozor.identify(user.id, { email: user.email, name: user.name });
+}, [user, dozor]);
+```
+
+Identified sessions roll up under the user in the dashboard's **Users** tab.
+
+## 7. Watch the replay
+
+Back in the dashboard, click **Replays**. New row at the top with the session you just generated. Click in — replay player loads, scrub through your own clicks. That's the full loop.
+
+## What's next
+
+- **Keep evaluating on the demo** — invite a teammate to your org, try filters, experiment with privacy options.
+- **[Self-host](/documentation/self-host)** — ~20 minutes if you have a Vercel + Neon account. After deploy, point the SDK's `endpoint` at your own domain.
+
+## Common issues
+
+**Sessions aren't appearing.** Check DevTools → Network for `/api/ingest` requests. `401` → wrong / regenerated `apiKey`. `4xx` → response body's `{ kind, message }` tells you what's off. To rule out integration issues vs. a bad key, paste the same key into the [Playground](/documentation/playground) — if a session lands there, the issue is in your app's wire-up, not the dashboard or the key.
+
+**Ad-blocker blocking requests.** Browser extensions block known analytics domains. Use the [tunnel pattern](/documentation/sdk/tunnel) — proxy through your own server, requests look same-origin to the browser.
+
+**I want a team, not Personal Space.** **Avatar (top-right) → Manage organizations → Create a new organization** card, type a name, click **Create**. Then invite members by email — they get an OTP-protected link valid for 3 days.
+
+**Session looks short / cut off.** Long sessions split automatically on navigation or extended idle gaps. Each slice is independently replayable. If you see a tiny fragment, check that you actually scrolled / clicked — pure idle time gets coalesced.

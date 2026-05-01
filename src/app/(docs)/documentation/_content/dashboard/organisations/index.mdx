@@ -1,0 +1,59 @@
+---
+title: Org types
+---
+
+Every account starts with one auto-created **Personal Space**
+organisation on first sign-in. From there you can create more orgs
+(one for each team, client, or project group you work on).
+
+Orgs are the unit of:
+
+- **Membership** — every member belongs to one or more orgs with a role.
+- **Projects** — each project lives inside exactly one org.
+- **Active context** — the dashboard always shows data for one org at
+  a time (the "active" org). Switch via the avatar dropdown's sub-menu.
+
+The active org is persisted server-side on your
+`User.activeOrganizationId` and JWT-cached, so reloading or signing
+in elsewhere keeps you in the same org until you switch.
+
+## Org types
+
+| Type | Created when | Properties |
+| --- | --- | --- |
+| `PERSONAL` | Auto on first sign-in (Auth.js `createUser` event) | One per user, can't be left or deleted, can't have additional members invited. It's the fallback context every signed-in user must always have. |
+| `TEAM` | Manually via **Avatar → Manage organizations → Create a new organization** | Multiple per user, supports invites + role changes, can be deleted by an OWNER. |
+
+## Switching orgs
+
+The avatar dropdown's "Switch organisation" sub-menu lists every org
+you're a member of. Picking one fires `PATCH /api/organizations/active`
+which:
+
+1. Updates `User.activeOrganizationId` in the database
+2. Refreshes the JWT (the active org id is JWT-cached for proxy reads)
+3. Re-renders the dashboard against the new org's data
+
+The avatar dropdown shows the picked org as active immediately (via
+`useOptimistic`) so the checkmark + identity card don't wait for the
+JWT round-trip.
+
+## Settings
+
+**Manage organizations** is the hub for everything org-level. Each
+org you belong to gets a card with three sections:
+
+- **Org settings** — name + avatar (DiceBear `glass` style,
+  deterministic from org id), and the per-project default
+  `defaultDisplayNameTraitKey`.
+- **API keys** — one row per project: label, masked key, last-used
+  timestamp. Inline actions (copy key) and modal actions (rename,
+  regenerate, set display-name trait, delete) are gated by your role.
+- **Members + invites** — current members with their roles, pending
+  invites with status badges, the invite form (OWNER-only).
+
+A red badge with a count appears on the avatar dropdown's **Manage
+organizations** item when someone has invited you to an org and you
+haven't accepted or declined yet. The number is the count of
+outstanding invites addressed to your email.
+

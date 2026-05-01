@@ -1,0 +1,124 @@
+---
+title: Player & scrubbing
+---
+
+Click any session row in the [Replays list](/documentation/dashboard/replays)
+to open the player at `/replays/{sessionId}`. The page stacks
+vertically:
+
+1. **Compact header** — badges with session id, user, project,
+   duration, screen size, date.
+2. **Slice picker** (only if the session has more than one slice) —
+   horizontal row of buttons, click to jump.
+3. **Viewport** — rrweb player. Optional console panel attaches as a
+   side column when you toggle it on.
+4. **Control bar** — playback controls + the seek bar.
+
+## Compact header
+
+A row of small badges above the player. Each badge shows one piece of
+session metadata via an icon + value:
+
+- **Session id** — the SDK-side `externalId` (UUID) with a copy button.
+- **User** — the identified user (if any), linked to their detail page
+  at `/users/[id]`.
+- **Project** — project label.
+- **Duration** — `MM:SS` total.
+- **Screen size** — e.g. `1920×1080`.
+- **Date** — when the session was created.
+
+A separate **Reload** button (orange, pulsing) appears in the header
+when background polling detects new slices, events, or that the
+session has just ended. Clicking it remounts the player against the
+fresh snapshot — playback resets to `t=0`. The button stays hidden
+when there's nothing to act on, so the orange signal carries weight
+when it appears.
+
+## Slices
+
+Long sessions are split into slices automatically. The reason for
+each split is one of:
+
+- **`init`** — first slice on session start.
+- **`navigation`** — SPA route change or hard navigation.
+- **`idle`** — extended idle gap with no DOM mutations.
+
+The slice picker renders one button per slice with an icon for the
+reason, a truncated pathname, and the slice's duration. Hover for the
+full breakdown (reason / pathname / duration / event count). Clicking
+a slice swaps the player to that slice's events and resets `t=0`
+within it.
+
+This makes long sessions tractable: a 30-minute session split into 5
+slices means each slice is a standalone replay — no scrub from the
+beginning to find a moment.
+
+## Lazy event loading
+
+The session-detail endpoint
+(`GET /api/sessions/{sessionId}`) returns metadata + the slice list
+**without events**. When a slice becomes active, the player fires
+`GET /api/sessions/{sessionId}/slices/{sliceIndex}/events` and feeds
+the result to rrweb's `Replayer`.
+
+Two reasons:
+
+- **Long sessions don't bloat the initial load** — events for slices
+  you never click are never fetched.
+- **Cache friendliness** — each slice's event stream is its own
+  TanStack query key; revisiting a slice is a no-op fetch.
+
+Legacy pre-slice sessions (recordings from older SDK builds) inline
+their full event stream in the detail response, so old recordings
+still play. The player branches on slice presence at render time.
+
+## Control bar
+
+The bar below the viewport carries:
+
+- **Play / Pause** — toggle playback of the active slice.
+- **−5s** / **+5s** — seek backward / forward by 5 seconds.
+- **Speed** — popover with `0.5×` / `1×` / `2×`.
+- **Skip idle** (toggle) — fast-forward through inactive periods inside
+  a slice.
+- **Auto play next** (toggle) — when the active slice ends, the player
+  advances to the next slice automatically. Off by default.
+- **Console** (toggle) — opens / closes the console-output side panel
+  on the right of the viewport.
+- **Seek bar** — scrubbable progress bar across the active slice's
+  duration.
+
+There are no keyboard shortcuts.
+
+## Console panel
+
+Toggling **Console** in the bar opens a 320 px-wide column to the right
+of the viewport. It lists every `console.log/warn/error/info/debug`
+call captured during the session, filtered to entries up to the
+current playback time. The list follows playback when you're scrolled
+to the bottom; scrolling up to inspect an earlier log pauses the
+auto-follow until you scroll back down.
+
+Console capture is on by default in the SDK (`recordConsole: true`)
+and can be opted out per-deployment.
+
+## Sandboxed iframe
+
+The recorded page DOM is replayed inside a sandboxed iframe owned by
+rrweb's `Replayer`. The dashboard's CSS, scripts, and cookies stay
+isolated from the recording — anything inline in the recorded page
+can't reach into the dashboard's chrome.
+
+This is load-bearing for security. See
+[Resources → Replay player](/documentation/resources/replay-player)
+for the sandbox model + how DOM mutations are reconstructed.
+
+## Deleting a session
+
+Not exposed in the player — only from the [Replays list](/documentation/dashboard/replays#deleting-a-session)
+via the row's kebab menu (OWNER / ADMIN).
+
+## See also
+
+- [Resources → Replay player](/documentation/resources/replay-player) — sandbox internals + rrweb event reconstruction.
+- [Resources → Data model](/documentation/resources/data-model) — the `Session` / `Slice` / `Event` schema.

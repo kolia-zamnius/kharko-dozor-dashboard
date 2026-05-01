@@ -1,0 +1,119 @@
+---
+title: How it works
+---
+
+A short walkthrough of what actually happens when the SDK is wired
+into your product. Aimed at the engineer evaluating "does this fit
+my mental model?" before committing to install or self-host.
+
+For the under-the-hood code-level deep-dive, see
+[Resources → Ingest pipeline](/documentation/resources/ingest-pipeline).
+
+## The two pieces
+
+Two sides talk over one HTTP endpoint:
+
+- **Browser side** — your product imports `@kharko/dozor`. It uses
+  rrweb to capture DOM mutations, mouse positions, scrolls, and input
+  events.
+- **Server side** — this codebase. It exposes `POST /api/ingest`,
+  validates the batch, stores it in Postgres, and serves the Replay UI.
+
+Between them: gzipped JSON over HTTPS. No broker, no queue, no
+third-party processor — you own both ends.
+
+## What the SDK does
+
+When you call `Dozor.init({ apiKey, endpoint })` in your app:
+
+1. **rrweb starts capturing** — DOM mutations (every node added,
+   removed, attribute changed), mouse positions, scroll offsets,
+   input events.
+2. **Events accumulate in a buffer** — in-memory array, capped at
+   10,000 events.
+3. **Slice markers track navigation** — every SPA route change or
+   extended idle gap creates a "slice" boundary so long sessions can
+   be replayed in chunks.
+4. **Privacy filters apply at source** — fields with `data-dozor-mask`
+   have their text replaced with asterisks **before** the event is
+   buffered. Masked content never enters the network.
+5. **Periodic flush** — every 60 s (or sooner: tab background, page
+   unload, buffer fill), the SDK gzips the buffer and POSTs to your
+   ingest endpoint.
+
+See [SDK reference](/documentation/sdk) for the per-package detail.
+
+## What the dashboard does on receive
+
+A batch arrives at `POST /api/ingest`:
+
+1. **Auth check** — `withPublicKey` HOF validates the
+   `X-Dozor-Public-Key` header against the `Project.key` column.
+   Unknown key → 401.
+2. **Decompress + validate** — gzip is unwrapped if present, JSON is
+   parsed, the payload is validated against a Zod schema. Malformed
+   batch → 400.
+3. **Upsert the session row** — keyed on `(projectId, externalId)`.
+   The same `sessionId` from the SDK upserts to the same row, so
+   batches for one session converge.
+4. **Upsert slice markers** — keyed on `(sessionId, index)`.
+5. **Bulk-insert events** — single `prisma.event.createMany`. Events
+   are written with their `sliceIndex` so the replay player can scope
+   queries per slice.
+6. **204 No Content** — empty response, the SDK proceeds to the next
+   batch.
+
+The whole pipeline is **synchronous Postgres writes** — no queue, no
+worker. Simplicity over throughput; if ingest volume grows past
+single-request capacity, the canonical next step is a Vercel-side
+queue (Inngest, Trigger.dev) plus a worker that batches rows.
+
+## What happens when you watch a replay
+
+Open the dashboard, click a session row:
+
+1. **`GET /api/sessions/{id}`** — metadata + slice list. Events are
+   **not** in this response.
+2. **Click a slice** → `GET /api/sessions/{id}/slices/{idx}/events`
+   fetches just that slice's event stream.
+3. **rrweb's player** consumes the event stream inside a sandboxed
+   iframe — DOM mutations are re-applied to a fresh document, mouse
+   moves and scrolls are replayed, the visual state of the user's
+   browser at any point in time is reconstructed pixel-for-pixel.
+
+The sandbox is load-bearing for security: the recorded page's scripts
+can't execute in the dashboard's chrome. See
+[Resources → Replay player](/documentation/resources/replay-player).
+
+## Identity layer
+
+Calling `dozor.identify(userId, traits)` in the SDK:
+
+1. The next ingest batch carries `userIdentity: { userId, traits }`
+   in its metadata.
+2. The dashboard upserts a `TrackedUser` keyed on
+   `(projectId, userId)` and links the session to it.
+3. The user shows up in the **Users** tab; all their sessions roll up
+   under one row.
+
+`traits` is free-form — anything you'd want to filter or display
+later (email, plan, signup date, A/B variant). Stored as JSON in
+Prisma, indexed only by `(projectId, userId)`.
+
+## Two reads worth knowing
+
+- **The SDK is one of two npm packages** — `@kharko/dozor` (vanilla)
+  and `@kharko/dozor-react` (React Provider + Hook on top of vanilla).
+  Both at [kolia-zamnius/kharko-dozor-packages][sdk-repo].
+- **The dashboard is what you self-host** — clone
+  [`kharko-dozor-dashboard`][dashboard-repo], deploy to Vercel + Neon
+  (or any Postgres), point the SDK at your domain. Every byte of
+  session data lives on your database.
+
+[sdk-repo]: https://github.com/kolia-zamnius/kharko-dozor-packages
+[dashboard-repo]: https://github.com/kolia-zamnius/kharko-dozor-dashboard
+
+## See also
+
+- [Resources → Ingest pipeline](/documentation/resources/ingest-pipeline) — the same flow above, code-level deep-dive.
+- [Resources → Data model](/documentation/resources/data-model) — every table and how they relate.

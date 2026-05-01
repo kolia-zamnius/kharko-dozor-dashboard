@@ -1,0 +1,134 @@
+---
+title: Tunnel pattern
+---
+
+Browser ad-blockers and privacy extensions can block requests to
+known analytics domains. A **tunnel** routes SDK traffic through your
+own server, making requests indistinguishable from your app's own
+API calls.
+
+```
+Browser → /api/monitor (your server, same-origin) → Dozor ingest endpoint
+          ↑ invisible to blockers                    ↑ server-to-server
+```
+
+Two benefits:
+
+- **Ad-blocker bypass** — same-origin traffic isn't on any blocklist
+- **No CORS preflight** — browsers skip the `OPTIONS` round-trip on
+  same-origin POST
+
+## 1. Add a proxy route on your server
+
+The proxy receives the SDK's POST and forwards it to the Dozor ingest
+URL with all relevant headers preserved (api key, content type,
+content encoding for gzipped batches).
+
+### Next.js (App Router)
+
+```ts title="app/api/monitor/route.ts"
+const INGEST_URL = "https://your-dashboard.com/api/ingest";
+
+export async function POST(req: Request) {
+  const body = await req.arrayBuffer();
+
+  const headers: Record<string, string> = {
+    "Content-Type": req.headers.get("content-type") ?? "application/json",
+  };
+
+  const encoding = req.headers.get("content-encoding");
+  if (encoding) headers["Content-Encoding"] = encoding;
+
+  const apiKey = req.headers.get("x-dozor-public-key");
+  if (apiKey) headers["X-Dozor-Public-Key"] = apiKey;
+
+  const res = await fetch(INGEST_URL, { method: "POST", headers, body });
+  return new Response(null, { status: res.status });
+}
+```
+
+### Next.js — `rewrites` (zero code)
+
+If you don't need any custom logic in the proxy, the simplest tunnel
+is a config-only rewrite:
+
+```ts title="next.config.ts"
+export default {
+  async rewrites() {
+    return [
+      { source: "/api/monitor", destination: "https://your-dashboard.com/api/ingest" },
+    ];
+  },
+};
+```
+
+### Express
+
+```ts title="src/routes/monitor.ts"
+import express from "express";
+
+const INGEST_URL = "https://your-dashboard.com/api/ingest";
+
+app.post("/api/monitor", express.raw({ type: "*/*" }), async (req, res) => {
+  const headers: Record<string, string> = {
+    "Content-Type": req.headers["content-type"] ?? "application/json",
+  };
+
+  const encoding = req.headers["content-encoding"];
+  if (encoding) headers["Content-Encoding"] = encoding;
+
+  const apiKey = req.headers["x-dozor-public-key"];
+  if (apiKey) headers["X-Dozor-Public-Key"] = apiKey;
+
+  const response = await fetch(INGEST_URL, {
+    method: "POST",
+    headers,
+    body: req.body,
+  });
+  res.status(response.status).end();
+});
+```
+
+## 2. Point the SDK at your proxy
+
+Set `endpoint` to the same-origin path:
+
+```ts title="src/lib/dozor.ts"
+import { Dozor } from "@kharko/dozor";
+
+export const dozor = Dozor.init({
+  apiKey: "dp_your_key",
+  endpoint: "/api/monitor",
+});
+```
+
+All SDK traffic — event batches, keepalive flushes — is now
+same-origin. Ad-blockers can't tell it apart from your app's own API
+calls.
+
+## When you don't need a tunnel
+
+If your audience doesn't run ad-blockers (internal tools, B2B
+dashboards, admin panels), the direct cross-origin POST is one less
+moving part. The dashboard's `/api/ingest` endpoint already returns
+permissive CORS headers, so it works from any origin out of the box.
+
+## Operational considerations
+
+- **The proxy adds one network hop** — same-region added latency is
+  small relative to the SDK's flush cadence (default 60 s), so the
+  user-visible cost is negligible. Cross-region adds more — measure
+  on your own deploy if it matters.
+- **Forwarded headers** — preserve `Content-Type`, `Content-Encoding`,
+  and `X-Dozor-Public-Key`. Drop everything else; the dashboard's
+  ingest doesn't need cookies or auth headers from the user's session.
+- **Bandwidth** — the proxy server pays egress for both the inbound
+  client batch and the outbound forwarding. For high-traffic apps this
+  is real cost — measure it on your provider.
+- **Audit logs** — the proxy is a natural place to drop a counter
+  (`{ projectId, batchSize }`) into your own observability if you
+  want SDK-level metrics without parsing the dashboard's logs.
+
+## See also
+
+- [Resources → Ingest pipeline](/documentation/resources/ingest-pipeline) — what the dashboard does with the batch once it arrives.

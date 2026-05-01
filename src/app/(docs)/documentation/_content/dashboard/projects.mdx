@@ -1,0 +1,96 @@
+---
+title: Projects & API keys
+---
+
+A **project** is a single recording target. One project = one
+regeneratable API key — there's no separate "API key" entity, the
+project's `key` field IS the credential.
+
+Practical implication: rotating a key means regenerating it on the
+project. The old key stops working immediately, the new one takes its
+place — no grace window, no two-keys-active phase.
+
+## Creating a project
+
+Open **Manage organizations**, find an org card you OWN, scroll to the
+**API keys** section, click **+ Add key**. Give the key a label (e.g.
+`Production`) — the label only shows in the dashboard UI, the SDK
+never sees it.
+
+The dashboard creates the project + key and shows the **plaintext
+key** for the first time.
+
+Format: `dp_` + 32 hex characters (e.g.
+`dp_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6`).
+
+<Callout type="info">
+  **Quickest way to confirm a key works:** paste it into the
+  [Playground](/documentation/playground) and click around. A session lands in **Replays** within a minute — no SDK
+  install or app changes needed.
+</Callout>
+
+## Regenerating a key
+
+OWNER-only. Click the regenerate icon on the key row → confirmation
+dialog → click **Regenerate** → new key shown once. SDK clients still
+holding the old key start getting `401`s on their next batch.
+
+What the SDK does on `401`:
+
+- **No retry** — the SDK treats client errors (`4xx`) as terminal and
+  drops the batch immediately. (Retries with exponential backoff are
+  reserved for `5xx` and network timeouts.)
+- **No surfacing in production** — the SDK only logs through
+  `console.*` when initialised with `debug: true`; default is silent.
+
+Net effect: in-flight batches at the moment of regeneration are lost.
+Subsequent batches keep returning `401` until clients are redeployed
+with the new key. **Rotate during low-traffic hours** if data loss
+matters.
+
+## Setting the default display-name trait key
+
+ADMIN+ action. Lives on the tracked-user detail page — open any user
+under **Users**, click their display name to open the modal, expand
+**Project default**. Set a trait key (e.g. `email`) and every tracked
+user in the project with `traits.email` shows that value in lists by
+default.
+
+This is step 3 of the 4-step display-name resolver chain — see
+[Tracked users → Display-name overrides](/documentation/dashboard/tracked-users/display-name)
+for the full chain. Clearing the field resets to unset (resolver falls
+through to `externalId`).
+
+## Deleting a project
+
+OWNER-only. Click the trash icon → confirmation dialog → **Delete**.
+The cascade is broad and irreversible:
+
+- The project's `Session` rows go (and with them the recordings:
+  `Slice` + `Event`)
+- The project's `TrackedUser` rows go
+
+No soft delete. Full cascade graph in
+[Data model](/documentation/resources/data-model).
+
+## Key handling
+
+The plaintext key leaves the server at exactly **two** endpoints —
+`GET /api/projects/{id}/key` (copy-button click) and
+`POST /api/projects/{id}/regenerate-key` (rotate). Everywhere else the
+key is masked (`dp_a1b2••••••••f7e8`).
+
+The full trust-boundary contract — caching, serialization, brand
+types, redaction — is in
+[Resources → Security → API key handling](/documentation/resources/security#api-key-handling).
+You don't need it to use the dashboard; it matters when contributing
+to the codebase.
+
+## See also
+
+- [Resources → Security → API key handling](/documentation/resources/security#api-key-handling)
+  — storage, redaction, the trust-boundary contract.
+- [Resources → Authentication](/documentation/resources/authentication)
+  — the `withPublicKey` HOF that validates every SDK request.
+- [SDK → Init & options](/documentation/sdk/dozor/init)
+  — how the SDK loads the key into the recorder.

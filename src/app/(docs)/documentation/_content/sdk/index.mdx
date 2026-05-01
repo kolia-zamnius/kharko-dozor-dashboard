@@ -1,0 +1,22 @@
+---
+title: Pick a package
+---
+
+The browser SDK ships in two packages:
+
+- **[`@kharko/dozor`](/documentation/sdk/dozor)** — framework-agnostic core. Captures rrweb events, batches and compresses them, ships to your ingest endpoint. Works in any browser.
+- **[`@kharko/dozor-react`](/documentation/sdk/dozor-react)** — React Context wrapper. Adds `<DozorProvider>` and `useDozor()` for reactive component access.
+
+Both are MIT-licensed at [`kolia-zamnius/kharko-dozor-packages`](https://github.com/kolia-zamnius/kharko-dozor-packages).
+
+| Stack | Install |
+| --- | --- |
+| Vanilla JS, Vue, Svelte, Solid, plain HTML | `npm install @kharko/dozor` |
+| React | `npm install @kharko/dozor @kharko/dozor-react` |
+
+For the five-minute integration walkthrough see [Quick start](/documentation/quick-start). The pages under this section are the deeper reference for once you're past the initial wiring.
+
+<Callout type="info">
+  **Want to see the SDK work end-to-end before installing it?** The [Playground](/documentation/playground) runs the
+  same SDK with a key you paste — recorder, batching, ingest, replay all live, no `npm install` required.
+</Callout>

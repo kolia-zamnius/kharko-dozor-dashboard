@@ -1,0 +1,166 @@
+---
+title: Recipes
+---
+
+Patterns that come up in real integrations. All of these are built on
+the lifecycle and hold/release primitives — see
+[Lifecycle](/documentation/sdk/dozor/lifecycle) for the underlying
+state machine.
+
+## Conditional recording
+
+Record a session, but only ship it if the user does something
+valuable. If they don't, drop the whole thing.
+
+```ts title="src/lib/dozor.ts"
+import { Dozor } from "@kharko/dozor";
+
+export const dozor = Dozor.init({
+  apiKey: "dp_your_key",
+  endpoint: "https://your-dashboard.com/api/ingest",
+  hold: true, // recording active, nothing shipped yet
+});
+
+// Elsewhere, when the user finishes (or abandons) the flow:
+// if (userCompletedPurchase) dozor.release();
+// else                       dozor.cancel();
+```
+
+In React, with `useDozor` — mount the provider with `hold: true`,
+release / cancel from a leaf component:
+
+```tsx title="app/layout.tsx"
+import { DozorProvider } from "@kharko/dozor-react";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <DozorProvider
+      options={{
+        apiKey: process.env.NEXT_PUBLIC_DOZOR_KEY!,
+        endpoint: "https://your-dashboard.com/api/ingest",
+        hold: true,
+      }}
+    >
+      {children}
+    </DozorProvider>
+  );
+}
+```
+
+```tsx title="components/checkout-flow.tsx"
+"use client";
+
+import { useDozor } from "@kharko/dozor-react";
+
+export function CheckoutFlow({ onSubmit }: { onSubmit: () => void }) {
+  const dozor = useDozor();
+  return (
+    <>
+      <button
+        onClick={() => {
+          onSubmit();
+          dozor.release();
+        }}
+      >
+        Complete purchase
+      </button>
+      <button onClick={() => dozor.cancel()}>Leave</button>
+    </>
+  );
+}
+```
+
+This pattern is what `hold` was designed for — recording captures
+"what happened" but you commit only when "what happened" turns out to
+be worth keeping.
+
+## Network-aware buffering
+
+Stop sending during heavy network activity so the SDK doesn't compete
+with business-critical requests:
+
+```ts title="src/lib/checkout.ts"
+import { dozor } from "./dozor"; // your initialised singleton
+
+export async function runCheckout(heavyApiCalls: Promise<unknown>[]) {
+  dozor.hold();
+  await Promise.all(heavyApiCalls);
+  dozor.release(); // flush events that accumulated during the hold
+}
+```
+
+The recorder keeps capturing during the hold — no events are lost,
+they just don't ship until you release.
+
+## Deferred start
+
+Don't record until the user enters a specific surface:
+
+```ts title="src/lib/dozor.ts"
+import { Dozor } from "@kharko/dozor";
+
+export const dozor = Dozor.init({
+  apiKey: "dp_your_key",
+  endpoint: "https://your-dashboard.com/api/ingest",
+  autoStart: false,
+});
+
+// Later, when the user enters the surface you want to record:
+// dozor.start();
+```
+
+Difference from `hold: true`:
+
+- `autoStart: false` — recorder is **idle**, no rrweb listeners attached
+- `hold: true` — recorder is **recording**, rrweb capturing, just not shipping
+
+Pick `autoStart: false` when you don't want the rrweb overhead until
+later. Pick `hold: true` when you want events from now but might
+abandon them.
+
+## Pause during sensitive input
+
+Pair `pause()` / `resume()` with focus / blur on credit-card or
+KYC fields for belt-and-braces protection beyond
+`privacyMaskInputs`. Full snippet (vanilla + React) lives in
+[Privacy & masking → Manually pause around a sensitive flow](/documentation/sdk/privacy#manually-pause-around-a-sensitive-flow).
+
+## Tag the session with a feature flag variant
+
+Common A/B testing pattern — link the session to whichever variant
+the user saw:
+
+```ts
+const variant = await getVariant("checkout-redesign");
+
+dozor.identify(currentUserId, {
+  email: currentUserEmail,
+  experiment: "checkout-redesign",
+  variant,
+});
+```
+
+The variant lands in `traits[experiment]` and can be filtered in the
+dashboard's tracked-users list.
+
+## Discard buffered events on logout
+
+When a user logs out and you don't want events captured under their
+identity to ship:
+
+```ts title="src/lib/auth-events.ts"
+import { dozor } from "./dozor";
+
+export async function onLogout() {
+  dozor.release({ discard: true }); // drop anything held in the buffer
+  dozor.cancel();                   // delete the session row server-side, return to idle
+  dozor.start();                    // start a fresh anonymous session against a new sessionId
+}
+```
+
+`stop()` would have flushed everything; `cancel()` is the destructive
+counterpart that explicitly drops the session. Both return the
+recorder to `idle` — `start()` then mints a new session. Calling
+`Dozor.init()` again would be a no-op, since the singleton is
+already initialised.
+

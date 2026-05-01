@@ -1,0 +1,146 @@
+---
+title: Authentication & sessions
+---
+
+The dashboard uses Auth.js v5 with **JWT sessions** (no `Session`
+table). The token is signed with `AUTH_SECRET` (rotated by the
+operator) and carries everything the proxy needs to authorise
+requests without a DB hit.
+
+## Two configs
+
+The auth config is split across two files because the **proxy runs on
+edge runtime** which can't import the full Prisma client:
+
+- **`src/lib/auth/config.ts`** — edge-safe options used by the proxy.
+  Just enough to read and verify the JWT.
+- **`src/server/auth/index.ts`** — full composition root used by the
+  API routes. Adapter, providers, callbacks, events. Split across
+  sibling files: `adapter.ts`, `providers.ts`, `callbacks.ts`,
+  `events.ts`.
+
+## Session shape
+
+```ts
+type Session = {
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string;
+    locale: Locale;            // mirrored from User.locale
+    activeOrganizationId: string | null;
+  };
+  expires: string;
+};
+```
+
+Three fields beyond the Auth.js defaults:
+
+- **`locale`** — projected from `User.locale` via the JWT callback.
+  The proxy reads it on every request to enforce the locale priority
+  chain.
+- **`activeOrganizationId`** — JWT-cached so the dashboard's
+  active-org context is one decoded JWT away, not a DB lookup. The
+  JWT callback validates membership on sign-in / `session.update()`
+  so a stale pointer to a deleted org gets caught.
+- **`id`** — the user id is in the token; Auth.js's session callback
+  surfaces it.
+
+## Sign-in methods
+
+Three primary (email-verifying) methods + one add-on. The boot-time
+refine in `src/server/env.ts` asserts at least one primary is
+configured; the FE conditionally renders only the methods this
+instance has wired (see `src/server/auth/enabled-providers.ts`).
+
+| Method | Provider | Storage | Role |
+| --- | --- | --- | --- |
+| Google OAuth | `next-auth/providers/google` | `Account` row | Primary |
+| GitHub OAuth | `next-auth/providers/github` | `Account` row | Primary |
+| Email OTP | `next-auth/providers/nodemailer` over Gmail SMTP | One-time-token `VerificationToken` | Primary |
+| Passkey (WebAuthn) | `next-auth/providers/passkey` (`@simplewebauthn` underneath) | `Authenticator` row | Add-on (registered after a primary-method sign-in) |
+
+Mix-and-match — a user can link any combination. The
+last-login-method guard prevents accidental lockout when unlinking;
+see [User settings → Connected accounts](/documentation/dashboard/profile#authentication--connected-accounts).
+
+## Custom adapter
+
+The Prisma adapter is wrapped to handle:
+
+- **`createUser` event** — auto-creates a Personal Space organisation
+  + OWNER membership for every new user. Without this, a fresh
+  sign-in lands on a dashboard with no org context.
+- **`User.activeOrganizationId` validation** — JWT callback checks
+  membership before passing the cached value through. Stale pointer
+  → fall back to the user's oldest org.
+- **JWT projection** — `User.locale` reads the DB once on sign-in /
+  `session.update()` and lands on `token.locale`; the session
+  callback narrows it into `session.user.locale`.
+
+## Locale routing
+
+`localePrefix: "as-needed"` + `localeDetection: false`. The proxy
+holds the full priority chain:
+
+1. **URL prefix** (`/uk/users` → `uk`) — explicit in URL wins
+2. **`User.locale`** (DB), wins for authed users
+3. **`DEFAULT_LOCALE`** fallback for anon users without URL prefix
+
+Disabling `localeDetection` is **load-bearing** — without it,
+next-intl reads `Accept-Language` / cookies and creates redirect
+loops with the proxy's authed-user locale-flip. The contract is "URL
+is the single source of truth, the proxy enforces priority".
+
+## Proxy guard chain
+
+Every request hits `src/proxy.ts` first:
+
+1. **Bypass** — `/api/*`, `/documentation/*`, `/playground/*`,
+   `/llms.txt` skip the chain entirely. API routes have their own HOF
+   auth; the docs zone is English-only and outside the locale
+   pipeline; the playground is deliberately public (paste-key-and-test).
+2. **Locale enforcement** — apply the priority chain, redirect if the
+   URL doesn't match (`/users` for an authed user with `User.locale =
+   "uk"` → `/uk/users`).
+3. **Auth check** — protected paths (`/users`, `/replays`, `/settings`)
+   require an authed session. Anonymous → redirect to
+   `/sign-in?callbackUrl=...`.
+4. **Auth-pages branch** — authed users hitting `/sign-in` /
+   `/sign-up` get redirected to `/users` (their post-sign-in landing).
+
+The chain is intentionally one file with linear top-to-bottom
+control flow — easier to audit than middleware composition.
+
+## Rate limits
+
+### OTP
+
+Two thresholds, both per email address:
+
+| Limit | Value | Source |
+| --- | --- | --- |
+| `OTP_DAILY_LIMIT` | 5 codes / day | `src/lib/auth/otp.constants.ts` |
+| `OTP_COOLDOWN_SECONDS` | 60 seconds between sends | `src/lib/auth/otp.constants.ts` |
+
+Daily caps reset at UTC midnight via the `(email, date)` unique index
+on `OtpRateLimit` — no explicit cleanup. When a user is blocked, the
+API returns a structured `{ kind: "rate_limit", retryAfter: <seconds> }`
+and the sign-in form displays the cooldown directly.
+
+### Invites
+
+Per-sender (signed-in user), counted across all orgs they admin:
+
+| Limit | Value |
+| --- | --- |
+| `INVITE_EXPIRY_DAYS` | 3 days |
+| `INVITE_DAILY_LIMIT` | 100 invites / day |
+
+Sized below the shared Gmail SMTP free quota. A compromised OWNER
+session can't fan out unlimited invites.
+
+## See also
+
+- [Dashboard → User settings](/documentation/dashboard/profile) — user-facing surfaces of the auth flows.

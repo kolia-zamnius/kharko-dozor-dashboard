@@ -1,0 +1,105 @@
+---
+title: Edge cases & browser support
+---
+
+The SDK is designed to be defensive — no method throws unexpectedly,
+no-op'd calls return cleanly, and transport failures retry on a
+predictable schedule. This page is the reference matrix for all of
+that.
+
+## No-op matrix
+
+Every method has a "do nothing" path for invalid state, by design.
+Apps don't have to track which lifecycle phase the recorder is in
+before calling.
+
+| Call | When | What happens |
+| --- | --- | --- |
+| `Dozor.init(...)` | Already initialised | Returns the existing singleton, ignores new options |
+| `start()` | Not in `idle` (already recording or paused) | No-op |
+| `pause()` | Not recording | No-op |
+| `resume()` | Not paused | No-op |
+| `stop()` / `cancel()` | Already in `idle` | No-op |
+| `hold()` | Already held | No-op |
+| `release()` | Not held | No-op |
+
+## Lifecycle interactions
+
+| Scenario | Behaviour |
+| --- | --- |
+| `stop()` while held | Flushes everything (including held events), tells the server the session is over, returns to `idle`. **No data loss.** Held flag is reset. |
+| `cancel()` while held | Drops the buffer without flushing, deletes the session row server-side, returns to `idle`. Held flag is reset. |
+| Tab hidden + `pauseOnHidden: true` | Auto-pause with `pauseReason: "visibility"`; auto-resume on visibility return. |
+| Tab hidden after manual `pause()` | The manual pause carries `pauseReason: "user"`; auto-resume only triggers for `"visibility"` pauses, so the manual pause survives the tab switch. |
+| Tab hidden + `pauseOnHidden: false` | No auto-pause; recording continues in background tab. |
+| `identify()` after metadata sent | Triggers metadata re-send on next flush — server picks up the new identity. |
+
+## Page unload behaviour
+
+| Scenario | Behaviour |
+| --- | --- |
+| Page unload while recording | Final events sent via `fetch()` with `keepalive: true`. Browser ships the request even after navigation. |
+| Page unload while paused | No final flush — paused means "don't transport". |
+| Page unload while held | Held events are **not** sent. The hold semantics apply through unload. |
+
+## Storage fallbacks
+
+| Scenario | Behaviour |
+| --- | --- |
+| `sessionStorage` unavailable (private mode, embedded iframe, disabled by user) | Session ID generated in memory only — does **not** persist across reloads. Each reload starts a fresh session. |
+| `CompressionStream` unavailable (older Safari, older Firefox) | Falls back to uncompressed JSON. Bandwidth higher (gzip ratios on rrweb event streams are typically large), everything else identical. |
+
+## Network + retry semantics
+
+| Server response | SDK behaviour |
+| --- | --- |
+| `204 No Content` | Success — proceed to next batch. |
+| `4xx` | **No retry.** Invalid key (`401`) or bad payload (`400`) — retry won't help, drop the batch. |
+| `5xx` or network error | Retried up to **3 times** with exponential backoff (1s → 2s → 4s). |
+| All retries exhausted | Events re-queued to buffer, retried on the next flush cycle. |
+| Buffer cap reached during outage | Buffer is capped at **10,000 events**; oldest dropped first. |
+| Fetch timeout (default `10s`) | Counts as network error — triggers retry. |
+
+The `fetchTimeout` option does **not** apply to page-unload
+`keepalive` flushes — those are fire-and-forget.
+
+## Browser support
+
+Works in any modern browser supporting:
+
+- [`MutationObserver`](https://caniuse.com/mutationobserver) — rrweb requirement
+- [`crypto.randomUUID()`](https://caniuse.com/mdn-api_crypto_randomuuid) — session ID generation
+- [`fetch()`](https://caniuse.com/fetch) with `keepalive` — unload-time flush
+- [`CompressionStream`](https://caniuse.com/mdn-api_compressionstream) — optional, falls back to uncompressed
+
+In practical terms: **Chrome 89+**, **Edge 89+**, **Firefox 113+**,
+**Safari 16.4+**.
+
+The version floor is set by `CompressionStream` (Safari 16.4 was the
+last to ship it). Without it the SDK still works, just sends
+uncompressed JSON.
+
+## TypeScript types
+
+The package exports types for backend and tooling code that needs to
+understand SDK payloads:
+
+```ts
+import type {
+  DozorOptions,
+  DozorState,
+  IngestPayload,
+  SessionMetadata,
+  Logger,
+  UserIdentity,
+  UserTraits,
+  SliceMarker,
+  SliceReason,
+} from "@kharko/dozor";
+```
+
+The dashboard's ingest endpoint validates incoming payloads against
+`IngestPayload` (via Zod) — if you're writing a custom proxy or test
+harness, importing the type keeps your shape aligned with what the
+server expects.
+

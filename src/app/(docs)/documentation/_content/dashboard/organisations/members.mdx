@@ -1,0 +1,79 @@
+---
+title: Members & roles
+---
+
+Each membership has one of three roles. The capability split is
+enforced both in the UI (hidden controls) and at the API (403 on
+direct call). The single source of truth is `requireMember(...)` in
+[`src/server/auth/permissions.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/auth/permissions.ts).
+
+## Capability matrix
+
+| Capability | OWNER | ADMIN | VIEWER |
+| --- | :-: | :-: | :-: |
+| Read everything in the org | ✓ | ✓ | ✓ |
+| Edit own profile | ✓ | ✓ | ✓ |
+| Self-leave the org | ✓ | ✓ | ✓ |
+| Accept / decline invites | ✓ | ✓ | ✓ |
+| Edit org name + avatar | ✓ | ✓ | — |
+| Rename a project | ✓ | ✓ | — |
+| Set `defaultDisplayNameTraitKey` | ✓ | ✓ | — |
+| Edit tracked-user `displayName` | ✓ | ✓ | — |
+| Delete a session | ✓ | ✓ | — |
+| Invite members | ✓ | — | — |
+| Cancel pending invites | ✓ | — | — |
+| Change member roles | ✓ | — | — |
+| Remove members | ✓ | — | — |
+| Create a project | ✓ | — | — |
+| Regenerate an API key | ✓ | — | — |
+| View an API key (plaintext) | ✓ | — | — |
+| Delete a project | ✓ | — | — |
+| Delete the org | ✓ | — | — |
+
+Multiple OWNERs are allowed — single-OWNER lock-out is **not** a
+problem the dashboard tries to enforce. The UI lets you make every
+member an OWNER if you want; the only protection is that you can't
+demote yourself if you're the only OWNER (would create an ownerless
+org).
+
+## Member operations (OWNER-only)
+
+Inside the org card on **Manage organizations**:
+
+- **Change role** — flip a member between VIEWER ↔ ADMIN ↔ OWNER.
+- **Remove member** — strips the membership; the user remains in the
+  system (their account stays) but loses access to this org.
+- **Cancel pending invite** — removes the invite, link stops working.
+  See [Invites](/documentation/dashboard/organisations/invites).
+
+## Self-leaving
+
+Any role — VIEWER, ADMIN, or OWNER — can self-leave a TEAM org from
+the "Members" section. Two restrictions, applied to every role:
+
+- **Personal Space → 403.** See [Org types](/documentation/dashboard/organisations#org-types).
+- **Sole-member org → 409**, with a hint to delete the org instead.
+
+OWNERs get one extra step in the same transaction: if the leaving
+OWNER was the only OWNER, the dashboard first transfers ownership
+(next-oldest ADMIN → fallback to any remaining member), then removes
+the membership. An ownerless org is impossible after the flow.
+
+## Deleting an org
+
+OWNER-only, TEAM orgs only. **Delete org** requires typed
+confirmation, then Prisma cascades take care of everything underneath
+— Memberships, Invites, Projects, and through Projects: Sessions,
+Slices, Events, TrackedUsers.
+
+One explicit pre-step before the delete fires: every
+`User.activeOrganizationId` pointing at the org gets nullified. The
+FK is `onDelete: SetNull` so the DB would do this anyway, but the
+pre-step makes the intent visible in the route handler.
+
+Full cascade graph + per-table column reference in
+[Data model](/documentation/resources/data-model).
+
+## See also
+
+- [Resources → Architecture → Permissions](/documentation/resources/architecture#permissions) — `requireMember` source of truth + tests that mirror this matrix.

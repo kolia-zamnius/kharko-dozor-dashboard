@@ -1,0 +1,108 @@
+---
+title: User settings
+---
+
+**Avatar (top-right) → User settings** — your own profile, separate
+from any org. The page is a stack of four sections: Profile, Locale,
+Authentication, Danger zone.
+
+## Avatar styles across the dashboard
+
+The dashboard uses three deterministic [DiceBear](https://www.dicebear.com/)
+styles to signal which kind of identity an avatar represents —
+visually distinct so the three never get confused on screen:
+
+- **Users** (account holders) — `shapes` style.
+- **Organisations** — `glass` style.
+- **Tracked users** (your visitors) — `big-smile` style.
+
+Each is seeded from the entity's id, stable across page loads, and
+never collides across kinds.
+
+## Profile
+
+- **Name** — display name on members lists and the avatar dropdown.
+  Editable any time via `PATCH /api/user`.
+- **Email** — read-only, bound to your auth identity (the email used
+  during sign-in).
+- **Avatar** — DiceBear `shapes` style, deterministic from your user
+  id. **Regenerate** rolls a new seed → same style, different visual.
+
+## Locale
+
+The dashboard supports six locales: **English (default), Ukrainian,
+German, Spanish, Portuguese, Italian** (`en, uk, de, es, pt, it`).
+Switching:
+
+1. Updates `User.locale` in the database.
+2. Forces a JWT refresh client-side (`session.update({})`) so
+   `session.user.locale` picks up the new value.
+3. `router.replace(pathname, { locale })` swaps the URL prefix and
+   re-renders the whole tree in the new locale.
+
+The locale travels: `User.locale` → `token.locale` →
+`session.user.locale`. The proxy reads it on every authed request, so
+a teammate sharing a link in their locale gets redirected to the same
+path in **your** preferred locale automatically.
+
+## Authentication — connected accounts
+
+List of OAuth providers currently linked (Google, GitHub). You can
+**unlink** any provider, but the dashboard runs a **last-login-method
+guard** inside a `Serializable` Postgres transaction to prevent
+single-click lockout:
+
+1. Count OAuth accounts that would remain after this unlink.
+2. Count registered passkeys for the user.
+3. Check `User.emailVerified` — if non-null, email-OTP is available.
+4. If the sum is **zero** → return `409`, preserve the account.
+
+Why `Serializable`: under the default read-committed isolation, two
+concurrent unlink transactions could both see "remaining = 1", both
+pass the guard, and both commit — dropping the user to zero login
+methods. Predicate locking blocks the second transaction's commit
+with a rollback error.
+
+Unlinking only deletes the local `Account` row — it does **not**
+revoke provider-side consent (users manage that in Google / GitHub
+settings).
+
+## Authentication — passkeys
+
+WebAuthn-registered devices. Each row carries:
+
+- **Name** (e.g. "MacBook Touch ID", "iPhone Face ID") — editable.
+- **Created date**.
+- **Device type** — single-device platform vs. cross-device roaming.
+
+**Register a new passkey** triggers the standard WebAuthn ceremony
+through Auth.js's WebAuthn provider; the browser prompts for the
+device's biometric or PIN. **Remove** unregisters the passkey — no
+last-method guard here, because removing a passkey alone never
+strands a user (OAuth + OTP remain available).
+
+Recommended for OWNERs: register at least one passkey. OAuth
+providers can revoke access at any time, and a passkey is your local
+fallback.
+
+## Danger zone — Delete account
+
+Destructive. The endpoint runs everything inside one `$transaction`:
+
+1. **Solo-member orgs** (you're the only member) get **deleted
+   outright** — Prisma cascades remove invites, projects, sessions,
+   slices, events, tracked users.
+2. **Shared orgs** get **ownership transfer** so an ownerless org is
+   impossible afterwards. Successor priority: oldest remaining ADMIN
+   → oldest remaining member of any role. Then the membership row
+   goes.
+3. **The user row deletes last** — cascades `Account`,
+   `Authenticator`, and `Membership`.
+
+Confirmation phrase enforced server-side: type `delete my account`
+to confirm. A misclick can't wipe the account.
+
+## See also
+
+- [Resources → Authentication](/documentation/resources/authentication) — JWT model, OAuth providers, WebAuthn integration.
+- [Members & roles](/documentation/dashboard/organisations/members) — the same ownership-transfer logic when a sole OWNER self-leaves a shared org.

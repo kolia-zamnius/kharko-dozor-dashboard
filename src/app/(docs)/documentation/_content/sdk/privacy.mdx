@@ -1,0 +1,144 @@
+---
+title: Privacy & masking
+---
+
+The SDK is privacy-aware by default. Masking and blocking happen at
+the **source** — masked text never enters the buffer, never crosses
+the network, never lands on your database. There's nothing to redact
+after the fact.
+
+## Defaults
+
+| Default | Effect |
+| --- | --- |
+| `privacyMaskInputs: true` | All `input` / `textarea` / `select` values are replaced with asterisks in the recording. Includes `type="password"`, `type="email"`, etc. |
+| `privacyMaskAttribute: "data-dozor-mask"` | Elements with this attribute have their text content replaced with asterisks. Descendants are masked too. |
+| `privacyBlockAttribute: "data-dozor-block"` | Elements with this attribute are removed entirely from the recording — replaced with a same-size empty placeholder. |
+
+The recorded page is reconstructed from the event stream inside a
+**sandboxed iframe** during replay — even if a recorded page tried to
+inject scripts, they cannot execute in the dashboard's chrome. See
+[Replay player internals](/documentation/resources/replay-player) for
+the sandbox model.
+
+## Mask sensitive text
+
+Add `data-dozor-mask` to elements whose text should appear as
+asterisks in the recording. Descendant text is masked too:
+
+```html
+<div data-dozor-mask>
+  <p>John Doe</p>           <!-- recorded as "********" -->
+  <span>+1 555-0123</span>  <!-- recorded as "************" -->
+</div>
+```
+
+Customise the attribute name if you'd rather use something else (e.g.
+align with an existing convention in your codebase):
+
+```ts title="src/lib/dozor.ts"
+import { Dozor } from "@kharko/dozor";
+
+export const dozor = Dozor.init({
+  apiKey: "dp_your_key",
+  endpoint: "https://your-dashboard.com/api/ingest",
+  privacyMaskAttribute: "data-private",
+});
+```
+
+## Block elements entirely
+
+Add `data-dozor-block` to remove an element from the recording —
+replaced with a same-size empty placeholder. Use for content that's
+not just sensitive but irrelevant to the replay:
+
+```html
+<img data-dozor-block src="/user-avatar.jpg" />
+<div data-dozor-block>
+  <iframe src="https://embedded-widget.com" />
+</div>
+```
+
+Block is stronger than mask: the element doesn't render in the
+replay at all, you just see a placeholder of the original size so
+layout stays accurate.
+
+## Block all media globally
+
+When the recorded site serves images / video behind auth cookies that
+won't be available during replay, mask all media at once:
+
+```ts title="src/lib/dozor.ts"
+import { Dozor } from "@kharko/dozor";
+
+export const dozor = Dozor.init({
+  apiKey: "dp_your_key",
+  endpoint: "https://your-dashboard.com/api/ingest",
+  privacyBlockMedia: true,
+});
+```
+
+This blocks `img`, `video`, `audio`, `picture`, `canvas`, `embed`,
+and `object` elements globally — useful when you'd rather see broken
+placeholders than broken images during replay.
+
+## Allow input recording
+
+Inputs are masked by default. If you're recording an internal tool
+where seeing actual input values is necessary:
+
+```ts title="src/lib/dozor.ts"
+import { Dozor } from "@kharko/dozor";
+
+export const dozor = Dozor.init({
+  apiKey: "dp_your_key",
+  endpoint: "https://your-dashboard.com/api/ingest",
+  privacyMaskInputs: false,
+});
+```
+
+This is rarely the right call for production user traffic.
+
+## Manually pause around a sensitive flow
+
+For belt-and-braces protection — pause the recorder while the user is
+on a credit-card field, even with `privacyMaskInputs` already on:
+
+```ts
+dozor.pause();
+// User enters card details
+dozor.resume();
+```
+
+In React, with `useDozor`:
+
+```tsx title="components/card-form.tsx"
+"use client";
+
+import { useDozor } from "@kharko/dozor-react";
+
+export function CardForm() {
+  const dozor = useDozor();
+
+  return (
+    <input
+      type="text"
+      onFocus={() => dozor.pause()}
+      onBlur={() => dozor.resume()}
+    />
+  );
+}
+```
+
+## What happens server-side
+
+Everything that arrived to the server is what the SDK sent. There is
+no second masking pass on the dashboard. If you mask at the source,
+masked stays masked. If you forgot to mask, the only retraction is to
+delete the session row outright — see
+[Resources → Security → Retention](/documentation/resources/security#retention).
+
+## See also
+
+- [Resources → Security](/documentation/resources/security) — what gets captured, what doesn't, retention policy.
+- [Resources → Replay player](/documentation/resources/replay-player) — the sandboxed iframe model.

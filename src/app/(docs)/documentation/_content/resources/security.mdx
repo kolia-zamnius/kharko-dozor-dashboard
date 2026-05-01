@@ -1,0 +1,204 @@
+---
+title: Security
+---
+
+## What the SDK captures
+
+When recording, the SDK ships:
+
+- **DOM mutations** — element additions, removals, attribute changes,
+  text content changes
+- **Mouse positions** and **scroll offsets**
+- **Input events** — focus, blur, value changes (values are masked by
+  default — see below)
+- **Browser metadata** — current URL, referrer, user agent, screen
+  dimensions, browser language
+- **Console output** — `console.log/warn/error/info/debug` calls, with
+  arguments (default-on; opt out with `recordConsole: false`)
+
+It does **not** capture:
+
+- HTTP request/response bodies
+- Network timing or resource loading
+- WebSocket / EventSource traffic
+- Files dragged into the page
+- Anything outside the recorded page's DOM
+
+The recording is reconstructed from the event stream inside a
+**sandboxed iframe** during replay — the recorded page can't execute
+scripts in the dashboard's chrome.
+
+## What's masked by default
+
+The SDK ships with these privacy defaults:
+
+| Default | Effect |
+| --- | --- |
+| `privacyMaskInputs: true` | All `input` / `textarea` / `select` values are replaced with asterisks in the recording. Includes `type="password"`, `type="email"`, etc. |
+| `privacyMaskAttribute: "data-dozor-mask"` | Add this attribute to any element whose text content should be replaced with asterisks. Descendants are masked too. |
+| `privacyBlockAttribute: "data-dozor-block"` | Add this attribute to remove an element entirely from the recording — replaced with a same-size empty placeholder. |
+
+If your product handles especially sensitive content (medical records,
+financial data, legal text), you can opt into stronger defaults:
+
+```ts
+Dozor.init({
+  apiKey: "dp_...",
+  endpoint: "...",
+  privacyBlockMedia: true, // replace all images/video/audio with placeholders
+});
+```
+
+For full opt-in masking on a per-element basis, see the
+[SDK → Privacy & masking](/documentation/sdk/privacy) page.
+
+## What's never sent
+
+When the SDK is told not to capture something, it isn't captured at the
+**source** — it never enters the event stream, never hits the network,
+never exists on the dashboard's database.
+
+Specifically:
+
+- `data-dozor-mask` text is replaced with asterisks **before** the
+  event is buffered. The original text never leaves the browser.
+- `data-dozor-block` elements are replaced with placeholders **before**
+  the snapshot is recorded. The original DOM subtree never leaves the
+  browser.
+- `pause()` and `cancel()` mean events are not buffered (or are dropped
+  from the buffer) — same effect, before transport.
+
+**Network-level masking is not retroactive.** Once an event leaves the
+browser unmasked, you can't redact it from the database via masking
+config — you'd have to delete the session row.
+
+## API key handling
+
+### Format
+
+`dp_` + 32 hex characters (e.g. `dp_a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6`). One
+project = one key. Regenerating rotates it atomically; the old key stops
+working immediately, with no grace window.
+
+### Storage
+
+The plaintext key lives in the database (Prisma `Project.key` column,
+`@unique`). It's not bcrypt-hashed — the SDK needs the plaintext to
+authenticate ingest, and a one-way hash would prevent verification.
+
+This is treated as an **operational secret**, not a user secret:
+
+- The dashboard's project-list endpoint returns a **masked** form only
+  (first 4 + bullets + last 4).
+- The plaintext is fetched on demand via a single dedicated route:
+  `GET /api/projects/[id]/key` (with `Cache-Control: no-store`).
+- That route is OWNER-only and called exactly once per "show key"
+  click — no caching in TanStack Query.
+- Branded TypeScript types (`ApiKeyPlaintext`, `ApiKeyMasked`) make
+  every plaintext-handling site visible in code review. The cast `as
+  ApiKeyPlaintext` is the one grep-able marker of a deliberate
+  trust-boundary crossing.
+
+### What the SDK sends
+
+The SDK passes the key in a single request header on every batch:
+
+```
+X-Dozor-Public-Key: dp_a1b2c3d4...
+```
+
+The server validates it on every request via `withPublicKey`; the
+response shape on auth failure is a structured `{ kind: "auth", ... }`
+JSON.
+
+## Authentication
+
+Auth.js v5 with JWT sessions (no `Session` table). Three primary
+sign-in methods (Google OAuth, GitHub OAuth, email OTP) + Passkey
+as an add-on. Rate limits are enforced per-email (OTP) and
+per-inviting-user (invites) to protect shared SMTP quota and prevent
+fan-out under a compromised session.
+
+Full reference: [Authentication & sessions](/documentation/resources/authentication)
+covers the JWT shape, the proxy guard chain, the custom Prisma
+adapter, locale routing, and exact rate-limit constants.
+
+## Retention
+
+### Sessions
+
+Sessions older than `SESSION_RETENTION_DAYS = 90` days are deleted by
+the daily cleanup cron at 03:30 UTC. The retention period is a single
+constant in `src/lib/time.ts` — change it once, redeploy, the cron
+honours the new value.
+
+When a session is deleted, its slices and events are cascade-deleted
+too (Prisma `onDelete: Cascade`). The session is **gone** — no soft
+delete tombstone.
+
+### Tracked users
+
+Tracked users are kept indefinitely as long as they have at least one
+session (or have been touched within the retention window). Orphans
+(no sessions for 90 days) are removed by the same daily cron.
+
+When a tracked user is deleted, their sessions are kept — Prisma
+`onDelete: SetNull` on `Session.trackedUserId` — so the recordings
+stay replayable as anonymous sessions.
+
+### Invites
+
+Pending invites older than `INVITE_EXPIRY_DAYS = 3` days are removed
+by the daily cron. Already-accepted / already-declined invites are
+also removed (the invite row is the audit trail; the membership row
+is the live state).
+
+### Daily cron contract
+
+The cron endpoint is `/api/cron/daily-cleanup`, gated by
+`Authorization: Bearer $CRON_SECRET`. Vercel injects this header
+automatically when invoking scheduled paths. On a self-hosted instance
+the operator generates a random 32-byte secret and puts it in the
+deploy environment.
+
+## Security headers
+
+Applied to every non-static response (`next.config.ts`):
+
+| Header | Value | Reason |
+| --- | --- | --- |
+| `X-Frame-Options` | `DENY` | Blocks clickjacking — dashboard refuses to render in any iframe |
+| `X-Content-Type-Options` | `nosniff` | Forces declared `Content-Type` over MIME sniffing |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Default in modern browsers, pinned to survive downstream proxies |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Disables APIs the dashboard never uses |
+
+A full Content Security Policy is **not** configured yet — it requires
+per-request nonces (Next.js inline scripts + Radix styles need allow-list
+entries) and is a separate scope. The headers above close the common
+low-effort attack vectors.
+
+## What's never sent off your instance
+
+If you self-host:
+
+- **No telemetry** — the dashboard makes zero outbound calls to any
+  domain you didn't configure (`SENTRY_DSN`, OAuth providers, Gmail
+  SMTP, your own Neon).
+- **No third-party processors** — session recordings, tracked users,
+  traits, organisations all live exclusively on the database you
+  pointed `DATABASE_URL` at.
+- **No usage analytics** — the dashboard doesn't ping back to
+  `kharko-dozor.vercel.app` or anywhere else to report which features
+  you used.
+
+The only external services involved are the ones you configured:
+your own Neon (data), your own Gmail SMTP (email), your chosen OAuth
+providers (sign-in), and optionally your own Sentry project (errors).
+
+## Reporting security issues
+
+The author maintains a `SECURITY.md` in the repo with the disclosure
+contact and process. Don't open public GitHub issues for vulnerabilities
+— email first.
+
+[See SECURITY.md →](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/SECURITY.md)
