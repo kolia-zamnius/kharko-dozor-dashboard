@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/forms/label";
 import { Button } from "@/components/ui/primitives/button";
 import { Separator } from "@/components/ui/primitives/separator";
 import { Link, useRouter } from "@/i18n/navigation";
+import type { EnabledProviders } from "@/lib/auth/enabled-providers.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -14,6 +15,7 @@ import { toast } from "sonner";
 
 type EmailStepProps = {
   callbackUrl: string;
+  enabled: EnabledProviders;
   /**
    * Called when the email has been successfully verified and the server
    * reported back whether the user has a passkey registered. The
@@ -37,10 +39,11 @@ type EmailStepProps = {
  * with toasts + routing, since the orchestrator doesn't need to track
  * those — they either reset the form or navigate away from sign-in.
  */
-export function EmailStep({ callbackUrl, onEmailResolved }: EmailStepProps) {
+export function EmailStep({ callbackUrl, enabled, onEmailResolved }: EmailStepProps) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const showOAuth = enabled.google || enabled.github;
 
   const {
     register,
@@ -80,13 +83,16 @@ export function EmailStep({ callbackUrl, onEmailResolved }: EmailStepProps) {
         <p className="text-default-500 text-sm">{t("signIn.welcomeSubtitle")}</p>
       </div>
 
-      <OAuthButtons callbackUrl={callbackUrl} />
-
-      <div className="flex items-center gap-3">
-        <Separator className="flex-1" />
-        <span className="text-default-500 text-xs">{t("shared.orContinueWithEmail")}</span>
-        <Separator className="flex-1" />
-      </div>
+      {showOAuth && (
+        <>
+          <OAuthButtons enabled={enabled} callbackUrl={callbackUrl} />
+          <div className="flex items-center gap-3">
+            <Separator className="flex-1" />
+            <span className="text-default-500 text-xs">{t("shared.orContinueWithEmail")}</span>
+            <Separator className="flex-1" />
+          </div>
+        </>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">

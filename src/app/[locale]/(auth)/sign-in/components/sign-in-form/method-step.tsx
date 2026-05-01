@@ -1,6 +1,7 @@
 import { checkOtpRateLimit } from "@/app/[locale]/(auth)/actions/auth";
 import { Button } from "@/components/ui/primitives/button";
 import { useRouter } from "@/i18n/navigation";
+import type { EnabledProviders } from "@/lib/auth/enabled-providers.types";
 import { FingerprintIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { signIn } from "next-auth/react";
@@ -12,6 +13,7 @@ type MethodStepProps = {
   email: string;
   hasPasskey: boolean;
   callbackUrl: string;
+  enabled: EnabledProviders;
   /** Called once the OTP email is on its way — advances to the code-entry screen. */
   onOtpRequested: () => void;
   /** Called after the user cancels and wants to change email. */
@@ -34,7 +36,7 @@ type MethodStepProps = {
  * intentional: it educates the user about the feature and nudges
  * them to set it up in Settings after they sign in.
  */
-export function MethodStep({ email, hasPasskey, callbackUrl, onOtpRequested, onBack }: MethodStepProps) {
+export function MethodStep({ email, hasPasskey, callbackUrl, enabled, onOtpRequested, onBack }: MethodStepProps) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -87,13 +89,15 @@ export function MethodStep({ email, hasPasskey, callbackUrl, onOtpRequested, onB
       </div>
 
       <div className="space-y-3">
-        <Button size="lg" className="w-full" onClick={handleSendOtp} disabled={submitting}>
-          {submitting ? t("method.sendingCode") : t("method.sendOtpCode")}
-        </Button>
+        {enabled.otp && (
+          <Button size="lg" className="w-full" onClick={handleSendOtp} disabled={submitting}>
+            {submitting ? t("method.sendingCode") : t("method.sendOtpCode")}
+          </Button>
+        )}
 
         <div>
           <Button
-            variant="outline"
+            variant={enabled.otp ? "outline" : "default"}
             size="lg"
             className="w-full"
             onClick={handlePasskey}

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
 import { Separator } from "@/components/ui/primitives/separator";
 import { Link, useRouter } from "@/i18n/navigation";
+import type { EnabledProviders } from "@/lib/auth/enabled-providers.types";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { signUpSchema, type SignUpInput } from "@/app/[locale]/(auth)/validators";
@@ -49,11 +50,18 @@ type SignUpState = { step: "form" } | { step: "otp"; email: string };
  * @see src/app/(auth)/actions/auth.ts — `prepareSignUp` server action
  * @see src/server/auth/adapter.ts — `createUser` override that consumes the cookie
  */
-export function SignUpForm({ callbackUrl = "/users" }: { callbackUrl?: string }) {
+export function SignUpForm({
+  callbackUrl = "/users",
+  enabled,
+}: {
+  callbackUrl?: string;
+  enabled: EnabledProviders;
+}) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [state, setState] = useState<SignUpState>({ step: "form" });
   const [submitting, setSubmitting] = useState(false);
+  const showOAuth = enabled.google || enabled.github;
 
   const {
     register,
@@ -110,54 +118,58 @@ export function SignUpForm({ callbackUrl = "/users" }: { callbackUrl?: string })
         <p className="text-default-500 text-sm">{t("signUp.subtitle")}</p>
       </div>
 
-      <OAuthButtons callbackUrl={callbackUrl} />
+      {showOAuth && <OAuthButtons enabled={enabled} callbackUrl={callbackUrl} />}
 
-      <div className="flex items-center gap-3">
-        <Separator className="flex-1" />
-        <span className="text-default-500 text-xs">{t("shared.orContinueWithEmail")}</span>
-        <Separator className="flex-1" />
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">{t("signUp.name.label")}</Label>
-          <Input
-            id="name"
-            placeholder={t("signUp.name.placeholder")}
-            autoComplete="name"
-            aria-invalid={!!errors.name}
-            aria-describedby={errors.name ? "signup-name-error" : undefined}
-            {...register("name")}
-          />
-          {errors.name && (
-            <p id="signup-name-error" className="text-destructive text-sm">
-              {errors.name.message}
-            </p>
-          )}
+      {showOAuth && enabled.otp && (
+        <div className="flex items-center gap-3">
+          <Separator className="flex-1" />
+          <span className="text-default-500 text-xs">{t("shared.orContinueWithEmail")}</span>
+          <Separator className="flex-1" />
         </div>
+      )}
 
-        <div className="space-y-2">
-          <Label htmlFor="email">{t("signUp.email.label")}</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder={t("signUp.email.placeholder")}
-            autoComplete="email"
-            aria-invalid={!!errors.email}
-            aria-describedby={errors.email ? "signup-email-error" : undefined}
-            {...register("email")}
-          />
-          {errors.email && (
-            <p id="signup-email-error" className="text-destructive text-sm">
-              {errors.email.message}
-            </p>
-          )}
-        </div>
+      {enabled.otp && (
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">{t("signUp.name.label")}</Label>
+            <Input
+              id="name"
+              placeholder={t("signUp.name.placeholder")}
+              autoComplete="name"
+              aria-invalid={!!errors.name}
+              aria-describedby={errors.name ? "signup-name-error" : undefined}
+              {...register("name")}
+            />
+            {errors.name && (
+              <p id="signup-name-error" className="text-destructive text-sm">
+                {errors.name.message}
+              </p>
+            )}
+          </div>
 
-        <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-          {submitting ? t("signUp.submit.sending") : t("signUp.submit.continue")}
-        </Button>
-      </form>
+          <div className="space-y-2">
+            <Label htmlFor="email">{t("signUp.email.label")}</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder={t("signUp.email.placeholder")}
+              autoComplete="email"
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? "signup-email-error" : undefined}
+              {...register("email")}
+            />
+            {errors.email && (
+              <p id="signup-email-error" className="text-destructive text-sm">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
+
+          <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+            {submitting ? t("signUp.submit.sending") : t("signUp.submit.continue")}
+          </Button>
+        </form>
+      )}
 
       <p className="text-default-500 text-center text-sm">
         {t("signUp.haveAccountText")}{" "}

@@ -1,3 +1,4 @@
+import { getEnabledProviders } from "@/server/auth/enabled-providers";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
@@ -20,7 +21,9 @@ export async function generateMetadata(): Promise<Metadata> {
  * Pure shell: awaits Next.js 16 async `searchParams`, forwards `error`
  * (Auth.js appends `?error=<code>` when a callback fails) and
  * `callbackUrl` to the client form. All behaviour lives inside
- * {@link SignInForm}.
+ * {@link SignInForm}. Provider flags are derived server-side and
+ * passed in so the form can render exactly the methods this instance
+ * has configured.
  */
 export default async function SignInPage({
   searchParams,
@@ -28,5 +31,6 @@ export default async function SignInPage({
   searchParams: Promise<{ error?: string; callbackUrl?: string }>;
 }) {
   const { error, callbackUrl } = await searchParams;
-  return <SignInForm error={error} callbackUrl={callbackUrl} />;
+  const enabled = getEnabledProviders();
+  return <SignInForm error={error} callbackUrl={callbackUrl} enabled={enabled} />;
 }
