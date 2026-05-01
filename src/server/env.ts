@@ -20,12 +20,12 @@ import { z } from "zod";
 const serverEnvSchema = z.object({
   // Database — Neon serverless Postgres. Pooled URL for the app, unpooled
   // (direct) URL for `prisma migrate` and one-off scripts.
-  DATABASE_URL: z.string().url(),
-  DATABASE_URL_UNPOOLED: z.string().url().optional(),
+  DATABASE_URL: z.url(),
+  DATABASE_URL_UNPOOLED: z.url().optional(),
 
   // Auth.js
   AUTH_SECRET: z.string().min(1),
-  AUTH_URL: z.string().url().optional(),
+  AUTH_URL: z.url().optional(),
 
   // Absolute base URL of the running app. Consumed by `apiFetch` on the
   // server path — when a Server Component prefetches through the query
@@ -38,7 +38,6 @@ const serverEnvSchema = z.object({
   //   2. `VERCEL_URL` (auto-injected per Vercel deployment, fallback)
   //   3. `http://localhost:3000` (dev fallback)
   APP_URL: z
-    .string()
     .url()
     .optional()
     .transform((v) => v?.replace(/\/$/, "")),
@@ -54,11 +53,17 @@ const serverEnvSchema = z.object({
   // generated at https://myaccount.google.com/apppasswords). Validation
   // strips incidental whitespace because Google displays the code in
   // groups of four and people copy-paste with spaces.
-  GMAIL_USER: z.string().email({ message: "GMAIL_USER must be a valid email address" }),
+  //
+  // Both vars are optional so a self-hoster can deploy with OAuth-only
+  // sign-in (no email OTP, no invite emails). The boot-time refine at
+  // the bottom of this schema asserts that at least one primary sign-in
+  // method is configured.
+  GMAIL_USER: z.email({ message: "GMAIL_USER must be a valid email address" }).optional(),
   GMAIL_APP_PASSWORD: z
     .string()
     .min(1)
-    .transform((v) => v.replace(/\s+/g, "")),
+    .transform((v) => v.replace(/\s+/g, ""))
+    .optional(),
 
   // OAuth providers — optional so local dev works without them; the
   // provider just won't appear on the sign-in page.
@@ -78,7 +83,30 @@ const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 
-const parsed = serverEnvSchema.safeParse(process.env);
+/**
+ * At least one primary (email-verifying) sign-in method must be configured —
+ * otherwise the dashboard has no way to create new user accounts. Passkey
+ * doesn't count: it's an add-on registered after a user has already signed
+ * in via a primary method.
+ *
+ * The refine runs after the field-level schema, so by the time this fires
+ * we know each individual var is well-typed (or absent). The job here is to
+ * assert the joint constraint: `(google || github || otp)` must hold.
+ */
+const refinedEnvSchema = serverEnvSchema.refine(
+  (env) => {
+    const google = Boolean(env.AUTH_GOOGLE_ID && env.AUTH_GOOGLE_SECRET);
+    const github = Boolean(env.AUTH_GITHUB_ID && env.AUTH_GITHUB_SECRET);
+    const otp = Boolean(env.GMAIL_USER && env.GMAIL_APP_PASSWORD);
+    return google || github || otp;
+  },
+  {
+    message:
+      "At least one primary sign-in method must be configured: Google OAuth (AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET), GitHub OAuth (AUTH_GITHUB_ID + AUTH_GITHUB_SECRET), or Email OTP (GMAIL_USER + GMAIL_APP_PASSWORD).",
+  },
+);
+
+const parsed = refinedEnvSchema.safeParse(process.env);
 
 if (!parsed.success) {
   console.error("❌ Invalid environment variables:", JSON.stringify(parsed.error.flatten().fieldErrors, null, 2));

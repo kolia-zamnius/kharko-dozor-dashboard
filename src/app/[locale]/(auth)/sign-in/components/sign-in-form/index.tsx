@@ -1,6 +1,7 @@
 "use client";
 
 import { OTPVerification } from "@/app/[locale]/(auth)/components/otp-verification";
+import type { EnabledProviders } from "@/lib/auth/enabled-providers.types";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -45,7 +46,15 @@ type SignInState =
  * complete itself and reports results via callbacks; this file never
  * touches `signIn()`, `router`, or any server action directly.
  */
-export function SignInForm({ error, callbackUrl = "/users" }: { error?: string; callbackUrl?: string }) {
+export function SignInForm({
+  error,
+  callbackUrl = "/users",
+  enabled,
+}: {
+  error?: string;
+  callbackUrl?: string;
+  enabled: EnabledProviders;
+}) {
   const tErrors = useTranslations("auth.signIn.authErrors");
   const [state, setState] = useState<SignInState>({ step: "email" });
 
@@ -70,6 +79,7 @@ export function SignInForm({ error, callbackUrl = "/users" }: { error?: string; 
         email={state.email}
         hasPasskey={state.hasPasskey}
         callbackUrl={callbackUrl}
+        enabled={enabled}
         onOtpRequested={() => setState({ step: "otp", email: state.email, hasPasskey: state.hasPasskey })}
         onBack={() => setState({ step: "email" })}
       />
@@ -79,6 +89,7 @@ export function SignInForm({ error, callbackUrl = "/users" }: { error?: string; 
   return (
     <EmailStep
       callbackUrl={callbackUrl}
+      enabled={enabled}
       onEmailResolved={(email, hasPasskey) => setState({ step: "method", email, hasPasskey })}
     />
   );
