@@ -1,0 +1,136 @@
+---
+title: Data model
+---
+
+The dashboard owns 14 tables, organised into two domains:
+
+- **Auth side** — `User`, `Account`, `VerificationToken`,
+  `Authenticator`, `OtpRateLimit`, `InviteSendRateLimit` (six tables,
+  Auth.js territory + rate-limit support).
+- **Business side** — `Organization`, `Membership`, `Invite`,
+  `Project`, `TrackedUser`, `Session`, `Slice`, `Event` (eight
+  tables, the actual product).
+
+Schema source: [`prisma/schema.prisma`][schema]. This page exists
+because the schema file is ground truth but doesn't tell you the
+**story** — what depends on what, what cascades, what's hot, what's
+cold.
+
+[schema]: https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/prisma/schema.prisma
+
+## Auth-side ER
+
+| Table | Key fields | Relations | Purpose |
+| --- | --- | --- | --- |
+| `User` | `id` (cuid), `email` (unique), `locale`, `activeOrganizationId` (FK → `Organization`, SetNull) | Owns: Account, Authenticator, Membership, InviteSendRateLimit (all Cascade) | The signed-in human |
+| `Account` | (`provider`, `providerAccountId`) unique, `userId` (FK → User, Cascade) | Belongs to User | OAuth links (Google, GitHub) |
+| `Authenticator` | `credentialID` (unique), composite PK with `userId` (FK → User, Cascade) | Belongs to User | WebAuthn / passkey registration |
+| `Membership` | (`userId`, `organizationId`) unique, `role`, both FKs Cascade | User ↔ Organization | Per-org role (OWNER / ADMIN / VIEWER) |
+| `VerificationToken` | (`identifier`, `token`) unique, `expires` | — | One-time email OTP (Auth.js managed) |
+| `OtpRateLimit` | (`email`, `date`) unique, `count` | — | Per-day OTP send cap (5/day, 60s cooldown) |
+| `InviteSendRateLimit` | (`userId`, `date`) unique, `count`, `userId` (FK → User, Cascade) | Belongs to User | Per-day invite send cap (100/day per signed-in user) |
+
+## Business-side ER
+
+| Table | Key fields | Relations | Purpose |
+| --- | --- | --- | --- |
+| `Organization` | `id`, `name`, `type` (`PERSONAL \| TEAM`) | Owns: Membership (Cascade), Invite (Cascade), Project (Cascade) | The team / personal-space tenant |
+| `Project` | `id`, `name`, `key` (unique), `organizationId` (FK → Org, Cascade), `defaultDisplayNameTraitKey` | Owns: TrackedUser (Cascade), Session (Cascade) | The recording target — one project = one regeneratable API key |
+| `Invite` | `email`, `role`, `status` (enum), `expiresAt`, `organizationId` (FK → Org, Cascade), `invitedById` (FK → User) | Belongs to Org + inviter | Pending invitation to join an org |
+| `TrackedUser` | `externalId`, `projectId` (FK → Project, Cascade), `customName`, `displayNameTraitKey`, `traits` (Json) | Belongs to Project, owns Sessions (via SetNull on delete) | A visitor identified via `dozor.identify()` |
+| `Session` | `externalId`, `projectId` (FK → Project, Cascade), `trackedUserId` (FK → TrackedUser, SetNull), `url`, `userAgent`, `duration`, `eventCount`, `startedAt`, `endedAt` | Owns: Slice (Cascade), Event (Cascade) | One browser session as captured by the SDK |
+| `Slice` | `index`, `reason` (`init \| idle \| navigation`), `url`, `pathname`, `duration`, `startedAt`, (`sessionId`, `index`) unique | Belongs to Session, owns Events (SetNull on delete) | Replayable segment within a session |
+| `Event` | `type`, `timestamp`, `data` (Json), `sessionId` (FK → Session, Cascade), `sliceId` (FK → Slice, SetNull), `sliceIndex` | Belongs to Session + Slice | Raw rrweb event |
+
+## Cascade rules — the destructive map
+
+When you delete an entity, this is what comes with it:
+
+**`User` delete**
+
+- **Cascades:** `Account`, `Authenticator`, `Membership`, `InviteSendRateLimit`.
+- **Pre-step:** any solo-member org (Personal Space + any TEAM org with just this user) is deleted outright, cascading further down. Shared TEAM orgs survive — ownership transfers if needed.
+- **FK SetNull:** `User.activeOrganizationId` on other users pointing at orgs the deleted user owned.
+
+**`Organization` delete** (TEAM only — `PERSONAL` deletion is rejected with `403`)
+
+- **Pre-step:** `User.activeOrganizationId` nullified for any user pointing to this org (the FK has `onDelete: SetNull`, but the route's pre-delete null-sweep makes the intent explicit).
+- **Cascades:** `Membership`, `Invite`, `Project` (and everything below).
+
+**`Project` delete**
+
+- **Cascades:** `Session`, `TrackedUser`.
+
+**`Session` delete**
+
+- **Cascades:** `Slice`, `Event`.
+- **FK SetNull:** the `TrackedUser` row stays — the user keeps their other sessions; only this session's `trackedUserId` was the linkage.
+
+**`TrackedUser` delete**
+
+- **FK SetNull:** `Session.trackedUserId` for sessions owned by the deleted user. The recordings stay replayable as anonymous.
+
+The pattern: **identity goes, recordings stay.** A user who deleted
+their account doesn't take their session recordings with them. A
+project that gets nuked takes its sessions because the project is
+the recording target. Personal Space can never be deleted.
+
+## Indexing strategy
+
+Hot read paths:
+
+| Query | Index used |
+| --- | --- |
+| Sessions list (per project, newest first) | `[projectId, createdAt(sort: Desc)]` on `Session` |
+| Tracked users list (per project, recent first) | `[projectId, updatedAt(sort: Desc)]` on `TrackedUser` |
+| Ingest upsert (per project, by external id) | `[projectId, externalId]` unique on `Session` + `TrackedUser` |
+| Slice events (one slice's events) | `sliceId` on `Event` |
+| Session events fallback (legacy pre-slice) | `sessionId` on `Event` |
+| Member's orgs | `userId` on `Membership` |
+| Org's members | `organizationId` on `Membership` |
+| OAuth account lookup | `[provider, providerAccountId]` unique on `Account` |
+| Project key lookup (ingest auth) | `key @unique` on `Project` |
+| Invite by email (recipient inbox) | `email` on `Invite` |
+
+Cold reads (admin / cron only) — no indexes beyond the FK ones.
+
+## Typical row sizes
+
+For capacity estimation. These are order-of-magnitude — your traffic
+profile shifts them.
+
+| Table | Bytes per row (typical) | Cardinality scaling |
+| --- | :-: | --- |
+| `User` | 200 | One per signed-in user (10s–100s) |
+| `Organization` | 150 | ~1.5× user count (personal + team orgs) |
+| `Membership` | 80 | Sum of org sizes (10s–1000s) |
+| `Project` | 250 | A few per org (10s–100s total) |
+| `TrackedUser` | 300 + traits JSON | One per `(project, externalId)` (1000s–100000s) |
+| `Session` | 300 | One per browser session (10000s–1000000s) |
+| `Slice` | 250 | ~3× session count (init + idle + navigation) |
+| `Event` | 100 + data JSON (avg 200 bytes) | rrweb-volume — **dominant table by 10–100×** |
+| `Invite` | 200 | Low cardinality, swept daily |
+| `OtpRateLimit` | 80 | Bucket-resets at UTC midnight |
+
+`Event` is by far the heaviest. A 5-minute session of normal browsing
+typically captures 1000–3000 events, so the table grows ~10000 rows
+per active user per day on a busy product.
+
+The 90-day retention cron (see
+[Authentication & sessions → Rate limits](/documentation/resources/authentication#rate-limits))
+is what keeps the database from compounding indefinitely.
+
+## Capacity estimates (Neon Free tier)
+
+The free Neon tier is **0.5 GB** of storage. Rough fits:
+
+- **50–100k sessions** at average size (1500 events each, ~250 bytes
+  per event payload)
+- **5–10 million events** before pressure
+- **At ~1000 sessions/day** that's about 50–100 days at retention.
+  Well within the 90-day cleanup cron.
+
+For higher traffic, Neon's paid tiers scale linearly. There's no
+soft limit in the dashboard itself — the cap is whatever your
+Postgres instance supports.
+

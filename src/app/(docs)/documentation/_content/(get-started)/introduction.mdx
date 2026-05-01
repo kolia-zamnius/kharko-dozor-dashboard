@@ -1,0 +1,45 @@
+---
+title: Introduction
+---
+
+Dozor is an open-source session recording and replay platform for the web. It captures real browser sessions through [rrweb][rrweb] and reconstructs them in pixel-perfect detail inside a sandboxed iframe — so you can watch exactly how users interact with your product, scrub through long sessions slice by slice, and tie sessions back to the people who created them.
+
+Two repositories make up the project:
+
+- **[`@kharko/dozor`][sdk-repo]** — the browser SDK. Two npm packages (`@kharko/dozor` for vanilla JS, `@kharko/dozor-react` for React). Captures DOM mutations + interactions via rrweb; ships them to your dashboard's ingest endpoint.
+- **[`kharko-dozor-dashboard`][dashboard-repo]** — this project. A Next.js dashboard for browsing, filtering, and replaying sessions. Manages projects, API keys, organisations, members, and tracked users. **This is the part you self-host.**
+
+[rrweb]: https://www.rrweb.io/
+[sdk-repo]: https://github.com/kolia-zamnius/kharko-dozor-packages
+[dashboard-repo]: https://github.com/kolia-zamnius/kharko-dozor-dashboard
+
+## The product is self-hosted
+
+End-state of running Dozor on your project:
+
+1. Clone [`kharko-dozor-dashboard`][dashboard-repo] and deploy it onto your own infrastructure — typically Vercel + Neon Postgres + Gmail SMTP, but any Node-friendly host and any Postgres works.
+2. Install [`@kharko/dozor`][sdk-repo] into your product, point it at your dashboard's URL, and ship.
+3. Every byte of session data lives on your database. No third-party processor, no shared instance, no telemetry phoning home.
+
+MIT-licensed end to end. No paid tiers, no enterprise upsell. Every feature works on every instance — yours, mine, anyone's — without limits on session count, project count, organisation members, or retention.
+
+## About the demo at `kharko-dozor.vercel.app`
+
+The instance at [`kharko-dozor.vercel.app`][demo] is a **public demo** — sandbox to evaluate the product before committing to self-host. Sign up, copy an API key, head to the [Playground](/documentation/playground) and watch a session land in under a minute, no app integration required. Once you're convinced, paste the SDK snippet into your own app to wire the real loop.
+
+[demo]: https://kharko-dozor.vercel.app
+
+**The demo is not for production data.** Sessions on the demo live on the shared demo Neon database alongside everyone else's evaluation data. The demo can disappear or get reset at any time — no SLA, no backups, no support. Once you're satisfied, [self-host your own instance](/documentation/self-host).
+
+You'll know you're on the demo: the dashboard shows a persistent "demo instance" banner across the top of every page. On a self-hosted instance that banner doesn't render at all.
+
+## Where to go next
+
+- **Just want to see it work?** → [Playground](/documentation/playground) — paste a key, click around, see a replay land in under a minute. No app integration needed.
+- **Evaluating?** → [Quick start](/documentation/quick-start) to wire your SDK against the public demo in five minutes.
+- **Ready to self-host?** → [Self-host recipe](/documentation/self-host).
+- **Curious how it works under the hood?** → [How it works](/documentation/how-it-works).
+
+The dashboard's CRUD REST surface is **not** rendered as a documentation section — the authoritative contract lives in [`openapi.snapshot.json`][openapi] in the repo, regenerated from live Zod validators on every CI run. Import into Postman / Insomnia / generate a client with `openapi-generator`.
+
+[openapi]: https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/openapi.snapshot.json

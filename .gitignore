@@ -43,3 +43,6 @@ test-results/
 
 # prisma generated
 **/src/generated/
+
+# fumadocs-mdx codegen — regenerated on build / dev start
+.source/

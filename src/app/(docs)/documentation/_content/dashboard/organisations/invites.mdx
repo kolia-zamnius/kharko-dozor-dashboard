@@ -1,0 +1,92 @@
+---
+title: Invites
+---
+
+OWNERs invite members by email from **Manage organizations →
+\[org card] → Invite**. The invitee gets an email with a link valid
+for **3 days**.
+
+## Sending an invite
+
+The Invite button opens a modal with:
+
+- **Email** — recipient address. Must be a valid email format.
+- **Role** — `ADMIN` or `VIEWER`. OWNER role is **not** issuable via
+  invite — promote post-acceptance via the role-change UI.
+
+The send fires `POST /api/organizations/{orgId}/invites`. The endpoint
+is **idempotent**: submitting the same email when a PENDING invite to
+that address already exists updates the row in place (TTL reset, role
+swapped, email re-fired). No duplicate rows. The form's helper text
+calls this out — there's no separate "Resend" button to find.
+
+Per-sender rate-limit: **`INVITE_DAILY_LIMIT = 100/day`** counted
+across all orgs the user admins. Sized below the shared Gmail SMTP
+free quota so a compromised OWNER session can't fan out unlimited
+invites.
+
+## What the invitee sees
+
+The invite email contains a link to `${APP_URL}/settings/organizations`
+— deliberately tokenless. Server-side lookup matches `(email, status)`
+on `GET /api/user/invites`, so the link doesn't need to carry an
+invite id.
+
+Clicking the link:
+
+1. **If they're not signed in** → proxy redirects to
+   `/sign-in?callbackUrl=/settings/organizations`. They authenticate
+   with whatever method this instance has configured (Google / GitHub /
+   email OTP). If the email has no account yet, the sign-in flow auto-
+   routes them to `/sign-up` with the callback preserved.
+2. **After authentication** → they land on `/settings/organizations`.
+3. **The "Pending invites" section** lists every invite addressed to
+   their email — a row per invite with org name, inviter, role, and
+   expiry. They click **Accept** or **Decline** inline.
+4. **Accept** opens a confirmation dialog (org name + role recap), then
+   one click runs an atomic transaction: `Membership` create + invite
+   `status → ACCEPTED` in one round-trip. The session JWT refreshes so
+   the new org appears in the avatar dropdown's org switcher; the user
+   is **not** auto-switched into it — they pick when to switch.
+5. **Decline** hard-deletes the invite row (no `DECLINED` status flip
+   — declined invites carry no audit value, the extra enum buys
+   nothing).
+
+## Expiry
+
+| Constant             | Value | Effect                                                      |
+| -------------------- | ----- | ----------------------------------------------------------- |
+| `INVITE_EXPIRY_DAYS` | 3     | Set per-invite at create time as `expiresAt = now + 3 days` |
+| `INVITE_DAILY_LIMIT` | 100   | Per signed-in user, counted across all orgs they admin      |
+
+Past-TTL invites are filtered out lazily on every list read and
+status-flipped to `EXPIRED` in the background. The
+[daily cleanup cron](/documentation/resources/self-hosting-reference#cleanup-cron--full-reference)
+hard-deletes expired rows overnight.
+
+## Pending-invite badge
+
+A red badge with a count appears on the avatar dropdown's **Manage
+organizations** item when invites are addressed to your email and you
+haven't accepted or declined yet. Click through to act on each.
+
+## OWNER operations on pending invites
+
+From the org card's pending-invites table:
+
+- **Change role** — inline `Select` flips ADMIN ↔ VIEWER. PATCH only,
+  no email re-sent.
+- **Extend** — bumps `expiresAt` back to a fresh 3-day window without
+  touching role or sending email. Re-attributes `invitedById` to the
+  acting OWNER.
+- **Revoke** — one-click destructive delete. The link stops working
+  immediately. No confirmation dialog because the action is trivially
+  reversible (re-invite the same email through the form).
+
+To **re-send** the email, type the recipient's address into the
+new-invite form again — POST is idempotent and re-fires the email on
+existing PENDING rows. There's no dedicated Resend button by design.
+
+## See also
+
+- [Resources → Authentication → Rate limits](/documentation/resources/authentication#rate-limits) — invite daily caps + the rationale behind them.

@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Kharko Dozor"
+    "name": "Dozor"
   },
   "duration": {
     "seconds": "{count}s",

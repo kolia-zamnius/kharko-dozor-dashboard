@@ -1,9 +1,9 @@
 {
-  "subject": "Te invitaron a {orgName} — Kharko Dozor",
-  "brand": "Kharko Dozor",
+  "subject": "Te invitaron a {orgName} — Dozor",
+  "brand": "Dozor",
   "title": "Te han invitado",
   "body": "<strong>{inviterName}</strong> te invita a unirte a <strong>{orgName}</strong> como <strong>{role, select, OWNER {Propietario} ADMIN {Admin} VIEWER {Visualizador} other {Miembro}}</strong>.",
   "cta": "Ver invitación",
   "footer": "Esta invitación caduca en {days, plural, one {# día} other {# días}}. Si no la esperabas, puedes ignorarla.",
-  "tagline": "Kharko Dozor — grabación y reproducción de sesiones"
+  "tagline": "Dozor — grabación y reproducción de sesiones"
 }

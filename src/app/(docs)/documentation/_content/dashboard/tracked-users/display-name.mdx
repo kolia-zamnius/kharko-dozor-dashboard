@@ -1,0 +1,99 @@
+---
+title: Display-name overrides
+---
+
+Whenever the dashboard renders a user (Replays list, Users list,
+user detail header), it resolves what to show via a deterministic
+4-step chain. The first step that yields a non-empty string wins.
+
+## The chain (priority order)
+
+1. **`customName`** (per user) — explicit override typed by an
+   admin. Wins over everything.
+2. **`displayNameTraitKey`** (per user) — read `traits[<this key>]`
+   for this specific user. E.g. set `"email"` on a user → dashboard
+   shows their `traits.email`.
+3. **`defaultDisplayNameTraitKey`** (per project) — same idea, but
+   applied as a default to every user in the project. Set to
+   `"email"` once → every user in the project with an `email` trait
+   shows it.
+4. **Fallback to `externalId`** — opaque, but always available.
+
+Trait values that aren't strings are coerced through `String(value)`
+before display, so `plan: 42` with key `"plan"` renders as `"42"`
+rather than silently falling through. Empty strings (post-trim) are
+treated as absent — the chain falls through.
+
+The chain runs server-side as `resolveDisplayName(...)` and the
+resolved value ships pre-baked in `userDisplayName` on every list
+endpoint. Client code doesn't walk traits per row — the work is done
+once on the server.
+
+## Where to set them
+
+All three knobs live in **one modal** opened from the user detail
+header. Click the pencil-edit icon next to the display name (visible
+only to OWNER / ADMIN — viewers don't see the trigger). Inside, three
+stacked sections — each with its own input + Save / Reset:
+
+| Section | Field set | Scope |
+| --- | --- | --- |
+| **Custom name** | `TrackedUser.customName` | This user only |
+| **Trait key (this user)** | `TrackedUser.displayNameTraitKey` | This user only |
+| **Project default** | `Project.defaultDisplayNameTraitKey` | Every user in this project |
+
+`null` clears any field — chain falls through to the next step. A
+non-empty string sets the override.
+
+Both endpoints (`PATCH /api/tracked-users/[id]/display-name`,
+`PATCH /api/projects/[id]/display-name-trait-key`) require ADMIN+ on
+the owning org, double-validated server-side.
+
+## Worked examples
+
+### Common case — set the project default once
+
+Project `Production` has `defaultDisplayNameTraitKey = "email"`.
+Three users in this project:
+
+| User | Traits |
+| --- | --- |
+| A | `{ email: "alice@acme.com", plan: "pro" }` |
+| B | `{ name: "Bob", plan: "free" }` |
+| C | `{ plan: "free" }` (no email, no name) |
+
+Resolved display names:
+
+- A → `"alice@acme.com"` — step 3 hits (project default `"email"` matches A's traits)
+- B → `externalId of B` — step 3 misses (no `email` trait on B); step 4 fallback
+- C → `externalId of C` — same as B
+
+### Per-user override
+
+Same project, but for User B specifically you set
+`displayNameTraitKey = "name"` on their detail page:
+
+- A → `"alice@acme.com"` (step 3)
+- B → `"Bob"` (step 2 wins — per-user trait key beats project default)
+- C → `externalId of C` (fallback)
+
+### Custom name wins everything
+
+For User C, you type `"VIP customer (manual)"` into the **Custom
+name** field:
+
+- A → `"alice@acme.com"` (step 3)
+- B → `"Bob"` (step 2)
+- C → `"VIP customer (manual)"` (step 1 wins over fallback)
+
+## Anonymous sessions
+
+Sessions without a `trackedUserId` (no `dozor.identify()` called) ship
+with `userDisplayName: null` and the dashboard renders them as the
+empty dash (`—`) in the User column. They don't appear at all in the
+Users list — only Replays.
+
+## See also
+
+- [Users list](/documentation/dashboard/tracked-users) — where the resolved name shows up.
+- [SDK → identify()](/documentation/sdk/dozor/methods#dozoridentifyuserid-traits) — how traits get into the system in the first place.

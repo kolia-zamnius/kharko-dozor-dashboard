@@ -19,6 +19,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useFormatters } from "@/lib/use-formatters";
 import {
   ArrowsClockwiseIcon,
+  BookOpenIcon,
   CheckIcon,
   GearSixIcon,
   MoonIcon,
@@ -179,6 +180,20 @@ export function AvatarDropdown() {
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
+
+        {/* Docs + theme group — both are "out of the dashboard flow"
+            navigations, intentionally separated from the org/settings
+            block above. Docs zone lives outside the `[locale]/` pipeline
+            (English-only by design); `asChild` + raw `<a href>` is the
+            hard-nav escape hatch — typed `router.push` from
+            `@/i18n/navigation` would prefix the locale and 404. */}
+        <DropdownMenuItem asChild>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- intentional hard nav: docs zone is outside the [locale]/ pipeline (see comment above). */}
+          <a href="/documentation/introduction">
+            <BookOpenIcon />
+            <span>{t("actions.documentation")}</span>
+          </a>
+        </DropdownMenuItem>
 
         <DropdownMenuItem onSelect={(e) => e.preventDefault()} onClick={toggleTheme}>
           <SunIcon className="hidden dark:block" />

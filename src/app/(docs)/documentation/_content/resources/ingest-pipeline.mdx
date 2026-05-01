@@ -1,0 +1,407 @@
+---
+title: Ingest pipeline
+---
+
+Traces a single rrweb event from browser capture to Postgres row, naming every module along the way. Read the [high-level walkthrough](/documentation/how-it-works) first if you haven't.
+
+Pipeline is **synchronous Postgres writes**, end to end. No queue, no worker, no Kafka. Simplicity over throughput — explained at the bottom of this page.
+
+## Stage 1 — Capture (browser-side)
+
+When `Dozor.init({ apiKey, endpoint })` runs, the SDK wires up rrweb
+and binds a few listeners.
+
+### What rrweb captures
+
+The recorder subscribes to:
+
+- `MutationObserver` — every DOM node added, removed, attribute changed
+- `mousemove` / `mousedown` / `mouseup` / `click` / `scroll` — pointer
+  + scroll positions
+- `input` / `focus` / `blur` — form interactions (with masking applied
+  before the event is buffered)
+- `console.log/warn/error/info/debug` — when `recordConsole: true`
+  (default)
+
+Each capture produces an `rrweb` event:
+
+```ts
+type rrwebEvent = {
+  type: number;          // discriminator: 2 = FullSnapshot, 3 = IncrementalSnapshot, 4 = Meta, ...
+  data: unknown;          // type-specific payload
+  timestamp: number;      // ms since epoch
+};
+```
+
+### Privacy applies at the source
+
+Before an event lands in the buffer, the privacy layer runs:
+
+- **Element with `data-dozor-mask`** → text content replaced with
+  asterisks in the captured node tree
+- **Element with `data-dozor-block`** → entire subtree replaced with a
+  same-size empty placeholder
+- **`<input>` / `<textarea>` / `<select>` value** → asterisks (when
+  `privacyMaskInputs: true`)
+
+The unmasked content **never enters the buffer**. There's nothing to
+redact later — masked stays masked.
+
+### Buffer accumulation
+
+Captured events go into an in-memory array. The buffer fills until
+one of these triggers:
+
+| Trigger | When |
+| --- | --- |
+| Flush interval | Every `flushInterval` ms (default 60_000) |
+| Buffer size cap | When `events.length >= batchSize` (default 2000) |
+| Tab visibility change | `visibilitychange` → hidden |
+| Page unload | `beforeunload` / `pagehide` |
+| Manual `release()` | When transport was held |
+
+### Slice marker emission
+
+The SDK emits a slice marker on:
+
+- **Init** — first slice on session start (`reason: "init"`)
+- **Idle gap >30s** — extended period with no DOM mutations
+  (`reason: "idle"`)
+- **Navigation** — SPA route change via `popstate` / History API, or
+  hard navigation (`reason: "navigation"`)
+
+A marker carries `{ index, reason, startedAt, url, pathname,
+viewportWidth, viewportHeight }`. The next batch ships markers
+alongside events.
+
+## Stage 2 — Transport (browser → server)
+
+When a flush triggers, the SDK serialises the buffer to JSON and
+ships it.
+
+### Serialisation + compression
+
+```
+Buffer (array of events) → JSON.stringify → byte string
+                          ↓
+                          if size > 1KB:
+                            CompressionStream("gzip") → gzipped bytes
+                                ↓
+                                set Content-Encoding: gzip
+```
+
+Browsers without `CompressionStream` (older Safari, older Firefox)
+fall back to uncompressed JSON. Bandwidth higher (gzip ratios on
+rrweb event streams are typically large); everything else identical.
+
+### POST request shape
+
+```
+POST /api/ingest HTTP/1.1
+Host: your-dashboard.com
+Content-Type: application/json
+Content-Encoding: gzip                  # only if gzipped
+X-Dozor-Public-Key: dp_a1b2c3...32hex
+
+[gzipped JSON body]
+```
+
+The body is the `IngestPayload` shape:
+
+```ts
+{
+  sessionId: string;          // UUID, stable per browser session
+  events: rrwebEvent[];       // ≤ 500 per batch
+  metadata?: SessionMetadata; // sent once per session, in the first batch
+  sliceMarkers?: SliceMarker[];
+}
+```
+
+`metadata` lands in the first batch only — it carries `url`, `referrer`,
+`userAgent`, `screenWidth`, `screenHeight`, `language`, plus the
+optional `userIdentity: { userId, traits }` from `dozor.identify()`.
+Subsequent batches omit it.
+
+### Retry semantics
+
+| Server response | SDK behaviour |
+| --- | --- |
+| `204` | Success — proceed to next batch |
+| `4xx` (`400`, `401`, etc.) | **No retry.** Buffer dropped, error logged in `[dozor]` |
+| `5xx` or network error | Retry with exponential backoff: 1s → 2s → 4s |
+| All retries exhausted | Events re-queued to buffer, retried on the next flush cycle |
+| Buffer reaches 10,000 events | Oldest dropped first (FIFO) |
+
+Page-unload flushes use `fetch({ keepalive: true })` — the browser
+ships the request even after navigation, fire-and-forget. No retry
+on these.
+
+## Stage 3 — Receive (server-side)
+
+The request arrives at `src/app/api/ingest/route.ts`.
+
+### `withPublicKey` HOF — auth + CORS
+
+```ts title="src/app/api/ingest/route.ts"
+// `withPublicKey` is from src/app/api/_lib/with-public-key.ts (simplified usage shown)
+export const POST = withPublicKey(async ({ project, req }) => {
+  // ... handler body
+});
+```
+
+The HOF runs before the handler:
+
+1. Reads `X-Dozor-Public-Key` header
+2. Looks up `Project` by `key @unique` (single indexed query)
+3. If not found → `401 Unauthorized` with structured `{ kind: "auth", ... }`
+4. If found → calls handler with `{ project, req }`
+5. Applies CORS headers to the response (success or failure)
+6. Catches `HttpError` / `ZodError` and serialises to JSON
+
+The handler never sees auth code, never sees CORS code. It sees a
+validated `project` and a `req` and produces a response.
+
+### `parseIngestBody` — gzip + JSON
+
+```ts title="src/app/api/ingest/_helpers/parse-body.ts"
+export async function parseIngestBody(req: Request): Promise<unknown> {
+  if (req.headers.get("Content-Encoding") === "gzip") {
+    const decoder = new DecompressionStream("gzip");
+    const decompressed = req.body!.pipeThrough(decoder);
+    const text = await new Response(decompressed).text();
+    return JSON.parse(text);
+  }
+  return req.json();
+}
+```
+
+Returns `unknown`. The route then runs `ingestSchema.parse(...)` —
+malformed payload throws `ZodError`, the HOF converts to `400`.
+
+## Stage 4 — Persist (database writes)
+
+Five sequential steps. Each one reads rows the previous wrote — no
+parallelism because the data dependencies are real.
+
+### Step 1 — Session upsert + identity link
+
+```ts title="src/app/api/ingest/_helpers/session-upsert.ts"
+// Simplified — full helper handles error paths + metadata first-batch logic
+const session = await prisma.session.upsert({
+  where: { projectId_externalId: { projectId, externalId } },
+  create: { externalId, projectId, url, userAgent, ..., startedAt, endedAt, eventCount, duration },
+  update: hasEvents ? { endedAt: maxTs, eventCount: { increment: events.length } } : {},
+});
+
+if (metadata?.userIdentity) {
+  const trackedUser = await prisma.trackedUser.upsert({
+    where: { projectId_externalId: { projectId, externalId: userId } },
+    create: { externalId: userId, projectId, traits },
+    update: { traits },
+  });
+  await prisma.session.update({ where: { id: session.id }, data: { trackedUserId: trackedUser.id } });
+}
+```
+
+Key invariants:
+
+- **Idempotent** — same `(projectId, externalId)` upserts to the same
+  row. Duplicate batches don't double-count.
+- **First batch creates the row** with full metadata. Subsequent
+  batches only bump `endedAt` + `eventCount`.
+- **Identity is one-way** — once a session is linked to a tracked
+  user, batches without `userIdentity` don't unlink. Re-identifying
+  with a different `userId` does relink.
+
+### Step 2 — Slice markers
+
+If the batch ships `sliceMarkers[]`, upsert each one keyed on
+`(sessionId, index)`. Plus a sweep that closes any previous open
+slice (`endedAt: null`) whose index is one less than a new marker:
+
+```ts title="src/app/api/ingest/_helpers/slice-markers.ts"
+// Close prev slices whose index = (newIndex - 1)
+prisma.slice.updateMany({
+  where: { sessionId, index: { in: prevIndices }, endedAt: null },
+  data: { endedAt: firstMarkerTs },
+});
+
+// Upsert new markers
+markers.map((marker) =>
+  prisma.slice.upsert({
+    where: { sessionId_index: { sessionId, index: marker.index } },
+    create: { sessionId, index, reason, url, pathname, ..., startedAt },
+    update: {},
+  }),
+);
+```
+
+Wrapped in `prisma.$transaction([...])` so the close-prev + upsert-new
+either both succeed or both roll back.
+
+### Step 2 (alt) — Backward-compat default slice
+
+Older SDK builds that pre-date the slice-marker protocol don't ship
+markers. Fallback: create a default `index: 0` slice once per
+session. Events without a `sliceIndex` default to slice 0.
+
+```ts title="src/app/api/ingest/_helpers/slice-markers.ts"
+prisma.slice.upsert({
+  where: { sessionId_index: { sessionId, index: 0 } },
+  create: { sessionId, index: 0, reason: "init", url, pathname, ..., startedAt: minTimestamp },
+  update: {},
+});
+```
+
+### Step 3 — Slice map for events
+
+Event rows carry both `sliceId` (FK) and `sliceIndex` (denormalised).
+To resolve `sliceId` per event, the route loads the relevant slices
+in one query:
+
+```ts title="src/app/api/ingest/_helpers/events.ts"
+const indices = [...new Set(events.map((e) => e.sliceIndex ?? 0))];
+const rows = await prisma.slice.findMany({
+  where: { sessionId, index: { in: indices } },
+  select: { id: true, index: true, startedAt: true },
+});
+const sliceMap = new Map(rows.map((r) => [r.index, { id: r.id, startedAt: r.startedAt }]));
+```
+
+One round-trip with `IN (...)`, not per-event lookups. The map is
+reused for both event linkage AND aggregate recomputation in step 4.
+
+### Step 4 — Bulk insert events + per-slice aggregates
+
+Single `createMany` for all events:
+
+```ts title="src/app/api/ingest/_helpers/events.ts"
+prisma.event.createMany({
+  data: events.map((e) => ({
+    sessionId,
+    sliceId: sliceMap.get(e.sliceIndex ?? 0)?.id ?? null,
+    sliceIndex: e.sliceIndex ?? 0,
+    type: e.type,
+    timestamp: BigInt(e.timestamp),
+    data: e.data as object,
+  })),
+});
+```
+
+Then per-slice aggregate updates — counted in JS in one pass over the
+events:
+
+```ts title="src/app/api/ingest/_helpers/events.ts"
+// Fold into Map<sliceIndex, { count, maxTimestamp }>
+const aggregates = new Map();
+for (const e of events) {
+  const idx = e.sliceIndex ?? 0;
+  const agg = aggregates.get(idx);
+  if (agg) {
+    agg.count += 1;
+    if (e.timestamp > agg.maxTimestamp) agg.maxTimestamp = e.timestamp;
+  } else {
+    aggregates.set(idx, { count: 1, maxTimestamp: e.timestamp });
+  }
+}
+```
+
+Then update each slice's `eventCount` (increment) + `endedAt` + `duration`:
+
+```ts title="src/app/api/ingest/_helpers/events.ts"
+prisma.$transaction(
+  [...aggregates].map(([index, agg]) => {
+    const slice = sliceMap.get(index);
+    return prisma.slice.update({
+      where: { id: slice.id },
+      data: { eventCount: { increment: agg.count }, endedAt, duration },
+    });
+  }),
+);
+```
+
+Aggregates never desync from event rows mid-batch — they're updated
+in the same `$transaction`.
+
+### Step 5 — Fire-and-forget `lastUsedAt`
+
+```ts title="src/app/api/ingest/route.ts"
+prisma.project
+  .update({ where: { id: project.id }, data: { lastUsedAt: new Date() } })
+  .catch(() => {});
+```
+
+A slow or failed update here must never break ingestion itself. The
+`lastUsedAt` field is for the dashboard's "last seen" UI hint — if
+it's a few seconds stale or skipped on one batch, nobody notices.
+
+## Stage 5 — Response
+
+```
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: *
+Cache-Control: no-store
+```
+
+Empty body. The SDK proceeds to the next batch.
+
+## Logging surface
+
+Every state-mutating step emits a structured pino log with a
+`domain:entity:action[:state]` tag — see
+[Architecture → Observability](/documentation/resources/architecture#observability)
+for the full convention. Tags emitted by ingest:
+
+| Tag | When | Level |
+| --- | --- | --- |
+| `ingest:batch:received` | Successful batch acceptance | `info` |
+| `ingest:tracked_user:linked` | Identity linked or relinked | `debug` |
+| `ingest:auth:invalid_key` | 401 from `withPublicKey` | `warn` |
+
+These are the search keys for finding ingestion-related events in
+your host's function logs (Vercel logs, or wherever you ship pino
+output).
+
+## Why no queue?
+
+The whole stage 4 happens inside a single function invocation. On a
+warm-DB, same-region deploy the round-trip is fast enough that the
+SDK's batching cadence (60 s default) absorbs any spikes — measure
+on your own deploy if it matters.
+
+If ingest volume grows past single-request capacity (Vercel's
+function timeout is 60 s on Hobby and 300 s on Pro, your host's
+limits will differ; Neon's connection limit is finite), the
+canonical next step is a queue + worker:
+
+```
+SDK → /api/ingest → enqueue (Inngest / Trigger.dev) → 204
+                  ↓ (later, async)
+                  worker → batched Postgres writes
+```
+
+This is **deliberately not implemented yet.** The product is
+self-hosted, traffic profile is per-deploy, and the simpler path
+("synchronous writes") works for the first several orders of
+magnitude. Adding a queue is a known next step, not a current need.
+
+See [Self-hosting reference → Capacity planning](/documentation/resources/self-hosting-reference#capacity-planning)
+for concrete numbers on when this matters.
+
+## Code map (every file referenced)
+
+| File | Role |
+| --- | --- |
+| [`src/app/api/ingest/route.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/route.ts) | Entry point — composes the helpers below |
+| [`src/app/api/_lib/with-public-key.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/_lib/with-public-key.ts) | Public-key auth HOF + CORS |
+| [`src/app/api/_lib/cors.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/_lib/cors.ts) | OPTIONS preflight + CORS headers |
+| [`src/app/api/ingest/_helpers/parse-body.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/parse-body.ts) | gzip-aware body read + Zod schema |
+| [`src/app/api/ingest/_helpers/session-upsert.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/session-upsert.ts) | Step 1 — session upsert + identity link |
+| [`src/app/api/ingest/_helpers/slice-markers.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/slice-markers.ts) | Step 2 — slice marker upsert + default slice fallback |
+| [`src/app/api/ingest/_helpers/events.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/events.ts) | Steps 3 + 4 — slice map + bulk insert + aggregates |
+| [`prisma/schema.prisma`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/prisma/schema.prisma) | Tables: `Session`, `Slice`, `Event`, `TrackedUser`, `Project` |
+
+## See also
+
+- [SDK → Wire format](/documentation/sdk/wire-format) — the REST contract this pipeline serves.
+- [SDK → @kharko/dozor → Init](/documentation/sdk/dozor/init) — client-side counterparts to stages 1+2.

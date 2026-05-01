@@ -1,0 +1,26 @@
+---
+title: Overview
+---
+
+`@kharko/dozor-react` is a thin React Context wrapper around [`@kharko/dozor`](/documentation/sdk/dozor). The core package owns rrweb, the buffer, transport, and every state transition. The React package adds two things:
+
+- **`<DozorProvider>`** — auto-initialises on mount, exposes the instance via Context, tears down on unmount.
+- **`useDozor()`** — reactive hook returning recorder state + callable methods. Re-renders the consuming component when relevant state changes.
+
+If you're not in React, use `@kharko/dozor` directly. If you are, use both.
+
+## Reading state from any component
+
+```tsx
+import { useDozor } from "@kharko/dozor-react";
+
+function StatusIndicator() {
+  const dozor = useDozor();
+  if (!dozor.isRecording) return null;
+  return <div>Recording — {dozor.bufferSize} events buffered</div>;
+}
+```
+
+The hook re-renders the component whenever `state` or `bufferSize` changes. Underneath it's `useSyncExternalStore` against `dozor.subscribe()`.
+
+For setup steps see [Quick start](/documentation/quick-start#react).

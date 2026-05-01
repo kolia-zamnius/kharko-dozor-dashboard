@@ -1,0 +1,38 @@
+{
+  "pages": [
+    "---Get Started---",
+    "(get-started)/introduction",
+    "(get-started)/how-it-works",
+    "(get-started)/playground",
+    "(get-started)/quick-start",
+    "(get-started)/self-host",
+
+    "---Dashboard---",
+    "dashboard/index",
+    "dashboard/organisations",
+    "dashboard/projects",
+    "dashboard/replays",
+    "dashboard/tracked-users",
+    "dashboard/profile",
+
+    "---SDK---",
+    "sdk/index",
+    "sdk/dozor",
+    "sdk/dozor-react",
+    "sdk/privacy",
+    "sdk/recipes",
+    "sdk/tunnel",
+    "sdk/wire-format",
+    "sdk/edge-cases",
+
+    "---Resources---",
+    "resources/architecture",
+    "resources/data-model",
+    "resources/ingest-pipeline",
+    "resources/replay-player",
+    "resources/authentication",
+    "resources/security",
+    "resources/self-hosting-reference",
+    "resources/contributing"
+  ]
+}

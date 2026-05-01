@@ -1,0 +1,125 @@
+---
+title: Users list
+---
+
+The Users tab (`/users`) lists every distinct user the SDK has
+identified via `dozor.identify(externalId, traits)`. Anonymous
+sessions don't appear here — they only show up in
+[Replays](/documentation/dashboard/replays).
+
+One row per `(projectId, externalId)` pair — the same `externalId`
+across two projects is two separate rows. That's deliberate: a user
+who appears in your Production and Staging projects is probably the
+same human, but their sessions are scoped per project, so the
+dashboard keeps them apart.
+
+## KPI strip
+
+Four cards above the list, scoped to the active org:
+
+| Card | Source |
+| --- | --- |
+| **Total tracked** | Distinct tracked users across the org's projects |
+| **Online now** | Users with their last event within the last **2 minutes** |
+| **Active 24h** | Users with their last event within the last 24 hours |
+| **New this week** | Users with `createdAt` in the last 7 days |
+
+Single `GET /api/tracked-users/summary` query — one round-trip with
+`COUNT … FILTER (...)` plus a `LATERAL` join to resolve each user's
+`MAX(Session.endedAt)`.
+
+## Columns
+
+| Column | Content | Sortable? |
+| --- | --- | --- |
+| **User** | Display name resolved via the [4-step chain](/documentation/dashboard/tracked-users/display-name); `externalId` shown as a subtitle when the displayName came from a real source | ✓ (sort by `createdAt`, "newest") |
+| **Project** | Badge with the project label | — |
+| **Status** | Activity bucket — see below | — |
+| **Last seen** | Relative timestamp of the most recent event | ✓ |
+| **Sessions** | Total session count for this user-in-this-project | ✓ |
+| **Active 7d** | Sum of session durations in the last 7 days, formatted | ✓ |
+
+### Status buckets
+
+Derived per row from the most recent session's `endedAt`:
+
+| Bucket | Threshold |
+| --- | --- |
+| `ONLINE` | Last event within the last 2 minutes |
+| `ACTIVE_24H` | Last event within the last 24 hours (but past the 2-min ONLINE bound) |
+| `IDLE_7D` | Last event within the last 7 days (but past the 24-hour bound) |
+| `DORMANT` | Last event older than 7 days, **or** the user has no events ever |
+
+Thresholds live in [`src/api-client/tracked-users/status.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/tracked-users/status.ts);
+the same enum is used server-side (filter) and client-side (badge
+render) so they can never disagree.
+
+## Filters
+
+- **Search** — matches `externalId` OR `customName` OR resolved
+  display name. The SQL prefilter narrows on the first two
+  case-insensitively; the display-name match runs in JS post-resolve
+  because the resolver may pull from a per-project trait key that
+  Prisma can't index.
+- **Project** — multi-select popover scoped to the active org.
+- **Status** — multi-select; uses the four buckets above.
+
+The status filter is **derived from `lastEventAt`** rather than
+stored, so the route over-fetches up to **500 rows** when status is
+active and applies the filter in JS. Other filters use SQL indexes
+directly. Past ~10k tracked users per org the over-fetch becomes a
+bottleneck — the canonical next step is a `$queryRaw` CTE with
+indexed `MAX(sessions.endedAt)`, flagged in the route's JSDoc.
+
+## Sorting
+
+Click any sortable column header to set / toggle the sort. The
+sort keys map to:
+
+| Header | Sort key | Behaviour |
+| --- | --- | --- |
+| **User** | `newest` | By `createdAt`, descending by default |
+| **Last seen** | `last-seen` | By most recent event timestamp |
+| **Sessions** | `sessions` | By total session count |
+| **Active 7d** | `active-time` | By summed session duration in the last 7 days |
+
+## Drilling into a user
+
+Click any row to open `/users/{trackedUserId}`. The detail page is a
+vertical stack:
+
+1. **Range selector** + last-updated indicator — `?range=6h|24h|7d`
+   drives every block below.
+2. **Header** — display name + identifiers, with an edit affordance
+   for OWNER / ADMIN (see [Display-name overrides](/documentation/dashboard/tracked-users/display-name)).
+3. **Traits** — JSON inspector for the traits the SDK shipped via
+   `identify()`.
+4. **Stats** — sessions / active time / avg session / events for the
+   selected range.
+5. **Activity chart** — histogram of events bucketed across the range.
+6. **Page distribution** — top pathnames for the user, with show
+   more / less.
+7. **Sessions timeline** — gantt-style stripe of sessions across the
+   range.
+8. **Sessions** — paginated session table scoped to this user.
+
+## Privacy
+
+Tracked users carry whatever traits the SDK shipped via `identify()`
+— the dashboard doesn't validate the shape (it's `Json` in Prisma).
+If you ship sensitive PII (emails, phone numbers, real names), it's
+stored on **your** database. No third-party processor sees it.
+
+## Retention
+
+The daily cleanup cron deletes a tracked user only when they have
+**zero sessions left**. The typical path is:
+
+1. The 90-day [session retention](/documentation/resources/security#retention)
+   deletes old sessions.
+2. A user whose every session has now been deleted shows zero on
+   `_count.sessions`.
+3. The same cron sweep deletes those orphan rows.
+
+A user with at least one session newer than 90 days stays — even if
+they haven't been seen in months, they're not the orphan target.

@@ -1,0 +1,344 @@
+---
+title: Self-host
+---
+
+The dashboard is a standard Next.js 16 app that needs Postgres and a way to send transactional email. It runs on anything that fits those — Vercel, Fly, Render, Railway, Docker on a VPS, etc.
+
+This guide walks through **Vercel + Neon + Gmail SMTP** end-to-end because it's the path with the lowest friction and free tiers generous enough to evaluate without a credit card. Every step is labelled `Required`, `Recommended`, or `Optional`, and [Code-level swaps](#code-level-swaps) at the bottom maps each layer to the file you'd touch to substitute it.
+
+## What you'll need
+
+**Required:**
+
+- A **Postgres 17+** instance — Neon, RDS, Supabase, your own host
+- A **Next.js 16-capable host** — Vercel, Fly, Render, Docker on a VPS
+- **At least one email-verifying Auth.js sign-in method** — Google OAuth, GitHub OAuth, email OTP, or any of the [80+ providers Auth.js supports](https://authjs.dev/getting-started/authentication/oauth) that returns a verified email. (Passkey alone isn't enough — it's an add-on, see step 3.)
+- A **way to send email** — required if email OTP is enabled, or to send organisation invites. Gmail SMTP works free; any SMTP provider works
+
+**Recommended:**
+
+- A **Sentry** project for error monitoring (the dashboard works fine without it — leaving `SENTRY_DSN` unset just disables error reporting)
+- A **custom domain** for your dashboard
+
+## 1. Fork & clone
+
+1. Fork [`kharko-dozor-dashboard`][repo] on GitHub.
+2. Clone it locally — you'll need it for the database step, then you'll deploy from your fork.
+
+```bash
+git clone https://github.com/<your-github-username>/kharko-dozor-dashboard.git
+cd kharko-dozor-dashboard
+npm install
+```
+
+[repo]: https://github.com/kolia-zamnius/kharko-dozor-dashboard
+
+## 2. Postgres `Required`
+
+The dashboard ships wired for Neon — `src/server/db/client.ts` uses `@prisma/adapter-neon` over the Neon serverless driver. The default deploy path is therefore "create a Neon project, paste two connection strings".
+
+Create a project at [neon.tech][neon]. Defaults are fine. After creation Neon shows two connection strings — both go into env vars in step 5:
+
+- **Pooled** (`...-pooler.*.aws.neon.tech`) → `DATABASE_URL`. PgBouncer-fronted, scales to many concurrent connections. The runtime app uses this.
+- **Unpooled** (no `-pooler`) → `DATABASE_URL_UNPOOLED`. Used **only** by `prisma migrate` CLI — Neon's pooled URL doesn't support the session-level features migrations need (advisory locks, transactional DDL).
+
+[neon]: https://neon.tech
+
+<Callout type="info">
+  **Want a different Postgres?** Docker locally, RDS, Supabase, your own server — any Postgres 17+ works. Swap
+  `@prisma/adapter-neon` for `@prisma/adapter-pg` in `src/server/db/client.ts` (~5 lines, see [Code-level
+  swaps](#code-level-swaps)). On non-Neon hosts you only need `DATABASE_URL` — `DATABASE_URL_UNPOOLED` is irrelevant
+  because the regular URL is already a direct TCP connection that supports session-level features. The migrator falls
+  back to `DATABASE_URL` automatically.
+</Callout>
+
+## 3. Auth providers `Pick at least one`
+
+The dashboard uses [Auth.js v5](https://authjs.dev). It ships configured with four providers, and you can enable any subset (or add more):
+
+**Primary methods (pick at least one):**
+
+- **Google OAuth** — recommended; one-click for most users
+- **GitHub OAuth** — recommended for developer audiences
+- **Email OTP** — passwordless 6-digit code; works for everyone, requires SMTP
+
+These all return a verified email — that's what the dashboard needs to create or look up the user account.
+
+**Add-on:**
+
+- **Passkey** (WebAuthn) — users register a passkey from their own settings page **after** they've signed in via a primary method. Cannot be used alone for first-time sign-up; cannot be used to sign in if the account doesn't exist yet.
+
+Adding more — Discord, Apple, Microsoft, Twitch, anything from Auth.js's 80+ providers — is one import in `src/server/auth/providers.ts` plus an env var pair. See [Code-level swaps](#code-level-swaps).
+
+### Google OAuth `Recommended`
+
+Create an OAuth 2.0 Client in [Google Cloud Console][gcc] (APIs & Services → Credentials → Create Credentials → OAuth client ID → Web application).
+
+Authorised redirect URIs:
+
+```
+https://your-domain.com/api/auth/callback/google
+http://localhost:3000/api/auth/callback/google
+```
+
+Save `Client ID` → `AUTH_GOOGLE_ID` and `Client secret` → `AUTH_GOOGLE_SECRET`.
+
+[gcc]: https://console.cloud.google.com/apis/credentials
+
+### GitHub OAuth `Optional`
+
+Create a new OAuth App at [GitHub Developer Settings][gh-dev]. Authorisation callback URL:
+
+```
+https://your-domain.com/api/auth/callback/github
+```
+
+Save `Client ID` → `AUTH_GITHUB_ID` and a generated `Client secret` → `AUTH_GITHUB_SECRET`.
+
+[gh-dev]: https://github.com/settings/developers
+
+## 4. SMTP `Required for OTP + invites`
+
+Used for email OTP sign-in codes and organisation invites. Skip this section entirely if you only want OAuth + Passkey sign-in and don't plan to invite teammates by email.
+
+The default wiring is Gmail SMTP — zero infra, free up to ~100–500 emails/day depending on account type:
+
+1. Enable [2-Step Verification][2sv] on the Google account (App Passwords require it).
+2. Generate an [App Password][app-pwd] labelled "Dozor" — copy the 16-character string.
+3. Save the Gmail address → `GMAIL_USER` and the App Password → `GMAIL_APP_PASSWORD`.
+
+[2sv]: https://myaccount.google.com/signinoptions/two-step-verification
+[app-pwd]: https://myaccount.google.com/apppasswords
+
+<Callout type="info">
+  **Need higher volume or production-grade deliverability?** Swap Gmail for SendGrid / Resend / Postmark / your own SMTP
+  by editing `src/server/mailer.ts` (~10 lines). The dashboard caps invite emails at 100/org/day to stay under Gmail's
+  quota — bump that constant if your provider allows more.
+</Callout>
+
+## 5. Configure environment
+
+Copy `.env.example` to `.env.local` and fill in the values. Three tiers:
+
+### Required
+
+| Variable                | Source                                  | Notes                                                                  |
+| ----------------------- | --------------------------------------- | ---------------------------------------------------------------------- |
+| `APP_URL`               | Your deployed URL                       | e.g. `https://dozor.example.com`. Used in emails and server-side fetch. |
+| `AUTH_URL`              | Same as `APP_URL`                       | Auth.js requires it explicitly.                                        |
+| `AUTH_SECRET`           | `openssl rand -base64 32`               | Random 32-byte secret. Don't reuse across instances.                   |
+| `DATABASE_URL`          | Postgres connection string              | Neon: the **pooled** (`-pooler`) URL. Other hosts: any standard Postgres URL.        |
+
+### Pick at least one auth provider
+
+| Variable                                | Source                                |
+| --------------------------------------- | ------------------------------------- |
+| `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` | Step 3 — Google                       |
+| `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` | Step 3 — GitHub                       |
+| `GMAIL_USER` + `GMAIL_APP_PASSWORD`     | Step 4 — Email OTP (also: invites)    |
+
+Passkey works as an add-on only — first-time sign-up always goes through one of the email-verifying methods above. Don't ship without at least one.
+
+### Optional
+
+| Variable                       | Default | Effect                                                                 |
+| ------------------------------ | ------- | ---------------------------------------------------------------------- |
+| `DATABASE_URL_UNPOOLED`        | unset   | Direct (non-pooled) Postgres URL — only used by `prisma migrate` CLI. **Required only on Neon** (their pooled URL doesn't support session-level features migrations need). On any other host the migrator falls back to `DATABASE_URL`. |
+| `CRON_SECRET`                  | unset   | Bearer token for `/api/cron/*`. Required only if you run the [daily cleanup cron](#8-daily-cleanup-cron-optional) in production. Unset = endpoint is open (fine locally; bad on a public deploy that wires cron). |
+| `SENTRY_DSN`                   | unset   | Error monitoring. Unset → Sentry no-ops; pino still logs to stdout.    |
+| `LOG_LEVEL`                    | `info`  | pino level (fatal / error / warn / info / debug / trace / silent).     |
+| `NEXT_PUBLIC_KHARKO_DEMO_MODE` | unset   | Shows the "this is a demo" banner. Leave unset on a self-hosted instance. |
+
+## 6. Initialize the database
+
+With `.env.local` filled in, apply the committed schema to your DB:
+
+```bash
+npx prisma migrate deploy
+```
+
+What this does: replays every file under `prisma/migrations/` against the DB pointed at by `DATABASE_URL_UNPOOLED` (Neon) or `DATABASE_URL` (any other host). For a fresh DB that's a single init migration creating ~16 tables (User / Organization / Project / Session / Slice / Event / Invite / …), 3 enums, all indexes. Idempotent — running it twice on the same DB is a no-op.
+
+You only run this **once per environment** (your remote DB, then later production if separate). After this, the schema is live and the dashboard can connect.
+
+### Verifying locally before deploying `Optional`
+
+Spin the dashboard up against your DB:
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`, sign up with whichever auth method you configured. If it works locally, deploy with confidence. If it doesn't — the error is in front of you immediately, no Vercel logs round-trip.
+
+<Callout type="info">
+  **Don't need `prisma migrate dev`.** That's for contributors editing the schema — it creates new migration files
+  when `prisma/schema.prisma` has uncommitted changes. As a self-hoster running unmodified upstream code, you only ever
+  need `migrate deploy` (and again after pulling upstream commits that include new migrations — see [Updating](#updating)).
+</Callout>
+
+## 7. Deploy
+
+The walkthrough uses **Vercel** because the project ships with `vercel.json`, function-region defaults, and a cron schedule that fits Vercel's free tier. Any Next.js 16 host works — see [Code-level swaps](#code-level-swaps) if you're going elsewhere.
+
+1. Go to [vercel.com/new][vercel-new], import your forked repo.
+2. **Don't deploy yet** — first add every env var from step 5 in **Settings → Environment Variables** (set Production + Preview at minimum).
+3. Hit **Deploy**. First build takes 2–4 minutes.
+
+[vercel-new]: https://vercel.com/new
+
+When the build finishes, Vercel gives you a URL like `your-fork.vercel.app`. Open it — the marketing landing renders.
+
+## 8. Daily cleanup cron `Optional`
+
+### What it does
+
+`GET /api/cron/daily-cleanup` is a pure database-hygiene endpoint. Nothing depends on it — the dashboard works correctly without ever calling it. The only reason to run it is to keep the database from growing unbounded over time.
+
+In order, it deletes:
+
+1. **Expired invites** — `Invite` rows past `INVITE_EXPIRY_DAYS` (default 3) that nobody accepted.
+2. **Old sessions** — `Session` rows older than `SESSION_RETENTION_DAYS` (default 90). Cascades to `Slice` + `Event` rows, which is the bulk of database volume — events for one busy session can be tens of MB.
+3. **Orphaned tracked-users** — `TrackedUser` rows whose every session was just deleted in step 2.
+4. **Empty organizations** — `Organization` rows with zero memberships left (after the last member leaves an invite-only org). Nullifies any `User.activeOrganizationId` pointing at them first.
+
+The two retention windows are constants — bump them in `src/lib/time.ts` (`SESSION_RETENTION_DAYS`) and `src/api-client/organizations/constants.ts` (`INVITE_EXPIRY_DAYS`) if 90 days / 3 days don't fit your audit / GDPR / "I want to keep replays for a year" needs.
+
+### About `CRON_SECRET`
+
+A shared secret between the scheduler and the endpoint. The endpoint checks `Authorization: Bearer $CRON_SECRET` and rejects any request without a match. Two notes:
+
+- **Locally**, `CRON_SECRET` can be unset — the auth check is skipped, so you can `curl` the endpoint while developing.
+- **In production**, set it. Without it, `/api/cron/daily-cleanup` is unauthenticated; anyone on the internet who guessed the path could trigger a DELETE-heavy job. Generate via `openssl rand -base64 32`.
+
+### Wiring options
+
+**On Vercel** (default): `vercel.json` already declares the schedule, and Vercel injects the bearer header automatically when invoking cron paths. Zero config beyond setting `CRON_SECRET` in env.
+
+```json title="vercel.json"
+{ "crons": [{ "path": "/api/cron/daily-cleanup", "schedule": "30 3 * * *" }] }
+```
+
+**Off Vercel**: delete `vercel.json` (it's only read by Vercel) and point any scheduler at the endpoint. Linux `cron`:
+
+```bash
+30 3 * * * curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://your-domain.com/api/cron/daily-cleanup
+```
+
+Or GitHub Actions, Kubernetes CronJob, Render Cron, Fly Machines on a schedule, an AWS EventBridge rule with a Lambda — anything that can issue an HTTP GET with a header on a schedule.
+
+**Don't want it at all**: do nothing. The endpoint exists but isn't invoked. The dashboard runs forever without it; your database just keeps growing.
+
+### Extending
+
+The handler is a single file ([src/app/api/cron/daily-cleanup/route.ts](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/cron/daily-cleanup/route.ts)) with one function per cleanup step. Add your own — purging a custom log table, archiving sessions to S3 before delete, emailing a digest of the night's counts. The structure is deliberately flat so it stays readable when extended.
+
+### Verifying
+
+Manually trigger to confirm the wiring works:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  https://your-domain.com/api/cron/daily-cleanup
+```
+
+A successful response is `200 OK` with a JSON summary like `{ "invites": 3, "sessions": 142, "trackedUsers": 12, "organizations": 0 }`. Look for the `cron:cleanup:summary` log entry on the same invocation.
+
+## 9. Smoke-test
+
+On the deployed instance:
+
+1. Visit `/` — marketing landing renders
+2. Sign up with whichever provider you configured
+3. Avatar (top-right) → Manage organizations → API keys → **Add key** — copy the `dp_…` key
+4. Open `/playground`, paste the key, click **Initialize → Start**, navigate to Interactions, click around (see [Playground](/documentation/playground))
+5. Check **Replays** — your playground session appears within a minute, with two slices (one per page)
+
+The playground exercises the full loop (SDK → ingest → DB → Replays UI) without you having to wire anything into a real app. If it works, your deploy is healthy. Once you're satisfied, follow [Quick start](/documentation/quick-start) to integrate the SDK into your actual product.
+
+Logs live in your host's logging UI (Vercel: project → **Logs**). The dashboard emits structured pino events tagged `domain:entity:action`, e.g. `auth:otp:cooldown_blocked`, `session:ingest:ok` — search by tag.
+
+## Custom domain `Optional`
+
+In Vercel: **Settings → Domains → Add**. Follow the DNS instructions; SSL is automatic.
+
+After the domain is live:
+
+1. Update `APP_URL` and `AUTH_URL` to the new domain
+2. Update OAuth redirect URIs in Google Cloud Console + GitHub Developer Settings
+3. Redeploy
+
+## Code-level swaps
+
+Every infra layer the dashboard depends on is wired through a single file. Substituting any of them is small and well-scoped:
+
+| Layer | Default | Swap to | File | Size |
+| --- | --- | --- | --- | --- |
+| Postgres adapter | `@prisma/adapter-neon` | Any Postgres via `@prisma/adapter-pg` | [`src/server/db/client.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/db/client.ts) | ~5 lines |
+| Email transport | Gmail SMTP via Nodemailer | SendGrid / Resend / Postmark / your SMTP | [`src/server/mailer.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/mailer.ts) | ~10 lines |
+| Cron runner | Vercel cron via `vercel.json` | Any external scheduler hitting the endpoint | [`vercel.json`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/vercel.json) (delete) + your cron | 0 code lines |
+| Auth providers | Google + GitHub + email OTP + Passkey | Add Discord / Apple / Microsoft / Twitch / etc. | [`src/server/auth/providers.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/auth/providers.ts) | ~3 lines/provider |
+| Error monitoring | Sentry via `instrumentation.ts` | Datadog / Rollbar / nothing | [`src/instrumentation.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/instrumentation.ts) | ~5 lines |
+| OTP daily / cooldown limits | `5 / day`, `60 s` between sends | Higher / lower | [`src/lib/auth/otp.constants.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/lib/auth/otp.constants.ts) | 1 line each |
+| Invite daily / expiry limits | `100 / day per inviter`, `3 days` TTL | Higher / lower | [`src/api-client/organizations/constants.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/organizations/constants.ts) | 1 line each |
+| Session retention window | `90 days` | Higher / lower | [`src/lib/time.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/lib/time.ts) | 1 line |
+
+The pattern: defaults are deliberately a single working choice — not a runtime switch — to keep the core code path linear. If you need a substitution, it's a small edit, not a config flag.
+
+## Updating
+
+When upstream ships changes:
+
+```bash
+git remote add upstream https://github.com/kolia-zamnius/kharko-dozor-dashboard.git
+git fetch upstream
+git merge upstream/main
+git push origin main
+```
+
+Vercel auto-deploys on push. If a new migration landed under `prisma/migrations/`, run `npx prisma migrate deploy` against your production DB before the new code hits live traffic — the deploy itself doesn't migrate the schema.
+
+## Point the SDK at your dashboard
+
+Once your dashboard is live and you've created an API key, point the SDK at it:
+
+```ts title="src/lib/dozor.ts"
+import { Dozor } from "@kharko/dozor";
+
+export const dozor = Dozor.init({
+  apiKey: "dp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  endpoint: "https://your-domain.com/api/ingest",
+});
+```
+
+For React: `<DozorProvider options={{ apiKey, endpoint }}>...</DozorProvider>`. Full API in the [SDK reference](/documentation/sdk).
+
+### Tunnel `Optional, recommended`
+
+The SDK supports a same-origin tunnel — a tiny proxy in your product forwards SDK requests to your dashboard's ingest endpoint. Two benefits:
+
+- **Ad-blocker bypass** — extensions can't block requests to your own domain
+- **No CORS** — same-origin avoids preflight overhead
+
+Pass a relative path:
+
+```ts title="src/lib/dozor.ts"
+import { Dozor } from "@kharko/dozor";
+
+export const dozor = Dozor.init({
+  apiKey: "dp_your_key",
+  endpoint: "/api/monitor",
+});
+```
+
+Proxy implementation is ~15 lines of Next.js / Express, or one `rewrites` rule. See [SDK → Tunnel](/documentation/sdk/tunnel).
+
+## Troubleshooting
+
+**OAuth callback fails with `redirect_uri_mismatch`.** The redirect URI registered in Google / GitHub doesn't match what Auth.js sends. Confirm `APP_URL` matches your actual domain (including `https://`) and that the callback URI in the OAuth provider is `<APP_URL>/api/auth/callback/<provider>` exactly.
+
+**OTP emails aren't arriving.** Wrong App Password or 2-Step Verification not enabled on the Gmail account. Regenerate the App Password and redeploy. Check Gmail's "Sent" folder on the sending account — successful sends show up there even if the recipient hasn't seen it yet.
+
+**Cron isn't firing.** On Vercel: free Hobby plan only supports daily cron — the shipped `30 3 * * *` schedule fits. Off Vercel: confirm your scheduler is hitting the endpoint with the bearer header. Either way, search logs for `cron:cleanup:*` events.
+
+**Database connection errors.** Use the **pooled** Postgres URL for `DATABASE_URL`, not the direct one. Serverless functions are short-lived and create new connections per invocation — without pooling you'll hit Postgres connection limits under any meaningful traffic.

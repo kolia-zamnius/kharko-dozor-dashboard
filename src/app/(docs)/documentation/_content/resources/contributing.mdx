@@ -1,0 +1,234 @@
+---
+title: Contributing
+---
+
+Dozor Dashboard is open source under MIT and welcomes contributions. PRs are reviewed on a best-effort basis by one maintainer.
+
+The conventions below are opinionated — the project favours expressive senior-level patterns over generic best-practice dumps. Read [Architecture](/documentation/resources/architecture) for the design intent behind the constraints.
+
+## Quick start
+
+```bash
+git clone https://github.com/kolia-zamnius/kharko-dozor-dashboard.git
+cd kharko-dozor-dashboard
+npm install
+cp .env.example .env.local   # fill in auth, SMTP, DB URLs
+npx prisma migrate dev       # apply committed migrations to your dev DB
+npm run dev
+```
+
+The dev server starts at [http://localhost:3000](http://localhost:3000).
+Sign in with email OTP (any working Gmail SMTP credentials in `.env.local`
+— the sender doesn't have to match the recipient).
+
+For the full deployment recipe (Neon, OAuth setup, Gmail App Password,
+Vercel cron), follow the [Self-host guide](/documentation/self-host).
+
+## Scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Next.js dev server (Turbopack) |
+| `npm run build` | Production build — runs on every PR via CI |
+| `npm run lint` | ESLint with type-aware rules on `.ts`/`.tsx` |
+| `npm run type-check` | `tsc --noEmit`, strict mode + `noUncheckedIndexedAccess` |
+| `npm run test:unit` | Vitest — pure functions, no Docker |
+| `npm run test:contract` | Vitest — OpenAPI snapshot drift + route-auth-wrapper invariant, no Docker |
+| `npm run test:integration` | Vitest — Testcontainers Postgres 17, slowest |
+
+CI runs `lint`, `type-check`, `unit`, `contract`, `integration` on every
+PR. The build is run by Vercel on deploy with real env vars (not in CI).
+
+### Before you open a PR
+
+Run these locally — CI will catch them, and iterating on a pushed PR
+wastes everyone's time:
+
+```bash
+npm run lint && npm run type-check && npm run build
+```
+
+Smoke-test the flow you changed: sign-in, `/users` filter + pagination,
+`/replays` playback, invite accept inside an org. The dashboard stays
+lightweight enough that this takes a minute.
+
+## Conventions
+
+The short version reviewers will flag:
+
+### Architecture
+
+- **Feature-based folders.** `src/api-client/{feature}/` (client) mirrors
+  `src/app/api/{feature}/` (server). Permission helpers + data loaders
+  live in `src/server/`.
+- **No raw `queryKey: [...]` arrays.** Every cache read or invalidate
+  goes through hierarchical factories in `src/api-client/<feature>/keys.ts`.
+- **HOFs serialise errors.** Route handlers `throw new HttpError(status,
+  msg)`; the `withAuth` / `withPublicKey` wrappers convert to JSON
+  responses. **No `try/catch` in handler bodies.**
+- **RBAC double-validation.** If the UI hides a button, the API must
+  also 403 the corresponding mutation. `requireMember(userId, orgId,
+  minRole)` is the entry point.
+
+### TypeScript
+
+- **No `any`.** Type-aware ESLint catches floating promises, missing
+  switch branches, type-only imports.
+- **No `@ts-ignore`.** Use `@ts-expect-error` with a comment if you
+  genuinely need to silence the compiler — but think hard first.
+- **`as unknown as ...`** is acceptable **only** at a grep-able trust
+  boundary (e.g. branded type cast) with a `// WHY:` comment.
+
+### UI
+
+- **Single loading gate per page.** Suspense + one page-level
+  `<Spinner />`, `keepPreviousData` to avoid flicker on subsequent
+  fetches. **No multiple skeletons** competing.
+- **No `forwardRef`.** React 19 — `ref` is a regular prop.
+- **No dot-notation compound components.** RSC-incompatible. Compound
+  primitives ship as `import { Foo, FooContent } from "@/components/ui/.../foo"`.
+
+### i18n
+
+- **All JSX strings via `t('namespace.key')`.** The exception is the
+  `src/app/(docs)/` zone (English-only by design, monolingual is a
+  feature there).
+- **Typed navigation** — use `Link` / `useRouter` / `redirect` /
+  `usePathname` from `@/i18n/navigation`, never `next/link` /
+  `next/navigation`. Two exceptions: `/api/auth/callback/*` and
+  `/documentation/*` (both outside the locale pipeline).
+
+### Logging
+
+- **`log.{info,warn,error,debug}(tag, data?)`** from `@/server/logger`.
+  Tag format: `domain:entity:action[:state]`, lowercase + underscores
+  inside segments.
+- **Don't put secrets in `data`** — pino redacts a default list
+  (`email`/`password`/`token`/`key`/`secret`/`headers.cookie`/
+  `headers.authorization`) but don't even hand them in.
+- **No `console.log` in new code.** Two narrow exceptions:
+  `sentry.{server,edge}.config.ts` and `src/server/env.ts` — both run
+  before pino is wired.
+
+### JSDoc
+
+- Short file headers — **WHY**, not WHAT (the code shows what).
+- `@see` cross-refs on anything that couples across modules.
+- `@throws` on functions that throw `HttpError`.
+- Skip `{type}` in `@param` — TypeScript already knows.
+
+## Commit messages
+
+Every commit title starts with `[<branch-name>]` in square brackets
+(or `[<ticket-id>]` if there's a Linear ticket). Recent history is
+the template:
+
+```
+[marketing-perf] tighten marketing landing for Lighthouse
+[observability] add pino logger and Sentry via instrumentation hook
+[playground-fe-adapt] make sign-in providers conditionally render
+```
+
+The reason: branches auto-delete on merge (squash-only), so the
+prefix is the only breadcrumb back to the PR after a clean
+`git log`.
+
+Subject ≤ 72 chars; body can be as long as needed. The PR description
+itself is more important — see below.
+
+## PR conventions
+
+Direct push to `main` is blocked by a GitHub ruleset. Every change
+goes through a PR.
+
+### Required CI checks before merge
+
+- `ci` (lint + type-check)
+- `unit`
+- `contract`
+- `integration`
+
+`next build` is **not** in CI — Vercel runs the production build on
+deploy with real env vars.
+
+### Merge method
+
+**Squash only.** The PR ends up as one commit on `main`; the branch
+auto-deletes on merge.
+
+### PR title and description
+
+- Title prefix: `[<branch-name>]` (or `[<linear-ticket>]` if there's
+  one). Example: `[observability] add pino logger and Sentry via
+  instrumentation hook`. After squash + branch delete, the prefix is
+  the breadcrumb back to the PR.
+- Body has three blocks:
+
+```
+## Context
+
+What this PR is and why. One short paragraph or 2-3 bullets.
+
+## Implementation notes
+
+How it was done at a glance — libraries used, approach, key decisions.
+Not a re-narration of the diff.
+
+## Notes (optional)
+
+Operational reminders that fall outside the diff:
+- "Run prisma db push after merge"
+- "Add SENTRY_DSN to Vercel before deploy"
+
+Skip this block when no follow-up is owed.
+```
+
+**Forbidden** in PR descriptions and commits:
+
+- `## Test plan` / `## Testing` sections — the suite IS the test plan,
+  run it
+- AI co-authorship references — commits should look like a human wrote
+  them; if you used a tool to draft, edit it down to your own voice
+  first
+
+## Database changes
+
+Schema edits happen in `prisma/schema.prisma`. The project uses Prisma
+migrations — every change is committed as a SQL file under
+`prisma/migrations/<timestamp>_<name>/migration.sql`.
+
+```bash
+# Edit prisma/schema.prisma — add a column, table, index, etc.
+npx prisma migrate dev --name <descriptive-name>
+```
+
+This generates the migration, applies it to your dev DB, and regenerates
+the Prisma client. Commit `prisma/schema.prisma` and the new
+`prisma/migrations/<ts>_<name>/` folder in the same PR.
+
+After a schema change ships, every contributor pulls and runs
+`npx prisma migrate dev` to apply the new migration locally. The
+operator runs `npx prisma migrate deploy` against the production Neon
+DB before the new code goes live.
+
+Tests use `prisma db push` against ephemeral Testcontainers databases
+(no migration history needed for a throwaway DB) — see
+`tests/setup/global-setup.ts`.
+
+## Reporting issues
+
+- **Bugs** — open a [GitHub issue][issues] with reproduction steps.
+- **Security vulnerabilities** — see [SECURITY.md][security], do **not**
+  open a public issue.
+- **Feature requests** — open an issue, but expect a higher bar for
+  acceptance. The project is opinionated; "make it more like X" is
+  generally not a useful framing.
+
+[issues]: https://github.com/kolia-zamnius/kharko-dozor-dashboard/issues
+[security]: https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/SECURITY.md
+
+## Code of conduct
+
+Be civil. Discuss ideas, not people. Respect disagreement — the
+maintainer reserves final call on architecture decisions, but always
+explains the reasoning.

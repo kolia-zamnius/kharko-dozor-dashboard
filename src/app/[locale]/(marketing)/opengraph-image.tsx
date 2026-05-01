@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 
 import { DEFAULT_LOCALE, LOCALES } from "@/i18n/config";
 
-export const alt = "Kharko Dozor — Open-source session replay";
+export const alt = "Dozor — Open-source session replay";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -81,7 +81,7 @@ export default async function OpengraphImage({ params }: { params: Promise<{ loc
           display: "flex",
         }}
       >
-        Kharko Dozor
+        Dozor
       </div>
     </div>,
     size,

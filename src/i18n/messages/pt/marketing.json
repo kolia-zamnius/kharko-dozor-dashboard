@@ -1,18 +1,18 @@
 {
   "meta": {
-    "title": "Kharko Dozor — reprodução de sessões open source",
+    "title": "Dozor — reprodução de sessões open source",
     "description": "Plataforma de gravação e reprodução de sessões para a web. Gratuita e open source, para sempre."
   },
   "header": {
-    "signIn": "Iniciar sessão",
     "signUp": "Começar",
     "dashboard": "Ir para o painel",
+    "documentation": "Documentação",
     "localeAria": "Mudar idioma"
   },
   "hero": {
     "eyebrow": "Open source · MIT",
     "headline": "Veja como os seus utilizadores realmente usam o seu produto",
-    "subheadline": "O Kharko Dozor grava sessões reais do navegador com rrweb e permite reproduzi-las com precisão pixel a pixel. Self-hosted, agnóstico ao framework, gratuito para sempre.",
+    "subheadline": "O Dozor grava sessões reais do navegador com rrweb e permite reproduzi-las com precisão pixel a pixel. Self-hosted, agnóstico ao framework, gratuito para sempre.",
     "ctaPrimary": "Instalar SDK",
     "ctaSecondary": "Ver no GitHub"
   },
@@ -55,7 +55,7 @@
   },
   "thankAuthor": {
     "heading": "Agradecer ao autor",
-    "subheading": "O Kharko Dozor é um projeto pessoal open source. Não há planos pagos, nem upsell empresarial, nem planos de monetização. Se o ajudou e quer agradecer, aqui estão duas formas.",
+    "subheading": "O Dozor é um projeto pessoal open source. Não há planos pagos, nem upsell empresarial, nem planos de monetização. Se o ajudou e quer agradecer, aqui estão duas formas.",
     "uahTitle": "Ucrânia — Monobank (UAH)",
     "uahDescription": "Doação num toque através do link Monobank. Funciona com qualquer cartão, de qualquer país, sem registo.",
     "uahCta": "Doar via Monobank",

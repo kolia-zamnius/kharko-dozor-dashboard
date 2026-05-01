@@ -47,6 +47,10 @@ const EXCEPTIONS: ReadonlyArray<{ path: string; reason: string }> = [
     path: "src/app/api/cron/daily-cleanup/route.ts",
     reason: "Bearer-token auth (Authorization: Bearer $CRON_SECRET) — intentionally NOT withAuth.",
   },
+  {
+    path: "src/app/api/search/route.ts",
+    reason: "Fumadocs docs search — public surface, only echoes published /documentation content.",
+  },
 ];
 
 /**

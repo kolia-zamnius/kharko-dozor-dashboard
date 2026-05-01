@@ -12,6 +12,11 @@
   "avatarDropdown": {
     "ariaLabel": "Menu account"
   },
+  "demoBanner": {
+    "label": "Demo pubblica",
+    "description": "Non caricare dati di produzione reali — le sessioni vivono su un'istanza condivisa. Per la produzione, self-host.",
+    "cta": "Self-host →"
+  },
   "drawer": {
     "openMenu": "Apri menu",
     "openMenuWithInvites": "Apri menu — {count, plural, one {# invito in attesa} other {# inviti in attesa}}",
@@ -21,6 +26,7 @@
     "switchOrg": "Cambia organizzazione",
     "manageOrgs": "Gestisci organizzazioni",
     "userSettings": "Impostazioni utente",
+    "documentation": "Documentazione",
     "signOut": "Esci"
   },
   "theme": {

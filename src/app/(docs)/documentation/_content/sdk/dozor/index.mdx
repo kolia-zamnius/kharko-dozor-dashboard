@@ -1,0 +1,15 @@
+---
+title: Overview
+---
+
+`@kharko/dozor` is the framework-agnostic core SDK. It owns:
+
+- **rrweb recorder** — DOM mutations, mouse positions, scrolls, inputs
+- **buffer** — events accumulate in memory until flushed
+- **transport** — gzip-compressed POST with retry, backoff, `keepalive` for unload
+- **lifecycle state machine** — `idle` / `recording` / `paused` (no terminal `stopped` variant — `stop()` returns to `idle`, the instance is reusable) plus an orthogonal "transport hold"
+- **identity layer** — `dozor.identify(userId, traits)` to link sessions to users
+
+Callable from any browser context — vanilla script tag, React app, Vue, Svelte, etc. React users should also read [`@kharko/dozor-react`](/documentation/sdk/dozor-react), which adds a reactive Provider + Hook on top.
+
+For five-minute setup against the public demo, see [Quick start](/documentation/quick-start).

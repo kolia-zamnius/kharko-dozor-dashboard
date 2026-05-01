@@ -1,0 +1,145 @@
+---
+title: Methods
+---
+
+All methods come off the instance returned by `Dozor.init()`. In React,
+the same methods come off the [`useDozor()`](/documentation/sdk/dozor-react/use-dozor)
+hook return value.
+
+```ts
+const dozor = Dozor.init({ apiKey: "dp_...", endpoint: "..." });
+
+dozor.start();
+dozor.identify("user_123", { plan: "pro" });
+dozor.pause();
+dozor.resume();
+dozor.stop();
+```
+
+## `Dozor.init(options)`
+
+Creates and returns the singleton recorder. Calling `init()` multiple
+times returns the existing instance — it does **not** re-initialise.
+
+```ts
+const dozor = Dozor.init({
+  apiKey: "dp_your_key",
+  endpoint: "https://your-dashboard.com/api/ingest",
+});
+```
+
+See [Init & options](/documentation/sdk/dozor/init) for the full
+options reference.
+
+## `dozor.start()`
+
+Starts recording. Only needed when `autoStart: false` was passed to
+`init()`. No-op when not in `idle` state.
+
+## `dozor.pause()`
+
+Pauses recording without destroying the session. Stops the rrweb
+recorder and the flush timer; the session ID and buffered events are
+kept. Resume with `resume()`.
+
+## `dozor.resume()`
+
+Resumes recording after `pause()`. Continues the same session with the
+same `sessionId`. No-op if not paused.
+
+## `dozor.stop()`
+
+Ends the current session: flushes all remaining events (including
+buffered-while-held ones), tells the server the session is finished,
+and returns the recorder to `idle`. The instance is still alive and
+reusable — call `start()` to begin a fresh session against a new
+`sessionId`.
+
+`stop()` always flushes — even if transport is held — so no data is
+lost when you explicitly end a session.
+
+No-op if already in `idle`.
+
+## `dozor.cancel()`
+
+Discards the current session entirely: drops all buffered events
+without flushing, sends a `DELETE` request to remove the session row
+from the server, and returns the recorder to `idle`. The instance is
+reusable — call `start()` afterwards if you want to record again.
+
+Use `cancel()` (not `stop()`) when the user changed their mind —
+e.g. abandoned a checkout you were holding events for. Whatever was
+captured is gone from both the buffer and the server.
+
+No-op if already in `idle`.
+
+## `dozor.hold()`
+
+Holds the transport — recording continues but events are buffered in
+memory without being shipped. The rrweb recorder keeps capturing DOM
+mutations normally.
+
+No-op if already held. See
+[Recipes → Conditional recording](/documentation/sdk/recipes) for the
+canonical use case.
+
+## `dozor.release(options?)`
+
+Releases the transport hold. By default, flushes all buffered events
+and resumes normal sending. Pass `{ discard: true }` to drop the held
+events instead.
+
+```ts
+dozor.release();                  // flush buffered events, resume
+dozor.release({ discard: true }); // drop buffered events, resume
+```
+
+No-op if not held.
+
+## `dozor.identify(userId, traits?)`
+
+Identifies the current user with an ID and optional traits. The
+identity is stored on the server (in the `userIdentity` slot of the
+next metadata payload) and linked to the session.
+
+If metadata has already been sent for this session, `identify()`
+triggers a metadata re-send on the next flush so the server picks up
+the new identity.
+
+```ts
+dozor.identify("user_123");
+
+dozor.identify("user_123", {
+  email: "john@example.com",
+  name: "John Doe",
+  plan: "pro",
+});
+```
+
+| Parameter | Type | Required | Description |
+| --- | --- | --- | --- |
+| `userId` | `string` | ✓ | Stable user identifier (1–255 chars). |
+| `traits` | `Record<string, unknown>` | — | Free-form object with user properties. Anything you'd want to filter or display in the dashboard. |
+
+Identified sessions roll up under the user in the dashboard's
+**Users** tab.
+
+## `dozor.subscribe(listener)`
+
+Subscribe to state changes. The listener fires whenever any observable
+property changes (`state`, `sessionId`, `isHeld`, `userId`,
+`bufferSize`). Returns an unsubscribe function.
+
+```ts
+const unsubscribe = dozor.subscribe(() => {
+  console.log("State:", dozor.state, "Held:", dozor.isHeld);
+});
+
+// later
+unsubscribe();
+```
+
+Used internally by `@kharko/dozor-react` for `useSyncExternalStore` —
+direct use is rare in app code, but exposed for non-React frameworks
+that want reactive state.
+

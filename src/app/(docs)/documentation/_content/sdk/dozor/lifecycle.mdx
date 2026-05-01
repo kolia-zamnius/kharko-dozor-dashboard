@@ -1,0 +1,96 @@
+---
+title: Lifecycle
+---
+
+A recorder instance moves between **three** states. The state
+machine is strict — invalid transitions are no-ops, never errors —
+so you can wire the SDK into your app without defensive guards.
+
+## States
+
+| State       | Meaning                                                                                                                                                                                                                       |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `idle`      | Initialised but not capturing. Reached after `init({ autoStart: false })`, or after `stop()` / `cancel()` from any active state. Buffer is empty, flush timer not running.                                                    |
+| `recording` | Active. rrweb capturing DOM mutations, flush timer ticking, transport sending batches on the cadence.                                                                                                                         |
+| `paused`    | Recording suspended without losing context. rrweb stopped, flush timer stopped, but `sessionId` and any buffered events are kept. Internally tags itself with a `pauseReason: "user" \| "visibility"` (see auto-pause below). |
+
+There is **no** terminal "stopped" state. `stop()` flushes and ends
+the current session, then returns the recorder to `idle` — the same
+instance is reusable: call `start()` to begin a fresh session against
+a new `sessionId`.
+
+## Transitions
+
+| From | Action | To | Side effects |
+| --- | --- | --- | --- |
+| (init) | `init({ autoStart: true })` | `recording` | Default |
+| (init) | `init({ autoStart: false })` | `idle` | — |
+| `idle` | `start()` | `recording` | Mints a fresh `sessionId` |
+| `recording` | `pause()` | `paused` (`pauseReason: "user"`) | — |
+| `paused` | `resume()` | `recording` | — |
+| `recording` | `stop()` | `idle` | Flush + `endSession` |
+| `paused` | `stop()` | `idle` | Flush + `endSession` |
+| `recording` | `cancel()` | `idle` | Drop buffer + `DELETE` session |
+| `paused` | `cancel()` | `idle` | Drop buffer + `DELETE` session |
+
+After `stop()` / `cancel()`, the next `start()` mints a fresh
+`sessionId` (the previous one was cleared), so a new recording starts
+clean.
+
+Calls outside these arrows are no-ops:
+
+- `start()` while already recording or paused → no-op
+- `pause()` when not recording → no-op
+- `resume()` when not paused → no-op
+- `stop()` / `cancel()` while idle → no-op
+
+## Transport hold (orthogonal)
+
+`hold()` and `release()` are independent of the lifecycle state. The
+recorder stays in whatever state it was in; only the **transport** is
+suspended. Captured events keep accumulating in the buffer — they
+just don't ship until you call `release()`. Useful when you want to
+record a sensitive flow and decide afterwards whether to send it.
+
+| From | Action | Result |
+| --- | --- | --- |
+| Any state | `hold()` | Transport held — recording continues if it was on, events buffer locally |
+| Held | `release()` | Transport resumed, held buffer flushes |
+| Held | `release({ discard: true })` | Transport resumed, held buffer is dropped instead |
+| Held | `stop()` | Returns to `idle` — force flush + `endSession`, no data loss |
+| Held | `cancel()` | Returns to `idle` — drop buffer + `DELETE` session |
+
+`init({ hold: true })` starts the recorder with the transport already
+held — call `release()` later when you decide the events are safe to
+ship. Useful for staged opt-in flows (consent banners, opt-in
+analytics) where you want recording to start immediately so you don't
+miss the first interactions, but defer transport until the user
+actually agrees.
+
+Hold edge cases:
+
+- `hold()` while already held → no-op
+- `release()` while not held → no-op
+- `stop()` while held → flushes the held buffer, ends the session
+  cleanly, returns to `idle`. No data loss.
+- `cancel()` while held → drops the held buffer, deletes the session
+  row on the server, returns to `idle`.
+
+## Auto-pause on tab visibility
+
+With the default `pauseOnHidden: true`, the SDK observes
+`visibilitychange` and:
+
+- Auto-pauses when the tab becomes hidden (state moves to `paused`
+  with `pauseReason: "visibility"`).
+- Auto-resumes when the tab returns to visible — but **only** when
+  the pause reason was `"visibility"`. A manual `pause()` (reason
+  `"user"`) is left alone; it won't auto-resume on tab return.
+
+The two `pauseReason` values are why a manual `pause()` survives
+the user briefly switching tabs — the SDK can tell which kind of
+pause it's looking at.
+
+Set `pauseOnHidden: false` to keep recording while the user is on
+another tab — useful for QA harnesses that need to capture work in
+background tabs.

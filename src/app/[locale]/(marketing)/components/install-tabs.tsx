@@ -82,14 +82,20 @@ const REACT_USAGE = `import { DozorProvider } from "@kharko/dozor-react";
 
 export default function App() {
   return (
-    <DozorProvider publicKey={process.env.NEXT_PUBLIC_DOZOR_KEY!}>
+    <DozorProvider
+      options={{
+        apiKey: process.env.NEXT_PUBLIC_DOZOR_KEY!,
+        endpoint: "https://kharko-dozor.vercel.app/api/ingest",
+      }}
+    >
       <YourApp />
     </DozorProvider>
   );
 }`;
 
-const VANILLA_USAGE = `import { init } from "@kharko/dozor";
+const VANILLA_USAGE = `import { Dozor } from "@kharko/dozor";
 
-init({
-  publicKey: "dp_...",
+Dozor.init({
+  apiKey: "dp_...",
+  endpoint: "https://kharko-dozor.vercel.app/api/ingest",
 });`;

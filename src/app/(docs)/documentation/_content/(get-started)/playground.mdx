@@ -1,0 +1,25 @@
+---
+title: Playground
+---
+
+The fastest way to see the SDK work end-to-end. Paste an API key, click around two pages, then open **Replays** — your session is at the top.
+
+Lives at [`/playground`](/playground). Public route, no sign-in. Sessions land in whichever project owns the API key you paste.
+
+## How to use it
+
+1. Sign in, copy any project's API key (Personal Space already has one — `Avatar → Manage organizations → Personal Space (API keys) → Add key`).
+2. Open [`/playground`](/playground).
+3. Paste the `dp_…` key. Optionally add a User ID + name/email traits.
+4. Click **Initialize** → **Start**. The status row flips to **Recording**.
+5. Click around, type into the three privacy-demo inputs, click **Go to Interactions →**, click some more.
+6. Open **Replays** in the dashboard — your session is at the top. Scrub through to verify masked inputs show asterisks, the blocked element is a grey rectangle, the console pane has your log/warn/error entries, and the slice list has two slices (one per page).
+
+## Privacy demo
+
+The SDK auto-masks every input by default — the right call for production, but it makes the privacy demo confusing because everything would already be masked. The playground passes `privacyMaskInputs: false`, so each of the three samples (regular / `data-dozor-mask` / `data-dozor-block`) demonstrates one mechanism in isolation.
+
+## See also
+
+- [Quick start](/documentation/quick-start) — wire the SDK into your own app once you've confirmed the loop works.
+- [SDK → Privacy](/documentation/sdk/privacy) — full reference on `data-dozor-*` attributes and related options.

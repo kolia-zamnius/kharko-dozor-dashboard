@@ -1,7 +1,7 @@
 {
   "page": {
-    "listTitle": "Registrazioni — Kharko Dozor",
-    "detailTitle": "Registrazione — Kharko Dozor"
+    "listTitle": "Registrazioni — Dozor",
+    "detailTitle": "Registrazione — Dozor"
   },
   "mutations": {
     "deleteSession": {

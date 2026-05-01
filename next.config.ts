@@ -1,3 +1,4 @@
+import { createMDX } from "fumadocs-mdx/next";
 import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
 
@@ -11,6 +12,15 @@ import type { NextConfig } from "next";
  * instead of silently falling back to an empty message bundle.
  */
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+/**
+ * Fumadocs MDX plugin — runs the codegen for `source.config.ts` on
+ * `next dev` / `next build`, regenerating `.source/` (gitignored). The
+ * docs zone reads from that codegen via `src/lib/source.ts`.
+ *
+ * @see source.config.ts — content registry the codegen consumes.
+ */
+const withMDX = createMDX();
 
 /**
  * Security headers applied to every non-static response.
@@ -75,7 +85,20 @@ const nextConfig: NextConfig = {
     // landing, which every visitor (authed or anon) should be able
     // to reach directly.
     { source: "/settings", destination: "/settings/user", permanent: false },
+
+    // `/documentation` → first slug. Bare `/documentation` doesn't
+    // match the catch-all `[...slug]` (zero-segment requires the
+    // optional `[[...slug]]` form, which we deliberately don't use —
+    // it'd swallow this redirect target). The Notebook sidebar's
+    // labelled groups surface the four sections once visitors land
+    // inside; the entry hop just picks the canonical first page so
+    // there's a single place to change it.
+    {
+      source: "/documentation",
+      destination: "/documentation/introduction",
+      permanent: false,
+    },
   ],
 };
 
-export default withNextIntl(nextConfig);
+export default withMDX(withNextIntl(nextConfig));

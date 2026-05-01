@@ -1,0 +1,83 @@
+---
+title: List & filters
+---
+
+The Replays tab (`/replays`) shows every session captured by the SDK
+across the active org's projects, newest first. Sessions stay until
+they hit the [retention cutoff](/documentation/resources/security#retention)
+— 90 days by default — at which point the daily cron deletes them.
+
+<Callout type="info">
+  **Empty list?** No sessions land here until the SDK posts at least one batch. Fastest way to populate it without
+  integrating into a real app: paste an API key into the [Playground](/documentation/playground), click around for
+  ~30 seconds, refresh.
+</Callout>
+
+## KPI strip
+
+Four cards above the list, scoped to the active org:
+
+| Card | Source |
+| --- | --- |
+| **Total sessions** | All sessions in the active org (so capped at ~90 days by retention) |
+| **Total duration** | `SUM(session.duration)` |
+| **Avg duration** | `AVG(session.duration)`, rounded |
+| **Active today** | Sessions created in the **last 24 hours** (rolling window, not calendar day) |
+
+Single `GET /api/sessions/summary` query — one round-trip with
+`COUNT … FILTER (...)` conditional aggregation, not four separate
+queries.
+
+## Columns
+
+| Column | Content |
+| --- | --- |
+| **Session** | The SDK-side `externalId` (a UUID), linked to the player at `/replays/[id]` |
+| **User** | Display name resolved via the [4-step chain](/documentation/dashboard/tracked-users/display-name); empty dash for anonymous sessions |
+| **Project** | Badge with the project's label |
+| **Pages** | Number of slices in the session (one per SPA navigation / idle gap) |
+| **Duration** | `MM:SS` recording length. Sortable — click the header to toggle desc/asc |
+| **Date** | Relative timestamp (e.g. "3 minutes ago"); hover for the full timestamp. Sortable |
+
+The right-most column is a per-row kebab menu visible only to OWNER /
+ADMIN — currently just **Delete** (see below).
+
+## Filters
+
+Three filter affordances:
+
+- **Search** — free-text input, matches against session and user fields server-side.
+- **Project** — multi-select popover scoped to the active org.
+- **Date range** — popover with four presets: **Today**, **Last 7 days**, **Last 30 days**, **Last 90 days**. The default is `90d` (matches the retention window so by default you see everything that exists).
+
+All filters serialise into the URL as query params; default values are
+elided to keep links clean. A filtered URL is shareable — pasting it
+into a teammate's browser gives them the same view, subject to RBAC
+(they only see orgs they're a member of).
+
+## Pagination
+
+**Cursor-based** by `id` (not offset), so list position stays stable
+as new sessions land — page 2 doesn't shift down when someone records
+on page 1. The cursor is the last row's id passed back via `?cursor=`;
+the server resolves the next slice with `cursor: { id }, skip: 1`.
+
+`keepPreviousData` on the TanStack query keeps the previous page on
+screen while the next page loads — no flicker on filter / sort /
+pagination change.
+
+## Deleting a session
+
+OWNER + ADMIN. Click the kebab icon (`⋮`) at the end of the row →
+**Delete** → confirmation dialog → **Delete**. The session row, its
+slices, and its events are removed from the database. No soft-delete.
+The session is gone.
+
+The capability is double-validated — UI hides the kebab menu for
+VIEWERs, and `DELETE /api/sessions/[id]` checks `requireMember(...,
+"ADMIN")` regardless.
+
+## See also
+
+- [Replay player](/documentation/dashboard/replays/player) — what the player surface looks like once you click into a session.
+- [Resources → Data model](/documentation/resources/data-model) — the `Session` / `Slice` / `Event` schema underneath.

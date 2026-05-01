@@ -1,6 +1,6 @@
 {
   "page": {
-    "title": "Utilizadores — Kharko Dozor"
+    "title": "Utilizadores — Dozor"
   },
   "mutations": {
     "updateDisplayName": {
@@ -90,7 +90,7 @@
   },
   "detail": {
     "page": {
-      "title": "Utilizador — Kharko Dozor"
+      "title": "Utilizador — Dozor"
     },
     "rangeSelectorAria": "Selecionar intervalo de atividade",
     "header": {

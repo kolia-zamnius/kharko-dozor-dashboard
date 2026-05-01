@@ -7,6 +7,59 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 
 /**
+ * Filter the React 19 + `next-themes@0.4.x` script-tag warning out of
+ * `console.error`.
+ *
+ * @remarks
+ * `next-themes` ships its FOUC-prevention init via `React.createElement(
+ * "script", { dangerouslySetInnerHTML: ... })`. The script DOES execute
+ * (server-rendered into HTML before hydration — that's the point of
+ * preventing the flash) and `next-themes` is the de-facto Next.js theme
+ * library. React 19's dev mode adds an unconditional warning for any
+ * `<script>` element seen in the React tree, on the (overzealous)
+ * premise that scripts in the client tree won't execute. For
+ * `dangerouslySetInnerHTML` server-rendered scripts that's a false
+ * positive — the script already ran from the HTML output before React
+ * even hydrated.
+ *
+ * Removing the warning:
+ *   - Replacing `next-themes` would fix it but break Fumadocs (which
+ *     imports `useTheme` from the same package internally).
+ *   - Forking `next-themes` to move the script outside the React tree
+ *     is the canonical upstream fix; the maintainers have an open
+ *     discussion (`pacocoursey/next-themes`) but no released version.
+ *   - Suppressing this single message is the surgical workaround:
+ *     dev-only console noise vs a real refactor with broader risk.
+ *
+ * The patch is module-scoped, runs once per page load (HMR-safe via
+ * the `__patched` flag), and only filters the EXACT warning string —
+ * any other `console.error` flows through untouched.
+ *
+ * Remove this block when:
+ *   - `next-themes` 1.x ships with the script outside React tree
+ *   - OR React 19 relaxes the warning for `dangerouslySetInnerHTML`
+ *   - OR we replace `next-themes` and provide a Fumadocs-compatible shim
+ */
+type PatchedConsole = Console & { __nextThemesScriptWarningPatched?: boolean };
+if (typeof window !== "undefined") {
+  const patched = console as PatchedConsole;
+  if (!patched.__nextThemesScriptWarningPatched) {
+    const original = console.error;
+    console.error = (...args: unknown[]) => {
+      const first = args[0];
+      if (
+        typeof first === "string" &&
+        first.includes("Encountered a script tag while rendering React component")
+      ) {
+        return;
+      }
+      original(...args);
+    };
+    patched.__nextThemesScriptWarningPatched = true;
+  }
+}
+
+/**
  * App-wide client providers that are **stable across locale
  * navigations**. Mounted from the non-localised root layout
  * (`src/app/layout.tsx`) so that switching `/en` ↔ `/uk` doesn't

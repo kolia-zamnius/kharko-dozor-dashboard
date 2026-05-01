@@ -57,7 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: t("title"),
       description: t("description"),
       url: urlFor(locale),
-      siteName: "Kharko Dozor",
+      siteName: "Dozor",
       locale,
       type: "website",
     },
@@ -77,7 +77,7 @@ export default async function MarketingHomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Kharko Dozor",
+    name: "Dozor",
     description: t("description"),
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web",

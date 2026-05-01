@@ -1,0 +1,347 @@
+---
+title: Self-hosting reference
+---
+
+This is the **reference companion** to
+[Self-host your own](/documentation/self-host) — that
+page walks you through the deploy step-by-step, this page is the
+lookup material you reach for once it's running.
+
+## Environment variables
+
+Every variable read by the dashboard. Listed with default behaviour
+when unset, so you can see what's required vs optional at a glance.
+
+### Required
+
+| Variable | What it does | Sourced from |
+| --- | --- | --- |
+| `APP_URL` | Absolute base URL — prepended to relative URLs by the server-side `apiFetch` bridge. Without it, Server Components can't fetch their own API routes. | Your domain (e.g. `https://docs.example.com`). Falls back to `VERCEL_URL` (auto-set on Vercel) then `http://localhost:3000` |
+| `AUTH_URL` | Auth.js base URL. Used to construct OAuth callback URLs. Set the same as `APP_URL` in production. | Same as `APP_URL` |
+| `AUTH_SECRET` | JWT signing secret. **Don't reuse across instances.** Rotating it invalidates every active session. | `openssl rand -base64 32` |
+| `DATABASE_URL` | Postgres connection string. On Neon: the **pooled** URL (`-pooler` in the host). On any other Postgres: a regular connection string. | Neon project dashboard or your own Postgres host |
+
+### At least one primary sign-in method
+
+The boot-time refine in `src/server/env.ts` asserts at least one of these is configured — otherwise the dashboard has no way to create accounts. Passkey doesn't count: it's an add-on registered after a primary-method sign-in.
+
+| Pair | Provider |
+| --- | --- |
+| `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` | Google OAuth |
+| `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` | GitHub OAuth |
+| `GMAIL_USER` + `GMAIL_APP_PASSWORD` | Email OTP (also required for sending org invites) |
+
+### Optional
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `DATABASE_URL_UNPOOLED` | unset | Direct (non-pooled) Postgres URL — used **only** by `prisma migrate` CLI. Required only on Neon (the pooled URL doesn't support session-level features migrations need). On any other host, `prisma.config.ts` falls back to `DATABASE_URL`. |
+| `CRON_SECRET` | unset | Bearer token for `/api/cron/*`. Required only if you wire the [daily cleanup cron](/documentation/self-host#8-daily-cleanup-cron-optional) on a public deploy — without it any internet caller could trigger DB-deletion. Unset is fine locally and on instances that don't run the cron. |
+| `NEXT_PUBLIC_KHARKO_DEMO_MODE` | unset | Set to `"true"` ONLY on a public demo deployment. Shows the persistent "this is a demo" disclosure banner. **Leave unset on a self-hosted instance.** |
+| `SENTRY_DSN` | unset | Error monitoring. Unset = Sentry is a no-op; structured pino logs still go to stdout. |
+| `LOG_LEVEL` | `info` (prod), `debug` (dev), `silent` (tests) | pino level: `fatal \| error \| warn \| info \| debug \| trace \| silent` |
+
+### Auto-set by Vercel
+
+| Variable | What it does |
+| --- | --- |
+| `VERCEL_URL` | Auto-set by Vercel; consumed as the fallback base URL when `APP_URL` is unset. You don't write this — Vercel does. |
+
+The canonical schema lives in
+[`src/server/env.ts`][env] — zod-validated, invalid env fails boot
+loudly. Adding a new variable means editing that file plus this table;
+the contract test will catch the second half if you forget.
+
+[env]: https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/env.ts
+
+### Sentry — where to put the DSN
+
+Don't commit `SENTRY_DSN` to any committed file (`.env.example`,
+`.env.test`). Even though the DSN looks "public", any actor with it
+can flood your error quota. The right places:
+
+- **Vercel** (production): Project Settings → Environment Variables →
+  add `SENTRY_DSN`, scoped to **Production** only. Preview /
+  Development would generate noise from your own experiments.
+- **`.env.local`** (gitignored): only if you want local dev errors to
+  land in Sentry — usually you don't.
+- **`.env.example`** / **`.env.test`**: leave empty. The code no-ops
+  cleanly when DSN is absent.
+
+A `console.warn` fires at boot if `NODE_ENV=production` and
+`SENTRY_DSN` is unset, so you can't silently lose error reporting
+after a Vercel env change.
+
+## Capacity planning
+
+Concrete numbers for sizing your deploy. The numbers below are based
+on the demo instance + dogfooding — your traffic profile will shift
+them.
+
+### Database sizing
+
+The dominant table is `Event` — see
+[Data model → Typical row sizes](/documentation/resources/data-model#typical-row-sizes).
+
+Order-of-magnitude:
+
+| Sessions/day | Events/day | DB growth/day | Days to fill 0.5 GB (Neon Free) |
+| --- | --- | --- | --- |
+| 100 | ~150,000 | ~40 MB | ~12 |
+| 1,000 | ~1.5M | ~400 MB | ~1.2 |
+| 10,000 | ~15M | ~4 GB | Hits free-tier cap same day |
+
+The daily 90-day-retention cron caps total volume — at steady state
+you hold ~90 days of traffic. Beyond that the schedule clears the
+oldest sessions every night.
+
+**At 1000 sessions/day** with 90-day retention, steady-state DB size
+is ~36 GB — Neon's Pro tier territory.
+
+**At 100 sessions/day** with 90-day retention, steady-state is ~3.5 GB
+— still on a small paid Neon plan.
+
+### When to outgrow the synchronous-write ingest
+
+The ingest pipeline writes synchronously inside one Vercel function
+invocation. Per-batch latency on Neon serverless is typically
+50–200 ms.
+
+Practical limits:
+
+- **Vercel function timeout** — 60 s on Hobby, 300 s on Pro. If a
+  single batch ever takes >10 s, you're approaching the ceiling.
+- **Neon connection limit** — depends on plan. Pooled connections
+  scale further; the SDK's per-batch cadence (60 s default flush)
+  limits concurrent writes per active user to roughly 1.
+- **Postgres write throughput** — at Neon's smallest compute (0.25
+  vCPU), ~100–200 ingest batches/sec is the comfortable ceiling.
+
+Rough adoption thresholds:
+
+| Symptom | What's happening | Next step |
+| --- | --- | --- |
+| Function timeouts on /api/ingest | Single batches taking >60 s | Reduce SDK `batchSize`, scale up Neon compute |
+| Connection pool exhaustion | More concurrent batches than pooled connections | Scale Neon pooler, or move to self-managed Postgres |
+| Steady-state DB size growth | Retention cron not enough | Lower `SESSION_RETENTION_DAYS`, archive selectively, or shard |
+| Ingest p95 latency >500 ms | Postgres write contention | Move to a queue + worker pattern (Inngest, Trigger.dev, BullMQ) |
+
+The queue + worker pattern is the canonical "next architecture" — see
+[Ingest pipeline → Why no queue?](/documentation/resources/ingest-pipeline#why-no-queue)
+for the deliberate reasoning behind not shipping it yet.
+
+## Operational tags reference
+
+Search keys for finding events in Vercel function logs (or wherever
+you ship pino output). Format: `domain:entity:action[:state]`.
+
+| Tag | When | Level |
+| --- | --- | --- |
+| `ingest:batch:received` | Successful ingest batch | `info` |
+| `ingest:tracked_user:linked` | Identity linked to session | `debug` |
+| `ingest:auth:invalid_key` | Bad API key on `/api/ingest` | `warn` |
+| `auth:otp:cooldown_blocked` | OTP daily/cooldown hit | `warn` |
+| `auth:account:unlink:guard_blocked` | Last-login-method guard fired | `warn` |
+| `org:invite:create_or_refresh:ok` | Invite sent / refreshed | `info` |
+| `org:invite:email` | Invite email send (success or fail) | `info` / `warn` |
+| `project:key:regenerate:ok` | API key rotated | `info` |
+| `cron:cleanup:start` | Daily cleanup cron fired | `info` |
+| `cron:cleanup:summary` | Daily cleanup completed with counts | `info` |
+| `cron:cleanup:unauthorized` | Bearer mismatch on cron endpoint | `warn` |
+| `session:cancel:ok` | SDK-side session cancel succeeded | `info` |
+| `session:cancel:noop_race` | Cancel arrived before any ingest batch | `debug` |
+
+## Troubleshooting catalog
+
+Common failure modes with concrete diagnostic steps.
+
+### Sessions aren't appearing in the dashboard
+
+1. **Check the SDK** — open browser DevTools → Network → look for
+   POSTs to `/api/ingest`. Are they firing?
+2. **Check status codes** — 401 means key mismatch; 400 means schema
+   drift (likely SDK version vs dashboard version mismatch).
+3. **Check the dashboard logs** — search for `ingest:batch:received`
+   tagged with your `projectId`. Present? The batch landed; the
+   dashboard's UI just hasn't refreshed.
+4. **Check `Project.lastUsedAt`** in the database directly — if it's
+   updating but the Replays list shows nothing, the issue is in the
+   dashboard read path, not ingest.
+
+### OTP emails aren't arriving
+
+1. **Check `GMAIL_*` env vars** — App Password must be exact 16 chars,
+   no spaces, generated for the Gmail account in `GMAIL_USER`.
+2. **Check 2-Step Verification** — App Passwords require it. Enable
+   on the Gmail account first.
+3. **Check Gmail "Sent" folder on the sender** — successful delivery
+   shows up there even if the recipient hasn't received yet.
+4. **Check rate limits** — search logs for
+   `auth:otp:cooldown_blocked`. The 5/day cap or 60s cooldown might
+   be hitting.
+
+### OAuth callback fails with `redirect_uri_mismatch`
+
+Confirm:
+- `APP_URL` matches your actual domain exactly (`https://`, no
+  trailing slash)
+- The OAuth provider's authorised redirect URI is
+  `<APP_URL>/api/auth/callback/<provider>` exactly (case-sensitive,
+  no trailing slash)
+
+### Cron isn't running
+
+1. **Vercel plan** — Hobby supports daily cron only. The shipped
+   schedule (`30 3 * * *`) fits. If you've changed it to anything
+   more frequent, you need Pro.
+2. **Check Vercel logs** for `cron:cleanup:start`. If absent, Vercel
+   isn't invoking the endpoint — likely `vercel.json` not picked up
+   on first deploy. Push a no-op commit to force re-registration.
+3. **Manual trigger** to verify the endpoint:
+   ```bash
+   curl -X GET https://your-domain.com/api/cron/daily-cleanup \
+     -H "Authorization: Bearer $CRON_SECRET"
+   ```
+   `200 OK` with a JSON summary → endpoint works, Vercel scheduling
+   is the problem.
+
+### Database connection errors on Vercel functions
+
+Use the **pooled** connection string (`-pooler` in the host) for
+`DATABASE_URL`, not the unpooled one. Vercel functions are
+short-lived and create new connections per invocation — without
+pooling you'll hit Postgres connection limits under any meaningful
+traffic.
+
+`DATABASE_URL_UNPOOLED` is only used by `prisma migrate` CLI on Neon
+(its pooled URL doesn't support session-level Postgres features the
+migrator needs). On any other host the migrator falls back to
+`DATABASE_URL`.
+
+### Replay player loads forever
+
+1. **Check the slice events query** — open DevTools → Network → look
+   for `/api/sessions/{id}/slices/{N}/events`. Did it 200?
+2. **Check the slice list in the metadata** — `GET
+   /api/sessions/{id}` should return `slices: [...]` non-empty.
+   Empty means the ingest pipeline didn't write a default slice (very
+   old SDK builds) — the player should fall back to inline events
+   from the detail response.
+3. **Check the browser console** — rrweb errors surface here. The
+   most common is "Snapshot doesn't have meta event" → recording
+   started without a meta event, the dashboard's `ensureMetaEvent`
+   helper should fix this.
+
+## Cleanup cron — full reference
+
+`/api/cron/daily-cleanup` is the only background job in the system.
+Vercel Cron pulls it on the schedule pinned in `vercel.json`:
+
+```json title="vercel.json"
+{
+  "crons": [
+    { "path": "/api/cron/daily-cleanup", "schedule": "30 3 * * *" }
+  ]
+}
+```
+
+### What it does
+
+Four ordered sweeps in a single request, each freeing rows for the
+next:
+
+1. **Expired invites** — `Invite` rows past their TTL (`PENDING` or
+   `EXPIRED` status). Independent step — runs first because it's
+   cheap and unrelated to the rest.
+2. **Old sessions** — `Session` rows older than
+   `SESSION_RETENTION_DAYS = 90`. Cascades through Prisma's
+   `onDelete: Cascade` to delete `Slice` and `Event` children.
+3. **Orphaned tracked users** — `TrackedUser` rows whose `sessions`
+   relation is empty. Often becomes non-empty post-step-2: a tracked
+   user whose only sessions just got hard-deleted now has zero, so
+   the cleanup catches them on the same run instead of waiting until
+   tomorrow.
+4. **Empty organisations** — `Organization` rows with zero
+   memberships. Two-step inside the same step: first `null` out every
+   `User.activeOrganizationId` that points to them (the schema
+   doesn't declare `onDelete: SetNull` on that pointer, so Postgres
+   would otherwise block the delete), then `deleteMany`.
+
+The response is a JSON summary with one count per step. Vercel Cron
+ignores the body — it only cares about the status code — but the
+parse still runs at the server boundary so a shape drift surfaces in
+logs.
+
+### Authentication
+
+Vercel Cron sends `Authorization: Bearer $CRON_SECRET` automatically.
+The route checks it against `env.CRON_SECRET`. **Mismatch → `401`,
+no work done.**
+
+The check is **skipped locally** when `CRON_SECRET` is unset — useful
+for hand-curling during development. In production the env var is
+required — unset would let any internet caller trigger the cleanup.
+
+### Why GET?
+
+Vercel Cron only issues HTTP `GET`. Destructive-on-GET violates HTTP
+semantics — but the alternative is a wrapper that fights the
+platform's contract. The auth check + cron-only invocation profile
+means a stray crawler can't trigger this anyway.
+
+### Timing + retention contract
+
+- **Schedule**: `30 3 * * *` UTC. Vercel Cron's free Hobby plan only
+  runs daily cron, which fits this rate exactly. If the schedule ever
+  needs more frequency, the project moves to Vercel Pro.
+- **Session retention**: `SESSION_RETENTION_DAYS = 90` in
+  `src/lib/time.ts`. Single constant, change it once and the cron
+  honours the new value on the next run.
+- **Invite expiry**: `INVITE_EXPIRY_DAYS = 3` (set per-invite at
+  create time). The cron sweeps any past-TTL row regardless.
+
+The 90-day retention is a hard delete — no soft-delete tombstone, no
+recovery window. See [Security → Retention](/documentation/resources/security#retention)
+for the full data-lifecycle contract.
+
+### Manual invocation
+
+Locally without `CRON_SECRET` set:
+
+```bash
+curl -X GET http://localhost:3000/api/cron/daily-cleanup
+```
+
+Against a production instance with the bearer:
+
+```bash
+curl -X GET https://your-domain.com/api/cron/daily-cleanup \
+  -H "Authorization: Bearer $CRON_SECRET"
+```
+
+A successful response is `200 OK` with a JSON summary like:
+
+```json
+{
+  "invites": 4,
+  "sessions": 132,
+  "trackedUsers": 17,
+  "organizations": 2
+}
+```
+
+`401` means your token doesn't match.
+
+## Performance tuning levers
+
+| Lever | What it changes | Trade-off |
+| --- | --- | --- |
+| SDK `flushInterval` | How often batches ship | Lower = fresher data, more requests; higher = quieter ingest, stale UI |
+| SDK `batchSize` | Max events per batch | Lower = more batches, higher = bigger payloads |
+| `SESSION_RETENTION_DAYS` (`src/lib/time.ts`) | How long sessions live | Lower = smaller DB, less history; higher = more capacity needed |
+| Neon compute size | Postgres throughput ceiling | Higher tier = more concurrent ingest, more $ |
+| Vercel plan | Function timeout, cron frequency | Pro for >daily cron, large batches |
+
+## See also
+
+- [Self-host your own](/documentation/self-host) — step-by-step deploy walkthrough.

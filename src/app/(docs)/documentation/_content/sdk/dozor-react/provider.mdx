@@ -1,0 +1,102 @@
+---
+title: <DozorProvider>
+---
+
+`<DozorProvider>` mounts the SDK in your React app. Place it once at
+the root, pass your `apiKey` + `endpoint`, and every component below
+gets reactive recorder state via [`useDozor()`](/documentation/sdk/dozor-react/use-dozor).
+
+## Setup
+
+Mount the provider at the root of your app — `app/layout.tsx` in
+Next.js, the file that renders `<App />` in Vite / CRA, etc. Pass an
+`options` object to start recording immediately on mount:
+
+```tsx title="app/layout.tsx"
+import { DozorProvider } from "@kharko/dozor-react";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <DozorProvider
+      options={{
+        apiKey: process.env.NEXT_PUBLIC_DOZOR_KEY!,
+        endpoint: "https://your-dashboard.com/api/ingest",
+      }}
+    >
+      {children}
+    </DozorProvider>
+  );
+}
+```
+
+That's it for ~95% of integrations. Recording starts on mount, runs
+in the background, flushes on the SDK's cadence. Every descendant can
+read state or invoke methods through `useDozor()`.
+
+## Props
+
+| Prop | Type | Required | Description |
+| --- | --- | --- | --- |
+| `options` | `DozorOptions` | — | Options passed to `Dozor.init()` on mount. Omit to defer init (see below). All options documented at [SDK → Init & options](/documentation/sdk/dozor/init). |
+| `children` | `ReactNode` | ✓ | Wrapped subtree. |
+
+## Deferring initialisation
+
+Some integrations need to wait before initialising — for example, a
+GDPR consent gate, or an async config fetch. **Mount the provider
+without `options`** and call `dozor.init()` from a component once
+your gating condition fires.
+
+```tsx title="app/layout.tsx"
+import { DozorProvider } from "@kharko/dozor-react";
+import { ConsentGate } from "@/components/consent-gate";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <DozorProvider>
+      <ConsentGate />
+      {children}
+    </DozorProvider>
+  );
+}
+```
+
+```tsx title="components/consent-gate.tsx"
+"use client";
+
+import { useEffect } from "react";
+import { useDozor } from "@kharko/dozor-react";
+import { useConsent } from "./your-consent-hook";
+
+export function ConsentGate() {
+  const dozor = useDozor();
+  const consent = useConsent();
+
+  useEffect(() => {
+    if (consent === "granted" && dozor.state === "not_initialized") {
+      dozor.init({
+        apiKey: process.env.NEXT_PUBLIC_DOZOR_KEY!,
+        endpoint: "https://your-dashboard.com/api/ingest",
+      });
+    }
+  }, [consent, dozor]);
+
+  return null;
+}
+```
+
+While `options` is omitted, `dozor.state` reads as `"not_initialized"`
+— the extra discriminant only the React package surfaces. Once
+`init()` runs, the state transitions to `"recording"` (or whatever
+`autoStart` you passed). See [`useDozor()` → State shape](/documentation/sdk/dozor-react/use-dozor#state-shape)
+for the full union.
+
+## Lifecycle notes
+
+- **One singleton per page** — the underlying SDK is a module-level
+  singleton, so the recorder outlives the provider. Mounting the
+  provider twice is a no-op on the second mount.
+- **Unmount is mostly a no-op** — the provider unmounting doesn't
+  stop the recorder. If you genuinely want to tear down on unmount
+  (rare; the provider is expected to live for the whole session),
+  call `dozor.stop()` from a cleanup effect explicitly.

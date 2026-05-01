@@ -12,6 +12,11 @@
   "avatarDropdown": {
     "ariaLabel": "Menú de cuenta"
   },
+  "demoBanner": {
+    "label": "Demo pública",
+    "description": "No subas datos de producción reales — las sesiones viven en una instancia compartida. Para producción, autohospédalo tú mismo.",
+    "cta": "Autohospedar →"
+  },
   "drawer": {
     "openMenu": "Abrir menú",
     "openMenuWithInvites": "Abrir menú — {count, plural, one {# invitación pendiente} other {# invitaciones pendientes}}",
@@ -21,6 +26,7 @@
     "switchOrg": "Cambiar de organización",
     "manageOrgs": "Gestionar organizaciones",
     "userSettings": "Ajustes de usuario",
+    "documentation": "Documentación",
     "signOut": "Cerrar sesión"
   },
   "theme": {
