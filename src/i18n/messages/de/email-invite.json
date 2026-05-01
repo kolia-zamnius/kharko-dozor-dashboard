@@ -1,9 +1,9 @@
 {
-  "subject": "Sie wurden zu {orgName} eingeladen — Kharko Dozor",
-  "brand": "Kharko Dozor",
+  "subject": "Sie wurden zu {orgName} eingeladen — Dozor",
+  "brand": "Dozor",
   "title": "Sie wurden eingeladen",
   "body": "<strong>{inviterName}</strong> lädt Sie ein, <strong>{orgName}</strong> als <strong>{role, select, OWNER {Besitzer} ADMIN {Admin} VIEWER {Betrachter} other {Mitglied}}</strong> beizutreten.",
   "cta": "Einladung ansehen",
   "footer": "Diese Einladung läuft in {days, plural, one {# Tag} other {# Tagen}} ab. Wenn Sie dies nicht erwartet haben, können Sie sie ignorieren.",
-  "tagline": "Kharko Dozor — Aufzeichnung und Wiedergabe von Sitzungen"
+  "tagline": "Dozor — Aufzeichnung und Wiedergabe von Sitzungen"
 }

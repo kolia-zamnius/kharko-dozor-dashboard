@@ -1,14 +1,13 @@
 /**
  * External URLs referenced from the marketing landing. Kept in one file
  * so links stay consistent across sections (hero CTA, installation,
- * footer) and flipping a destination — notably `docs`, which currently
- * points at the SDK README on GitHub — is a single-line change.
+ * footer).
  *
  * @remarks
- * `docs` is the intended flip-switch: once the public docs site ships
- * under `/docs`, change the value to `"/docs"` (or `/docs/getting-started`)
- * and every reference in the landing updates atomically. Do **not**
- * inline the GitHub URL at call sites.
+ * `docs` points at the in-app `/documentation` zone (English-only,
+ * outside the `[locale]/` pipeline). It is **internal**: every render
+ * site treats it as a same-origin link (no `target="_blank"`, no
+ * `rel="noreferrer"`).
  *
  * Donation details are kept here rather than in messages JSON because
  * they're immutable account identifiers, not translatable copy — the
@@ -26,11 +25,10 @@ export const EXTERNAL_LINKS = {
   /** React bindings for the SDK on npm. */
   npmSdkReact: "https://www.npmjs.com/package/@kharko/dozor-react",
   /**
-   * Documentation entry point. Currently points at the SDK README on
-   * GitHub — flip to an in-app `/docs/getting-started` path when the
-   * public docs site ships.
+   * Documentation entry point — in-app Fumadocs site at
+   * `/documentation`. Internal link, served by `src/app/(docs)/`.
    */
-  docs: "https://github.com/kolia-zamnius/kharko-dozor-packages#readme",
+  docs: "/documentation/introduction",
   contact: {
     email: "kolzam.person@gmail.com",
     linkedin: "https://www.linkedin.com/in/kolia-zamnyus-a892a0332/",

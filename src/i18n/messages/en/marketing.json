@@ -1,18 +1,18 @@
 {
   "meta": {
-    "title": "Kharko Dozor — Open-source session replay",
+    "title": "Dozor — Open-source session replay",
     "description": "Session recording and replay platform for the web. Free and open source, forever."
   },
   "header": {
-    "signIn": "Sign in",
     "signUp": "Get started",
     "dashboard": "Go to dashboard",
+    "documentation": "Documentation",
     "localeAria": "Change language"
   },
   "hero": {
     "eyebrow": "Open source · MIT",
     "headline": "Watch how your users actually use your product",
-    "subheadline": "Kharko Dozor records real browser sessions with rrweb and lets you replay them in pixel-perfect detail. Self-hosted, framework-agnostic, free forever.",
+    "subheadline": "Dozor records real browser sessions with rrweb and lets you replay them in pixel-perfect detail. Self-hosted, framework-agnostic, free forever.",
     "ctaPrimary": "Install SDK",
     "ctaSecondary": "View on GitHub"
   },
@@ -55,7 +55,7 @@
   },
   "thankAuthor": {
     "heading": "Thank the author",
-    "subheading": "Kharko Dozor is an open-source personal project. There are no paid tiers, no enterprise upsell, no plan to monetise. If it helped you and you want to say thanks, here are two ways.",
+    "subheading": "Dozor is an open-source personal project. There are no paid tiers, no enterprise upsell, no plan to monetise. If it helped you and you want to say thanks, here are two ways.",
     "uahTitle": "Ukraine — Monobank (UAH)",
     "uahDescription": "One-tap donation via Monobank link. Works from any card, any country, no sign-up needed.",
     "uahCta": "Donate via Monobank",

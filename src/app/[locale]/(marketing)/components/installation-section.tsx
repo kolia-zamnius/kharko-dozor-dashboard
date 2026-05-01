@@ -29,9 +29,10 @@ import { InstallTabs } from "./install-tabs";
  * imply drop-in code.
  *
  * Typed `Link` from `@/i18n/navigation` for the dashboard button
- * (locale-aware); docs link stays a plain `<a>` since external URLs
- * don't carry a locale. Phosphor icon comes from `/dist/ssr` so it
- * emits at HTML-response time.
+ * (locale-aware); docs link stays a plain `<a>` because the docs zone
+ * lives outside the `[locale]/` pipeline (typed `Link` would prefix the
+ * URL and 404). Phosphor icon comes from `/dist/ssr` so it emits at
+ * HTML-response time.
  */
 export async function InstallationSection() {
   const t = await getTranslations("marketing.installation");
@@ -59,7 +60,7 @@ export async function InstallationSection() {
 
         <div className="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-3">
           <Button asChild variant="outline" size="sm">
-            <a href={EXTERNAL_LINKS.docs} target="_blank" rel="noreferrer">
+            <a href={EXTERNAL_LINKS.docs}>
               <ArrowSquareOutIcon size={16} />
               {t("docsLink")}
             </a>

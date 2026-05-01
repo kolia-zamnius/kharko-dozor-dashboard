@@ -12,6 +12,11 @@
   "avatarDropdown": {
     "ariaLabel": "Menu da conta"
   },
+  "demoBanner": {
+    "label": "Demo pública",
+    "description": "Não coloque dados de produção reais aqui — as sessões ficam numa instância partilhada. Para produção, faça self-host.",
+    "cta": "Self-host →"
+  },
   "drawer": {
     "openMenu": "Abrir menu",
     "openMenuWithInvites": "Abrir menu — {count, plural, one {# convite pendente} other {# convites pendentes}}",
@@ -21,6 +26,7 @@
     "switchOrg": "Mudar de organização",
     "manageOrgs": "Gerir organizações",
     "userSettings": "Definições do utilizador",
+    "documentation": "Documentação",
     "signOut": "Terminar sessão"
   },
   "theme": {

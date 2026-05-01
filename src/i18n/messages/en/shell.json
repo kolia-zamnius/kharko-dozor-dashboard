@@ -12,6 +12,11 @@
   "avatarDropdown": {
     "ariaLabel": "Account menu"
   },
+  "demoBanner": {
+    "label": "Public demo",
+    "description": "Don't put real production data here — sessions live on a shared instance. For production, self-host your own.",
+    "cta": "Self-host →"
+  },
   "drawer": {
     "openMenu": "Open menu",
     "openMenuWithInvites": "Open menu — {count, plural, one {# pending invite} other {# pending invites}}",
@@ -21,6 +26,7 @@
     "switchOrg": "Switch organization",
     "manageOrgs": "Manage organizations",
     "userSettings": "User settings",
+    "documentation": "Documentation",
     "signOut": "Sign out"
   },
   "theme": {

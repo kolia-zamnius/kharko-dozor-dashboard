@@ -1,7 +1,7 @@
 {
   "page": {
-    "listTitle": "Replays — Kharko Dozor",
-    "detailTitle": "Replay — Kharko Dozor"
+    "listTitle": "Replays — Dozor",
+    "detailTitle": "Replay — Dozor"
   },
   "mutations": {
     "deleteSession": {

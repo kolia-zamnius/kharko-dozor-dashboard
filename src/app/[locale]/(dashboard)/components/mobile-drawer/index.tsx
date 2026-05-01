@@ -12,6 +12,7 @@ import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/cn";
 import { useFormatters } from "@/lib/use-formatters";
 import {
+  BookOpenIcon,
   CaretDownIcon,
   GearSixIcon,
   ListIcon,
@@ -202,6 +203,21 @@ export function MobileDrawer() {
           >
             <GearSixIcon />
             {t("actions.userSettings")}
+          </Button>
+
+          <Separator className="my-2" />
+
+          {/* Docs + theme group — same separation as the desktop avatar
+              dropdown. Docs zone lives outside `[locale]/` (English-only).
+              `asChild` + raw `<a href>` is the hard-nav escape hatch —
+              `router.push` from `@/i18n/navigation` would prefix the
+              locale and 404. */}
+          <Button asChild variant="ghost" size="sm" className="w-full justify-start">
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- intentional hard nav: docs zone is outside the [locale]/ pipeline (see comment above). */}
+            <a href="/documentation/introduction" onClick={() => setIsOpen(false)}>
+              <BookOpenIcon />
+              {t("actions.documentation")}
+            </a>
           </Button>
           <Button variant="ghost" size="sm" className="w-full justify-start" onClick={toggleTheme}>
             <SunIcon className="hidden dark:block" />

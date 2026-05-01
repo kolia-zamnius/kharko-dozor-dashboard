@@ -118,7 +118,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const locale = await detectLocale();
   const t = await getTranslations({ locale, namespace: "common.notFound" });
   return {
-    title: `${t("title")} — Kharko Dozor`,
+    title: `${t("title")} — Dozor`,
   };
 }
 

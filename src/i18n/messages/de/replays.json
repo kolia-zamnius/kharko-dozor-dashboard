@@ -1,7 +1,7 @@
 {
   "page": {
-    "listTitle": "Aufzeichnungen — Kharko Dozor",
-    "detailTitle": "Aufzeichnung — Kharko Dozor"
+    "listTitle": "Aufzeichnungen — Dozor",
+    "detailTitle": "Aufzeichnung — Dozor"
   },
   "mutations": {
     "deleteSession": {

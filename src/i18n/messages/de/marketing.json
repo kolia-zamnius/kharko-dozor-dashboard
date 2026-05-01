@@ -1,18 +1,18 @@
 {
   "meta": {
-    "title": "Kharko Dozor — Open-Source Session-Replay",
+    "title": "Dozor — Open-Source Session-Replay",
     "description": "Plattform zur Aufzeichnung und Wiedergabe von Browser-Sessions. Kostenlos und Open Source, für immer."
   },
   "header": {
-    "signIn": "Anmelden",
     "signUp": "Loslegen",
     "dashboard": "Zum Dashboard",
+    "documentation": "Dokumentation",
     "localeAria": "Sprache ändern"
   },
   "hero": {
     "eyebrow": "Open Source · MIT",
     "headline": "Sehen Sie, wie Ihre Nutzer Ihr Produkt wirklich verwenden",
-    "subheadline": "Kharko Dozor zeichnet echte Browser-Sessions mit rrweb auf und lässt Sie diese pixelgenau wiedergeben. Self-hosted, Framework-agnostisch, für immer kostenlos.",
+    "subheadline": "Dozor zeichnet echte Browser-Sessions mit rrweb auf und lässt Sie diese pixelgenau wiedergeben. Self-hosted, Framework-agnostisch, für immer kostenlos.",
     "ctaPrimary": "SDK installieren",
     "ctaSecondary": "Auf GitHub ansehen"
   },
@@ -55,7 +55,7 @@
   },
   "thankAuthor": {
     "heading": "Dem Autor danken",
-    "subheading": "Kharko Dozor ist ein persönliches Open-Source-Projekt. Es gibt keine kostenpflichtigen Stufen, kein Enterprise-Upsell, keine Monetarisierungspläne. Wenn es Ihnen geholfen hat und Sie sich bedanken möchten, gibt es zwei Wege.",
+    "subheading": "Dozor ist ein persönliches Open-Source-Projekt. Es gibt keine kostenpflichtigen Stufen, kein Enterprise-Upsell, keine Monetarisierungspläne. Wenn es Ihnen geholfen hat und Sie sich bedanken möchten, gibt es zwei Wege.",
     "uahTitle": "Ukraine — Monobank (UAH)",
     "uahDescription": "Spende mit einem Klick per Monobank-Link. Funktioniert mit jeder Karte, aus jedem Land, ohne Registrierung.",
     "uahCta": "Über Monobank spenden",

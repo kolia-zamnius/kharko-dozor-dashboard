@@ -1,8 +1,8 @@
 {
-  "subject": "{token} — your Kharko Dozor code",
-  "brand": "Kharko Dozor",
+  "subject": "{token} — your Dozor code",
+  "brand": "Dozor",
   "title": "Verification code",
   "subtitle": "Enter this code to sign in. It expires in 10 minutes.",
   "footer": "If you didn't request this code, you can safely ignore this email.",
-  "tagline": "Kharko Dozor — session recording & replay"
+  "tagline": "Dozor — session recording & replay"
 }

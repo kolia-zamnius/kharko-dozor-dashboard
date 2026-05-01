@@ -29,7 +29,7 @@ export function Navbar() {
   return (
     <header className="border-border bg-background/80 sticky top-0 z-30 grid h-14 grid-cols-[1fr_auto] items-center border-b px-4 backdrop-blur md:grid-cols-[1fr_auto_1fr]">
       <div className="flex items-center">
-        <Image src="/assets/logo.svg" alt="Kharko Dozor" width={28} height={28} />
+        <Image src="/assets/logo.svg" alt="Dozor" width={28} height={28} />
       </div>
 
       <nav className="hidden items-center gap-1 md:flex">

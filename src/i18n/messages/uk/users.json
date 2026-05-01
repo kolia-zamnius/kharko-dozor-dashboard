@@ -1,6 +1,6 @@
 {
   "page": {
-    "title": "Користувачі — Kharko Dozor"
+    "title": "Користувачі — Dozor"
   },
   "mutations": {
     "updateDisplayName": {
@@ -90,7 +90,7 @@
   },
   "detail": {
     "page": {
-      "title": "Користувач — Kharko Dozor"
+      "title": "Користувач — Dozor"
     },
     "rangeSelectorAria": "Обрати діапазон активності",
     "header": {

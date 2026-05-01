@@ -1,8 +1,8 @@
 {
-  "subject": "{token} — il tuo codice Kharko Dozor",
-  "brand": "Kharko Dozor",
+  "subject": "{token} — il tuo codice Dozor",
+  "brand": "Dozor",
   "title": "Codice di verifica",
   "subtitle": "Inserisci questo codice per accedere. Scade tra 10 minuti.",
   "footer": "Se non hai richiesto questo codice, puoi ignorare questa email.",
-  "tagline": "Kharko Dozor — registrazione e riproduzione di sessioni"
+  "tagline": "Dozor — registrazione e riproduzione di sessioni"
 }

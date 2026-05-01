@@ -25,7 +25,7 @@ export async function MarketingFooter() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Image src="/assets/logo.svg" alt="" aria-hidden="true" width={24} height={24} />
-            <span className="text-sm font-semibold tracking-tight">Kharko Dozor</span>
+            <span className="text-sm font-semibold tracking-tight">Dozor</span>
           </div>
           <p className="text-muted-foreground max-w-sm text-sm">{t("tagline")}</p>
         </div>
@@ -44,12 +44,11 @@ export async function MarketingFooter() {
               </a>
             </li>
             <li>
-              <a
-                href={EXTERNAL_LINKS.docs}
-                target="_blank"
-                rel="noreferrer"
-                className="hover:text-foreground transition-colors"
-              >
+              {/* Docs is in-app at `/documentation` (see EXTERNAL_LINKS.docs).
+                  Plain `<a href>` because the docs zone lives outside the
+                  `[locale]/` pipeline — typed `Link` from `@/i18n/navigation`
+                  would prefix `/uk/documentation/...` and 404. */}
+              <a href={EXTERNAL_LINKS.docs} className="hover:text-foreground transition-colors">
                 {t("resourcesDocs")}
               </a>
             </li>

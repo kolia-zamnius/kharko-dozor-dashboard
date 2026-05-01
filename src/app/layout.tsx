@@ -16,7 +16,7 @@ import { Providers } from "./_providers/stable";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Kharko Dozor",
+  title: "Dozor",
   description: "Session recording and replay platform",
   icons: {
     icon: { url: "/assets/logo.svg", type: "image/svg+xml" },

@@ -12,6 +12,11 @@
   "avatarDropdown": {
     "ariaLabel": "Меню акаунта"
   },
+  "demoBanner": {
+    "label": "Публічне демо",
+    "description": "Не завантажуйте сюди продакшн-дані — сесії живуть на спільному інстансі. Для продакшну — self-hosted у себе.",
+    "cta": "Як self-host →"
+  },
   "drawer": {
     "openMenu": "Відкрити меню",
     "openMenuWithInvites": "Відкрити меню — {count, plural, one {# нове запрошення} few {# нові запрошення} many {# нових запрошень} other {# запрошень}}",
@@ -21,6 +26,7 @@
     "switchOrg": "Змінити організацію",
     "manageOrgs": "Керування організаціями",
     "userSettings": "Налаштування користувача",
+    "documentation": "Документація",
     "signOut": "Вийти"
   },
   "theme": {

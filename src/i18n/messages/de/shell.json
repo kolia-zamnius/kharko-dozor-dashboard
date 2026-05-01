@@ -12,6 +12,11 @@
   "avatarDropdown": {
     "ariaLabel": "Kontomenü"
   },
+  "demoBanner": {
+    "label": "Öffentliche Demo",
+    "description": "Speichern Sie hier keine echten Produktionsdaten — Sessions liegen auf einer geteilten Instanz. Für den produktiven Einsatz: selbst hosten.",
+    "cta": "Selbst hosten →"
+  },
   "drawer": {
     "openMenu": "Menü öffnen",
     "openMenuWithInvites": "Menü öffnen — {count, plural, one {# ausstehende Einladung} other {# ausstehende Einladungen}}",
@@ -21,6 +26,7 @@
     "switchOrg": "Organisation wechseln",
     "manageOrgs": "Organisationen verwalten",
     "userSettings": "Benutzereinstellungen",
+    "documentation": "Dokumentation",
     "signOut": "Abmelden"
   },
   "theme": {
