@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DemoBanner } from "./components/demo-banner";
 import { Navbar } from "./components/navbar";
 
 /**
@@ -30,6 +31,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       >
         Skip to main content
       </a>
+      <DemoBanner />
       <Navbar />
       <main id="main-content" className="container mx-auto p-3">
         {children}
