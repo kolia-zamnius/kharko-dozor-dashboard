@@ -35,20 +35,21 @@ const mdxComponents = {
  * the docs landing" decision in one place (next.config) instead of
  * branching inside this component on `slug?.length === 0`.
  *
- * Uses Next.js's auto-generated `PageProps<>` typed props so the
- * params signature stays in sync with the route segment shape — and
- * Next.js's instrumentation can resolve component names cleanly
- * (older inline `Promise<{ slug: string[] }>` shape was suspected of
- * tripping a `Performance.measure` negative-timestamp dev warning).
+ * Params signature matches the rest of the project (explicit
+ * `Promise<{...}>` shape rather than Next.js 16's auto-generated
+ * `PageProps<>` global) — lets `tsc --noEmit` run in CI without first
+ * running `next typegen` to populate `.next/types/`.
  *
  * @see next.config.ts — `/documentation` redirect.
  * @see src/app/(docs)/documentation/not-found.tsx — fallback for
  *   genuinely unknown slugs.
  */
-export default async function DocumentationPage(
-  props: PageProps<"/documentation/[...slug]">,
-) {
-  const { slug } = await props.params;
+type DocumentationPageProps = {
+  params: Promise<{ slug: string[] }>;
+};
+
+export default async function DocumentationPage({ params }: DocumentationPageProps) {
+  const { slug } = await params;
   const page = source.getPage(slug);
   if (!page) notFound();
 
@@ -69,8 +70,8 @@ export async function generateStaticParams() {
   return source.generateParams();
 }
 
-export async function generateMetadata(props: PageProps<"/documentation/[...slug]">) {
-  const { slug } = await props.params;
+export async function generateMetadata({ params }: DocumentationPageProps) {
+  const { slug } = await params;
   const page = source.getPage(slug);
   if (!page) return {};
 

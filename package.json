@@ -9,7 +9,7 @@
   "packageManager": "npm@10.9.3",
   "scripts": {
     "dev": "next dev --turbopack",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate && fumadocs-mdx",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
