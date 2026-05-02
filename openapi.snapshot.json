@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Kharko Dozor SDK API",
+    "title": "Kharko Dozor REST API",
     "version": "1.0.0",
-    "description": "Public contract for the @kharko/dozor SDK. Generated from the repo's zod schemas; committed for PR-time diffing."
+    "description": "Public SDK ingest endpoint (`/api/ingest`) plus the dashboard's internal API (session-cookie authenticated). Generated from the repo's zod schemas; committed for PR-time diffing."
   },
   "servers": [
     {
@@ -15,21 +15,15 @@
       "post": {
         "summary": "Submit a batch of rrweb events from the SDK",
         "description": "Public-key authenticated. Always returns 204 on success. Accepts gzipped payloads via Content-Encoding: gzip.",
+        "tags": [
+          "Ingest"
+        ],
         "parameters": [
           {
             "in": "header",
             "name": "x-dozor-public-key",
             "required": true,
-            "description": "Project public key (dp_<32hex>)",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "content-encoding",
-            "required": false,
-            "description": "Set to 'gzip' when body is compressed",
+            "description": "Project public key (dp_<32hex>) — created in Settings → Organizations → Project.",
             "schema": {
               "type": "string"
             }
@@ -182,6 +176,61 @@
                   "events"
                 ],
                 "additionalProperties": false
+              },
+              "example": {
+                "sessionId": "9b2e1d4c-6a3f-4f8e-9b1d-2c8a4e6f7a90",
+                "events": [
+                  {
+                    "type": 4,
+                    "data": {
+                      "href": "https://your-app.com/checkout",
+                      "width": 1440,
+                      "height": 900
+                    },
+                    "timestamp": 1761480000000,
+                    "sliceIndex": 0
+                  },
+                  {
+                    "type": 3,
+                    "data": {
+                      "source": 1,
+                      "positions": [
+                        {
+                          "x": 412,
+                          "y": 318,
+                          "id": 17,
+                          "timeOffset": 0
+                        }
+                      ]
+                    },
+                    "timestamp": 1761480001234,
+                    "sliceIndex": 0
+                  }
+                ],
+                "metadata": {
+                  "url": "https://your-app.com/checkout",
+                  "referrer": "https://your-app.com/cart",
+                  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+                  "screenWidth": 1440,
+                  "screenHeight": 900,
+                  "language": "en-US",
+                  "userIdentity": {
+                    "userId": "usr_abc123",
+                    "traits": {
+                      "plan": "pro",
+                      "email": "alex@your-app.com"
+                    }
+                  }
+                },
+                "sliceMarkers": [
+                  {
+                    "index": 0,
+                    "reason": "init",
+                    "startedAt": 1761480000000,
+                    "url": "https://your-app.com/checkout",
+                    "pathname": "/checkout"
+                  }
+                ]
               }
             }
           }
@@ -201,9 +250,4408 @@
       "options": {
         "summary": "CORS preflight",
         "description": "Always returns 204 with CORS headers. No authentication required — browsers send this before the POST.",
+        "tags": [
+          "Ingest"
+        ],
         "responses": {
           "204": {
             "description": "Preflight OK"
+          }
+        }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "summary": "List projects across the caller's organisations",
+        "description": "Returns every project in every org the caller belongs to. Optional `?organizationId=` narrows to one org. Keys are masked — plaintext only via `GET /api/projects/{id}/key`.",
+        "tags": [
+          "Projects"
+        ],
+        "responses": {
+          "200": {
+            "description": "Project list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "maskedKey": {
+                        "type": "string"
+                      },
+                      "organizationId": {
+                        "type": "string"
+                      },
+                      "sessionCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "lastUsedAt": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "updatedAt": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "maskedKey",
+                      "organizationId",
+                      "sessionCount",
+                      "lastUsedAt",
+                      "createdAt",
+                      "updatedAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "example": [
+                  {
+                    "id": "prj_x9y8z7w6",
+                    "name": "Production",
+                    "maskedKey": "dp_a1b2••••••••••••••••••••••••f7e8",
+                    "organizationId": "org_acme",
+                    "sessionCount": 1247,
+                    "lastUsedAt": "2026-04-26T10:29:42.183Z",
+                    "createdAt": "2026-04-12T09:15:00.000Z",
+                    "updatedAt": "2026-04-12T09:15:00.000Z"
+                  },
+                  {
+                    "id": "prj_v4u3t2s1",
+                    "name": "Staging",
+                    "maskedKey": "dp_c3d4••••••••••••••••••••••••e9f0",
+                    "organizationId": "org_acme",
+                    "sessionCount": 38,
+                    "lastUsedAt": "2026-04-25T22:11:08.471Z",
+                    "createdAt": "2026-04-12T09:18:30.000Z",
+                    "updatedAt": "2026-04-12T09:18:30.000Z"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new project",
+        "description": "OWNER-only. Mints a fresh API key for the new project.",
+        "tags": [
+          "Projects"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50
+                  },
+                  "organizationId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "name",
+                  "organizationId"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "name": "Production",
+                "organizationId": "org_acme"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Project created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "maskedKey": {
+                      "type": "string"
+                    },
+                    "organizationId": {
+                      "type": "string"
+                    },
+                    "sessionCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "lastUsedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "maskedKey",
+                    "organizationId",
+                    "sessionCount",
+                    "lastUsedAt",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "id": "prj_x9y8z7w6",
+                  "name": "Production",
+                  "maskedKey": "dp_a1b2••••••••••••••••••••••••f7e8",
+                  "organizationId": "org_acme",
+                  "sessionCount": 0,
+                  "lastUsedAt": null,
+                  "createdAt": "2026-04-26T10:30:00.000Z",
+                  "updatedAt": "2026-04-26T10:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER of the target organisation"
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}": {
+      "patch": {
+        "summary": "Rename a project",
+        "description": "ADMIN+ — metadata only, not key lifecycle.",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "description": "Project id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "name": "Production EU"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Project renamed"
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not ADMIN+ of the project's organisation"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Hard-delete a project",
+        "description": "OWNER-only. Cascades sessions → slices → events → tracked users. The deletion is permanent — no soft-delete tombstone.",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "description": "Project id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "confirmation": {
+                    "type": "string",
+                    "const": "delete project"
+                  }
+                },
+                "required": [
+                  "confirmation"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "confirmation": "delete project"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Project deleted"
+          },
+          "400": {
+            "description": "Confirmation phrase missing or wrong"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/key": {
+      "get": {
+        "summary": "Reveal a project's plaintext API key",
+        "description": "OWNER-only. The single endpoint that returns plaintext key material; called from the dashboard's copy button on click. Sets `Cache-Control: no-store` so no proxy caches the value.",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "description": "Project id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plaintext key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "key"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "key": "dp_a1b2c3d4e5f6a7b8c9d0e1f2a3b4f7e8"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/regenerate-key": {
+      "post": {
+        "summary": "Regenerate a project's API key",
+        "description": "OWNER-only. The old key stops working immediately — no grace window. The response carries the new plaintext key for one-time copy.",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "description": "Project id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "New plaintext key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "key"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "key": "dp_5f3a2b1c9d8e7f6a4b2c0d1e3f5a7b9c"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        }
+      }
+    },
+    "/api/projects/{projectId}/display-name-trait-key": {
+      "patch": {
+        "summary": "Set the project's default display-name trait key",
+        "description": "ADMIN+. The trait key is consulted as step 3 of the 4-step display-name resolution (see `resolveDisplayName`). Pass `null` in `traitKey` to reset.",
+        "tags": [
+          "Projects"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "description": "Project id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "traitKey": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "traitKey"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "traitKey": "email"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Default trait key updated"
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not ADMIN+"
+          },
+          "404": {
+            "description": "Project not found"
+          }
+        }
+      }
+    },
+    "/api/organizations": {
+      "get": {
+        "summary": "List the caller's organisations",
+        "description": "Returns every org the caller is a member of, ordered by creation date ascending — Personal Space (always the oldest) surfaces first. Each entry carries the caller's role + the org's member count.",
+        "tags": [
+          "Organizations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Organisation list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "image": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "PERSONAL",
+                          "TEAM"
+                        ]
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "OWNER",
+                          "ADMIN",
+                          "VIEWER"
+                        ]
+                      },
+                      "membershipId": {
+                        "type": "string"
+                      },
+                      "memberCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name",
+                      "image",
+                      "type",
+                      "role",
+                      "membershipId",
+                      "memberCount",
+                      "createdAt"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "example": [
+                  {
+                    "id": "org_personal",
+                    "name": "Personal Space",
+                    "image": "https://api.dicebear.com/9.x/shapes/svg?seed=personal",
+                    "type": "PERSONAL",
+                    "role": "OWNER",
+                    "membershipId": "mem_personal",
+                    "memberCount": 1,
+                    "createdAt": "2026-01-15T08:00:00.000Z"
+                  },
+                  {
+                    "id": "org_acme",
+                    "name": "Acme Inc",
+                    "image": "https://api.dicebear.com/9.x/shapes/svg?seed=acme",
+                    "type": "TEAM",
+                    "role": "OWNER",
+                    "membershipId": "mem_aaaa1111",
+                    "memberCount": 3,
+                    "createdAt": "2026-04-12T09:00:00.000Z"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a TEAM organisation",
+        "description": "Creates a TEAM-type org with the caller as its OWNER. Personal Space is auto-provisioned by Auth.js's `createUser` event — this route only mints TEAM orgs.",
+        "tags": [
+          "Organizations"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "name": "Acme Inc"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Organisation created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "image": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "PERSONAL",
+                        "TEAM"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "image",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "id": "org_acme",
+                  "name": "Acme Inc",
+                  "image": "https://api.dicebear.com/9.x/shapes/svg?seed=acme",
+                  "type": "TEAM"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}": {
+      "patch": {
+        "summary": "Edit org name and/or avatar",
+        "description": "ADMIN+. `regenerateAvatar: true` rolls the DiceBear seed to a new UUID. Both fields optional; an empty body is a no-op `204`.",
+        "tags": [
+          "Organizations"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "description": "Organisation id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50
+                  },
+                  "regenerateAvatar": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "example": {
+                "name": "Acme Labs",
+                "regenerateAvatar": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Organisation updated (or no-op for empty body)"
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not ADMIN+"
+          },
+          "404": {
+            "description": "Organisation not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Hard-delete a TEAM organisation",
+        "description": "OWNER-only. Cascades projects → sessions → slices → events → tracked users. Personal Space deletion is rejected with `403`. Members whose `activeOrganizationId` pointed here are flipped to their Personal Space first.",
+        "tags": [
+          "Organizations"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "description": "Organisation id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Organisation deleted"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER, or attempting to delete Personal Space"
+          },
+          "404": {
+            "description": "Organisation not found"
+          }
+        }
+      }
+    },
+    "/api/organizations/active": {
+      "patch": {
+        "summary": "Switch the caller's active organisation",
+        "description": "Persists `User.activeOrganizationId` (mirrored to JWT). Membership is verified inside the same transaction so the active-org pointer can never flip to an org the caller doesn't belong to.",
+        "tags": [
+          "Organizations"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "organizationId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "organizationId"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "organizationId": "org_acme"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Active organisation updated"
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a member of the target organisation"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/members": {
+      "get": {
+        "summary": "List org members",
+        "description": "VIEWER+ — every member sees the full roster. Role-change / remove are gated tighter on the `[memberId]` routes.",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "description": "Organisation id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Member list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "OWNER",
+                          "ADMIN",
+                          "VIEWER"
+                        ]
+                      },
+                      "joinedAt": {
+                        "type": "string"
+                      },
+                      "user": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "image": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "email",
+                          "image"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "role",
+                      "joinedAt",
+                      "user"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "example": [
+                  {
+                    "id": "mem_aaaa1111",
+                    "role": "OWNER",
+                    "joinedAt": "2026-04-12T09:00:00.000Z",
+                    "user": {
+                      "id": "usr_owner",
+                      "name": "Sam Owner",
+                      "email": "sam@your-company.com",
+                      "image": "https://api.dicebear.com/9.x/shapes/svg?seed=sam"
+                    }
+                  },
+                  {
+                    "id": "mem_bbbb2222",
+                    "role": "ADMIN",
+                    "joinedAt": "2026-04-15T14:22:00.000Z",
+                    "user": {
+                      "id": "usr_admin",
+                      "name": "Jordan Admin",
+                      "email": "jordan@your-company.com",
+                      "image": "https://api.dicebear.com/9.x/shapes/svg?seed=jordan"
+                    }
+                  },
+                  {
+                    "id": "mem_cccc3333",
+                    "role": "VIEWER",
+                    "joinedAt": "2026-04-20T08:45:00.000Z",
+                    "user": {
+                      "id": "usr_viewer",
+                      "name": null,
+                      "email": "support@your-company.com",
+                      "image": "https://api.dicebear.com/9.x/shapes/svg?seed=support"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a member of the organisation"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/members/{memberId}": {
+      "patch": {
+        "summary": "Change a member's role",
+        "description": "OWNER-only. Multiple OWNERs per org are allowed — single-OWNER lock-out is not enforced by the API.",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "description": "Organisation id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "memberId",
+            "required": true,
+            "description": "Membership id (cuid) — NOT the user id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "OWNER",
+                      "ADMIN",
+                      "VIEWER"
+                    ]
+                  }
+                },
+                "required": [
+                  "role"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "role": "ADMIN"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Role updated"
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER"
+          },
+          "404": {
+            "description": "Member not found in this organisation"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove a member or self-leave",
+        "description": "Two shapes — self-leave (any role, including last OWNER which triggers ownership transfer to the next-oldest ADMIN) or remove-other (OWNER-only). Personal Space leave is rejected. Sole-member leave is rejected — the route surface answer is to delete the org instead.",
+        "tags": [
+          "Members"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "description": "Organisation id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "memberId",
+            "required": true,
+            "description": "Membership id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Member removed / left"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER (when removing other), or attempting to leave Personal Space"
+          },
+          "404": {
+            "description": "Member not found"
+          },
+          "409": {
+            "description": "Sole-member leave — delete the organisation instead"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/invites": {
+      "get": {
+        "summary": "List outstanding invites for the org",
+        "description": "OWNER-only — invite lifecycle is governance. Past-TTL rows are filtered out lazily and flipped to `EXPIRED` in the background.",
+        "tags": [
+          "Invites"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "description": "Organisation id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending invite list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "ADMIN",
+                          "VIEWER"
+                        ]
+                      },
+                      "expiresAt": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "invitedBy": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "email": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "email"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "email",
+                      "role",
+                      "expiresAt",
+                      "createdAt",
+                      "invitedBy"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "example": [
+                  {
+                    "id": "inv_k4l5m6n7",
+                    "email": "teammate@your-company.com",
+                    "role": "ADMIN",
+                    "expiresAt": "2026-04-29T10:30:00.000Z",
+                    "createdAt": "2026-04-26T10:30:00.000Z",
+                    "invitedBy": {
+                      "name": "Sam Owner",
+                      "email": "sam@your-company.com"
+                    }
+                  },
+                  {
+                    "id": "inv_o8p9q0r1",
+                    "email": "intern@your-company.com",
+                    "role": "VIEWER",
+                    "expiresAt": "2026-04-28T15:12:00.000Z",
+                    "createdAt": "2026-04-25T15:12:00.000Z",
+                    "invitedBy": {
+                      "name": "Sam Owner",
+                      "email": "sam@your-company.com"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER"
+          }
+        }
+      },
+      "post": {
+        "summary": "Send (or refresh) an invite",
+        "description": "OWNER-only. Idempotent refresh-or-create: an existing PENDING invite to the same email is updated in place (TTL reset, role swapped, email re-fired). Email send is fire-and-forget — the invite row exists regardless of SMTP outcome. Per-sender rate-limit (`INVITE_DAILY_LIMIT = 100/day`) returns `429` when capped.",
+        "tags": [
+          "Invites"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "description": "Organisation id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "ADMIN",
+                      "VIEWER"
+                    ]
+                  }
+                },
+                "required": [
+                  "email",
+                  "role"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "email": "teammate@your-company.com",
+                "role": "ADMIN"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invite created or refreshed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "ADMIN",
+                        "VIEWER"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "email",
+                    "role"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "id": "inv_k4l5m6n7",
+                  "email": "teammate@your-company.com",
+                  "role": "ADMIN"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER, or org is Personal Space"
+          },
+          "409": {
+            "description": "Recipient is already a member — change their role instead"
+          },
+          "429": {
+            "description": "Daily invite-send cap reached for this sender"
+          }
+        }
+      }
+    },
+    "/api/organizations/{orgId}/invites/{inviteId}": {
+      "patch": {
+        "summary": "Edit a pending invite",
+        "description": "OWNER-only. Discriminated body — `{ action: 'change-role', role }` updates the role, `{ action: 'extend' }` resets the TTL and re-attributes the inviter to the acting user.",
+        "tags": [
+          "Invites"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "description": "Organisation id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "inviteId",
+            "required": true,
+            "description": "Invite id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "const": "change-role"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "ADMIN",
+                          "VIEWER"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "role"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "const": "extend"
+                      }
+                    },
+                    "required": [
+                      "action"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "example": {
+                "action": "change-role",
+                "role": "VIEWER"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Invite updated"
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER"
+          },
+          "404": {
+            "description": "Invite not found in this organisation, or not PENDING"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Revoke a pending invite",
+        "description": "OWNER-only. Hard-delete (not a status flip) so the refresh-or-create path on `POST` keeps its idempotency without filtering revoked rows.",
+        "tags": [
+          "Invites"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "orgId",
+            "required": true,
+            "description": "Organisation id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "inviteId",
+            "required": true,
+            "description": "Invite id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Invite revoked"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not OWNER"
+          },
+          "404": {
+            "description": "Invite not found in this organisation, or not PENDING"
+          }
+        }
+      }
+    },
+    "/api/sessions": {
+      "get": {
+        "summary": "List sessions, cursor-paginated",
+        "description": "VIEWER+. Scoped to the caller's active org. Filters: `?search=` (matches `externalId`, case-insensitive), `?projectIds=id1,id2`, `?range=` preset (`today` / `7d` / `30d` / `all`), `?sort=date|duration`, `?sortDir=asc|desc`. Display name is resolved server-side via the 4-step chain.",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "projectIds",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "today",
+                "7d",
+                "30d",
+                "90d"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "date",
+                "duration"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "sortDir",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "desc",
+                "asc"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated session list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "externalId": {
+                            "type": "string"
+                          },
+                          "projectId": {
+                            "type": "string"
+                          },
+                          "projectName": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "duration": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "eventCount": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "trackedUserId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "userId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "userDisplayName": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "userTraits": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string"
+                                },
+                                "additionalProperties": {}
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "sliceCount": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "externalId",
+                          "projectId",
+                          "projectName",
+                          "url",
+                          "duration",
+                          "eventCount",
+                          "createdAt",
+                          "trackedUserId",
+                          "userId",
+                          "userDisplayName",
+                          "userTraits",
+                          "sliceCount"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "nextCursor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "nextCursor"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "ses_p1q2r3s4",
+                      "externalId": "9b2e1d4c-6a3f-4f8e-9b1d-2c8a4e6f7a90",
+                      "projectId": "prj_x9y8z7w6",
+                      "projectName": "Production",
+                      "url": "https://your-app.com/checkout",
+                      "duration": 184320,
+                      "eventCount": 1247,
+                      "createdAt": "2026-04-26T10:30:00.000Z",
+                      "trackedUserId": "tu_t5u6v7w8",
+                      "userId": "usr_abc123",
+                      "userDisplayName": "alex@your-app.com",
+                      "userTraits": {
+                        "plan": "pro",
+                        "email": "alex@your-app.com"
+                      },
+                      "sliceCount": 3
+                    }
+                  ],
+                  "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTA0LTI2VDEwOjMwOjAwLjAwMFoifQ=="
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No active organisation set on the caller"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a member of the active organisation"
+          }
+        }
+      }
+    },
+    "/api/sessions/{sessionId}": {
+      "get": {
+        "summary": "Full session detail for the replay page",
+        "description": "VIEWER+ of the owning org. Returns metadata + slice list. Events are loaded per-slice via the `/slices/{sliceIndex}/events` sibling endpoint. Legacy pre-slice sessions inline their full event stream so old recordings still play.",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "description": "Session id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "externalId": {
+                      "type": "string"
+                    },
+                    "projectId": {
+                      "type": "string"
+                    },
+                    "projectName": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "userAgent": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "screenWidth": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "screenHeight": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "language": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "duration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "eventCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "startedAt": {
+                      "type": "string"
+                    },
+                    "endedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "trackedUserId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "userId": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "userTraits": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "timestamp": {
+                            "type": "number"
+                          },
+                          "data": {}
+                        },
+                        "required": [
+                          "type",
+                          "timestamp",
+                          "data"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "slices": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "index": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "reason": {
+                            "type": "string",
+                            "enum": [
+                              "init",
+                              "idle",
+                              "navigation"
+                            ]
+                          },
+                          "pathname": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          },
+                          "viewportWidth": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "viewportHeight": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "exclusiveMinimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "startedAt": {
+                            "type": "string"
+                          },
+                          "endedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "duration": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "eventCount": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "index",
+                          "reason",
+                          "pathname",
+                          "url",
+                          "viewportWidth",
+                          "viewportHeight",
+                          "startedAt",
+                          "endedAt",
+                          "duration",
+                          "eventCount"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "externalId",
+                    "projectId",
+                    "projectName",
+                    "url",
+                    "userAgent",
+                    "screenWidth",
+                    "screenHeight",
+                    "language",
+                    "duration",
+                    "eventCount",
+                    "startedAt",
+                    "endedAt",
+                    "createdAt",
+                    "trackedUserId",
+                    "userId",
+                    "userTraits",
+                    "events",
+                    "slices"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "id": "ses_p1q2r3s4",
+                  "externalId": "9b2e1d4c-6a3f-4f8e-9b1d-2c8a4e6f7a90",
+                  "projectId": "prj_x9y8z7w6",
+                  "projectName": "Production",
+                  "url": "https://your-app.com/checkout",
+                  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+                  "screenWidth": 1440,
+                  "screenHeight": 900,
+                  "language": "en-US",
+                  "duration": 184320,
+                  "eventCount": 1247,
+                  "startedAt": "2026-04-26T10:30:00.000Z",
+                  "endedAt": "2026-04-26T10:33:04.320Z",
+                  "createdAt": "2026-04-26T10:30:00.000Z",
+                  "trackedUserId": "tu_t5u6v7w8",
+                  "userId": "usr_abc123",
+                  "userTraits": {
+                    "plan": "pro",
+                    "email": "alex@your-app.com"
+                  },
+                  "events": [],
+                  "slices": [
+                    {
+                      "id": "sli_111",
+                      "index": 0,
+                      "reason": "init",
+                      "pathname": "/checkout",
+                      "url": "https://your-app.com/checkout",
+                      "viewportWidth": 1440,
+                      "viewportHeight": 900,
+                      "startedAt": "2026-04-26T10:30:00.000Z",
+                      "endedAt": "2026-04-26T10:31:18.420Z",
+                      "duration": 78420,
+                      "eventCount": 612
+                    },
+                    {
+                      "id": "sli_222",
+                      "index": 1,
+                      "reason": "navigation",
+                      "pathname": "/checkout/payment",
+                      "url": "https://your-app.com/checkout/payment",
+                      "viewportWidth": 1440,
+                      "viewportHeight": 900,
+                      "startedAt": "2026-04-26T10:31:18.420Z",
+                      "endedAt": "2026-04-26T10:33:04.320Z",
+                      "duration": 105900,
+                      "eventCount": 635
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a VIEWER+ of the owning organisation"
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Hard-delete a session",
+        "description": "ADMIN+ (not OWNER) — QA / staging cleanup loops stay unblocked without an owner on call. Cascades slices and events.",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "description": "Session id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Session deleted"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not ADMIN+ of the owning organisation"
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        }
+      }
+    },
+    "/api/sessions/{sessionId}/slices/{sliceIndex}/events": {
+      "get": {
+        "summary": "Stream rrweb events for a single slice",
+        "description": "VIEWER+. Loaded on demand by the replay viewer as the user scrubs into a slice — avoids shipping the full event log upfront for long multi-slice sessions. Events are timestamp-ascending so the rrweb Replayer consumes them as a stream.",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "description": "Session id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sliceIndex",
+            "required": true,
+            "description": "0-based slice index within the session",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event stream for the slice",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "timestamp": {
+                        "type": "number"
+                      },
+                      "data": {}
+                    },
+                    "required": [
+                      "type",
+                      "timestamp",
+                      "data"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "example": [
+                  {
+                    "type": 4,
+                    "timestamp": 1761480000000,
+                    "data": {
+                      "href": "https://your-app.com/checkout",
+                      "width": 1440,
+                      "height": 900
+                    }
+                  },
+                  {
+                    "type": 2,
+                    "timestamp": 1761480000050,
+                    "data": {
+                      "node": {
+                        "type": 0,
+                        "childNodes": [],
+                        "id": 1
+                      },
+                      "initialOffset": {
+                        "left": 0,
+                        "top": 0
+                      }
+                    }
+                  },
+                  {
+                    "type": 3,
+                    "timestamp": 1761480001234,
+                    "data": {
+                      "source": 1,
+                      "positions": [
+                        {
+                          "x": 412,
+                          "y": 318,
+                          "id": 17,
+                          "timeOffset": 0
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid `sliceIndex` (not a non-negative integer)"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a VIEWER+ of the owning organisation"
+          },
+          "404": {
+            "description": "Session or slice not found"
+          }
+        }
+      }
+    },
+    "/api/sessions/summary": {
+      "get": {
+        "summary": "KPI aggregate for the sessions list stats strip",
+        "description": "VIEWER+. Returns four KPIs scoped to the caller's active org: total sessions, total duration, average duration (rounded), active today (created in the last 24 h). Single SQL round-trip via `$queryRaw` with conditional aggregation.",
+        "tags": [
+          "Sessions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Four-KPI aggregate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "totalSessions": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "totalDuration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "avgDuration": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "activeToday": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "totalSessions",
+                    "totalDuration",
+                    "avgDuration",
+                    "activeToday"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "totalSessions": 1247,
+                  "totalDuration": 6834120,
+                  "avgDuration": 5481,
+                  "activeToday": 42
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No active organisation set on the caller"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a member of the active organisation"
+          }
+        }
+      }
+    },
+    "/api/sessions/cancel": {
+      "post": {
+        "summary": "Cancel a session — SDK `stop()` teardown path",
+        "description": "Public-key authenticated. Hard-deletes the session row matching `(projectId, externalId)`. Quiet no-op when no row exists — cancellation can race with the first ingest batch arriving. The `(projectId, externalId)` scoping prevents one project's key from cancelling another project's session.",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-dozor-public-key",
+            "required": true,
+            "description": "Project public key (dp_<32hex>) — created in Settings → Organizations → Project.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "sessionId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                  }
+                },
+                "required": [
+                  "sessionId"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "sessionId": "9b2e1d4c-6a3f-4f8e-9b1d-2c8a4e6f7a90"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Session cancelled or no-op race"
+          },
+          "400": {
+            "description": "Body failed validation (sessionId not a UUID)"
+          },
+          "401": {
+            "description": "Missing or invalid X-Dozor-Public-Key header"
+          }
+        }
+      },
+      "options": {
+        "summary": "CORS preflight",
+        "description": "Always returns 204 with CORS headers. No authentication required.",
+        "tags": [
+          "Sessions"
+        ],
+        "responses": {
+          "204": {
+            "description": "Preflight OK"
+          }
+        }
+      }
+    },
+    "/api/tracked-users": {
+      "get": {
+        "summary": "List tracked users, cursor-paginated",
+        "description": "VIEWER+. Scoped to the caller's active org. Filters: `?search=` (matches `externalId` OR `customName`, case-insensitive), `?projectIds=`, `?statuses=ONLINE,ACTIVE_24H,...`, `?sort=last-seen|sessions|active-time|newest`, `?sortDir=`. Status is derived (not indexable) — when status filter is active the route over-fetches up to 500 rows and applies it in JS.",
+        "tags": [
+          "Tracked Users"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "projectIds",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "in": "query",
+            "name": "statuses",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ONLINE",
+                  "ACTIVE_24H",
+                  "IDLE_7D",
+                  "DORMANT"
+                ]
+              }
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "last-seen",
+                "sessions",
+                "active-time",
+                "newest"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "sortDir",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "desc",
+                "asc"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated tracked-user list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "externalId": {
+                            "type": "string"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          },
+                          "projectId": {
+                            "type": "string"
+                          },
+                          "projectName": {
+                            "type": "string"
+                          },
+                          "traits": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string"
+                                },
+                                "additionalProperties": {}
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "sessionCount": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "lastEventAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "ONLINE",
+                              "ACTIVE_24H",
+                              "IDLE_7D",
+                              "DORMANT"
+                            ]
+                          },
+                          "activeTime7d": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "externalId",
+                          "displayName",
+                          "projectId",
+                          "projectName",
+                          "traits",
+                          "sessionCount",
+                          "lastEventAt",
+                          "status",
+                          "activeTime7d",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "nextCursor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "nextCursor"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "tu_t5u6v7w8",
+                      "externalId": "usr_abc123",
+                      "displayName": "alex@your-app.com",
+                      "projectId": "prj_x9y8z7w6",
+                      "projectName": "Production",
+                      "traits": {
+                        "plan": "pro",
+                        "email": "alex@your-app.com"
+                      },
+                      "sessionCount": 14,
+                      "lastEventAt": "2026-04-26T10:33:04.320Z",
+                      "status": "ONLINE",
+                      "activeTime7d": 184320,
+                      "createdAt": "2026-04-15T11:24:00.000Z"
+                    }
+                  ],
+                  "nextCursor": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No active organisation set on the caller"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a member of the active organisation"
+          }
+        }
+      }
+    },
+    "/api/tracked-users/{userId}": {
+      "get": {
+        "summary": "Full tracked-user detail",
+        "description": "VIEWER+. Same shape `loadTrackedUserDetail` produces for the user-detail page Server Component prefetch — `HydrationBoundary` skips the on-mount refetch because the wire format is byte-identical.",
+        "tags": [
+          "Tracked Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "description": "TrackedUser id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tracked-user detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "externalId": {
+                      "type": "string"
+                    },
+                    "displayName": {
+                      "type": "string"
+                    },
+                    "projectId": {
+                      "type": "string"
+                    },
+                    "projectName": {
+                      "type": "string"
+                    },
+                    "traits": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {}
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "sessionCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "lastEventAt": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "ONLINE",
+                        "ACTIVE_24H",
+                        "IDLE_7D",
+                        "DORMANT"
+                      ]
+                    },
+                    "activeTime7d": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "customName": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "displayNameTraitKey": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "projectDisplayNameTraitKey": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "externalId",
+                    "displayName",
+                    "projectId",
+                    "projectName",
+                    "traits",
+                    "sessionCount",
+                    "lastEventAt",
+                    "status",
+                    "activeTime7d",
+                    "createdAt",
+                    "customName",
+                    "displayNameTraitKey",
+                    "projectDisplayNameTraitKey"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "id": "tu_t5u6v7w8",
+                  "externalId": "usr_abc123",
+                  "displayName": "alex@your-app.com",
+                  "projectId": "prj_x9y8z7w6",
+                  "projectName": "Production",
+                  "traits": {
+                    "plan": "pro",
+                    "email": "alex@your-app.com"
+                  },
+                  "sessionCount": 14,
+                  "lastEventAt": "2026-04-26T10:33:04.320Z",
+                  "status": "ONLINE",
+                  "activeTime7d": 184320,
+                  "createdAt": "2026-04-15T11:24:00.000Z",
+                  "customName": null,
+                  "displayNameTraitKey": null,
+                  "projectDisplayNameTraitKey": "email"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a VIEWER+ of the owning organisation"
+          },
+          "404": {
+            "description": "Tracked user not found"
+          }
+        }
+      }
+    },
+    "/api/tracked-users/{userId}/display-name": {
+      "patch": {
+        "summary": "Update display-name overrides",
+        "description": "ADMIN+. Body fields `customName` and `traitKey` are independently optional; omitted fields stay unchanged, `null` clears the field (falls back through resolver chain), `string` sets the override (trimmed + validated). Implements steps 1–2 of the 4-step resolver chain.",
+        "tags": [
+          "Tracked Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "description": "TrackedUser id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "customName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "traitKey": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 60
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "example": {
+                "customName": "Alex (acme rep)"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Display name updated"
+          },
+          "400": {
+            "description": "Body failed validation (or empty body — at least one field required)"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not ADMIN+ of the owning organisation"
+          },
+          "404": {
+            "description": "Tracked user not found"
+          }
+        }
+      }
+    },
+    "/api/tracked-users/{userId}/activity": {
+      "get": {
+        "summary": "Activity dashboard data bundle",
+        "description": "VIEWER+. Three SQL queries in parallel — histogram, page distribution, KPI aggregates — in a rolling window picked from `?range=` (default `24h`). `Cache-Control: no-store` because the histogram advances with each ingest batch.",
+        "tags": [
+          "Tracked Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "description": "TrackedUser id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "6h",
+                "24h",
+                "7d"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageLimit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activity bundle (histogram + pages + KPI summary)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "range": {
+                      "type": "string",
+                      "enum": [
+                        "6h",
+                        "24h",
+                        "7d"
+                      ]
+                    },
+                    "from": {
+                      "type": "string"
+                    },
+                    "to": {
+                      "type": "string"
+                    },
+                    "bucketMs": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "buckets": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "t": {
+                            "type": "string"
+                          },
+                          "total": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "byPage": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "pathname": {
+                                  "type": "string"
+                                },
+                                "count": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                }
+                              },
+                              "required": [
+                                "pathname",
+                                "count"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "t",
+                          "total",
+                          "byPage"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pageDistribution": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "pathname": {
+                            "type": "string"
+                          },
+                          "duration": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "share": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "visits": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "pathname",
+                          "duration",
+                          "share",
+                          "visits"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "sessionCount": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "totalActiveTime": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "avgSessionDuration": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "totalEvents": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "uniquePages": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "topPage": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "firstEventAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lastEventAt": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "sessionCount",
+                        "totalActiveTime",
+                        "avgSessionDuration",
+                        "totalEvents",
+                        "uniquePages",
+                        "topPage",
+                        "firstEventAt",
+                        "lastEventAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "range",
+                    "from",
+                    "to",
+                    "bucketMs",
+                    "buckets",
+                    "pageDistribution",
+                    "summary"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "range": "24h",
+                  "from": "2026-04-25T10:30:00.000Z",
+                  "to": "2026-04-26T10:30:00.000Z",
+                  "bucketMs": 3600000,
+                  "buckets": [
+                    {
+                      "t": "2026-04-26T09:00:00.000Z",
+                      "total": 412,
+                      "byPage": [
+                        {
+                          "pathname": "/checkout",
+                          "count": 280
+                        },
+                        {
+                          "pathname": "/checkout/payment",
+                          "count": 132
+                        }
+                      ]
+                    },
+                    {
+                      "t": "2026-04-26T10:00:00.000Z",
+                      "total": 835,
+                      "byPage": [
+                        {
+                          "pathname": "/checkout/payment",
+                          "count": 503
+                        },
+                        {
+                          "pathname": "/checkout",
+                          "count": 332
+                        }
+                      ]
+                    }
+                  ],
+                  "pageDistribution": [
+                    {
+                      "pathname": "/checkout/payment",
+                      "duration": 105900,
+                      "share": 0.575,
+                      "visits": 5
+                    },
+                    {
+                      "pathname": "/checkout",
+                      "duration": 78420,
+                      "share": 0.425,
+                      "visits": 3
+                    }
+                  ],
+                  "summary": {
+                    "sessionCount": 3,
+                    "totalActiveTime": 184320,
+                    "avgSessionDuration": 61440,
+                    "totalEvents": 1247,
+                    "uniquePages": 2,
+                    "topPage": "/checkout/payment",
+                    "firstEventAt": "2026-04-26T08:12:00.000Z",
+                    "lastEventAt": "2026-04-26T10:33:04.320Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a VIEWER+ of the owning organisation"
+          },
+          "404": {
+            "description": "Tracked user not found"
+          }
+        }
+      }
+    },
+    "/api/tracked-users/{userId}/sessions": {
+      "get": {
+        "summary": "Sessions for one tracked user, cursor-paginated",
+        "description": "VIEWER+. Slim shape — no event payload, no trait JSON. Detail fields hydrate per-row via the session detail endpoint on demand. `userDisplayName` is `null` here on purpose (the user-detail page already surfaces the identity above the table).",
+        "tags": [
+          "Tracked Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "description": "TrackedUser id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated session list (sessions list shape)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "externalId": {
+                            "type": "string"
+                          },
+                          "projectId": {
+                            "type": "string"
+                          },
+                          "projectName": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "duration": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "eventCount": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "trackedUserId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "userId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "userDisplayName": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "userTraits": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string"
+                                },
+                                "additionalProperties": {}
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "sliceCount": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "externalId",
+                          "projectId",
+                          "projectName",
+                          "url",
+                          "duration",
+                          "eventCount",
+                          "createdAt",
+                          "trackedUserId",
+                          "userId",
+                          "userDisplayName",
+                          "userTraits",
+                          "sliceCount"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "nextCursor": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "nextCursor"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "ses_p1q2r3s4",
+                      "externalId": "9b2e1d4c-6a3f-4f8e-9b1d-2c8a4e6f7a90",
+                      "projectId": "prj_x9y8z7w6",
+                      "projectName": "Production",
+                      "url": "https://your-app.com/checkout",
+                      "duration": 184320,
+                      "eventCount": 1247,
+                      "createdAt": "2026-04-26T10:30:00.000Z",
+                      "trackedUserId": "tu_t5u6v7w8",
+                      "userId": "usr_abc123",
+                      "userDisplayName": null,
+                      "userTraits": null,
+                      "sliceCount": 3
+                    }
+                  ],
+                  "nextCursor": null
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a VIEWER+ of the owning organisation"
+          },
+          "404": {
+            "description": "Tracked user not found"
+          }
+        }
+      }
+    },
+    "/api/tracked-users/{userId}/status": {
+      "get": {
+        "summary": "Online-status heartbeat",
+        "description": "VIEWER+. Lightweight — `MAX(Session.endedAt)` keyed on the indexed `trackedUserId`, no `Event` table scan. Online flag flips when the most recent session ended within `ONLINE_THRESHOLD_MS`. `Cache-Control: no-store` so polling sees fresh values.",
+        "tags": [
+          "Tracked Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "description": "TrackedUser id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Online flag + last-event timestamp",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "online": {
+                      "type": "boolean"
+                    },
+                    "lastEventAt": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "online",
+                    "lastEventAt"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "online": true,
+                  "lastEventAt": "2026-04-26T10:33:04.320Z"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a VIEWER+ of the owning organisation"
+          },
+          "404": {
+            "description": "Tracked user not found"
+          }
+        }
+      }
+    },
+    "/api/tracked-users/{userId}/timeline": {
+      "get": {
+        "summary": "Sessions timeline in a rolling window",
+        "description": "VIEWER+. `?range=` matches the activity histogram (`6h` / `24h` / `7d`). Server computes `from = now - windowMs` itself — sending raw ISO from the client would shift the TanStack Query key on every render. Sessions overlap the window if they `startedAt ≤ to AND (endedAt ≥ from OR endedAt IS NULL)`.",
+        "tags": [
+          "Tracked Users"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "description": "TrackedUser id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "range",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "6h",
+                "24h",
+                "7d"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Timeline window with sessions + slices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "range": {
+                      "type": "string",
+                      "enum": [
+                        "6h",
+                        "24h",
+                        "7d"
+                      ]
+                    },
+                    "from": {
+                      "type": "string"
+                    },
+                    "to": {
+                      "type": "string"
+                    },
+                    "sessions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "externalId": {
+                            "type": "string"
+                          },
+                          "startedAt": {
+                            "type": "string"
+                          },
+                          "endedAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "duration": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "url": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "slices": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string"
+                                },
+                                "pathname": {
+                                  "type": "string"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "startedAt": {
+                                  "type": "string"
+                                },
+                                "endedAt": {
+                                  "anyOf": [
+                                    {
+                                      "type": "string"
+                                    },
+                                    {
+                                      "type": "null"
+                                    }
+                                  ]
+                                },
+                                "duration": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              },
+                              "required": [
+                                "url",
+                                "pathname",
+                                "reason",
+                                "startedAt",
+                                "endedAt",
+                                "duration"
+                              ],
+                              "additionalProperties": false
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "externalId",
+                          "startedAt",
+                          "endedAt",
+                          "duration",
+                          "url",
+                          "slices"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "pages": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "range",
+                    "from",
+                    "to",
+                    "sessions",
+                    "pages"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "range": "24h",
+                  "from": "2026-04-25T10:30:00.000Z",
+                  "to": "2026-04-26T10:30:00.000Z",
+                  "sessions": [
+                    {
+                      "id": "ses_p1q2r3s4",
+                      "externalId": "9b2e1d4c-6a3f-4f8e-9b1d-2c8a4e6f7a90",
+                      "startedAt": "2026-04-26T10:30:00.000Z",
+                      "endedAt": "2026-04-26T10:33:04.320Z",
+                      "duration": 184320,
+                      "url": "https://your-app.com/checkout",
+                      "slices": [
+                        {
+                          "url": "https://your-app.com/checkout",
+                          "pathname": "/checkout",
+                          "reason": "init",
+                          "startedAt": "2026-04-26T10:30:00.000Z",
+                          "endedAt": "2026-04-26T10:31:18.420Z",
+                          "duration": 78420
+                        },
+                        {
+                          "url": "https://your-app.com/checkout/payment",
+                          "pathname": "/checkout/payment",
+                          "reason": "navigation",
+                          "startedAt": "2026-04-26T10:31:18.420Z",
+                          "endedAt": "2026-04-26T10:33:04.320Z",
+                          "duration": 105900
+                        }
+                      ]
+                    }
+                  ],
+                  "pages": [
+                    "/checkout",
+                    "/checkout/payment"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a VIEWER+ of the owning organisation"
+          },
+          "404": {
+            "description": "Tracked user not found"
+          }
+        }
+      }
+    },
+    "/api/tracked-users/summary": {
+      "get": {
+        "summary": "KPI aggregate for the users list stats strip",
+        "description": "VIEWER+. Four KPIs scoped to the caller's active org: total tracked users, online now, active in last 24 h, new this week. Single SQL round-trip via `$queryRaw` with conditional aggregation + a `LATERAL` join to resolve `MAX(Session.endedAt)` per user.",
+        "tags": [
+          "Tracked Users"
+        ],
+        "responses": {
+          "200": {
+            "description": "Four-KPI aggregate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "onlineNow": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "active24h": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "newThisWeek": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "onlineNow",
+                    "active24h",
+                    "newThisWeek"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "total": 312,
+                  "onlineNow": 8,
+                  "active24h": 47,
+                  "newThisWeek": 21
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No active organisation set on the caller"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a member of the active organisation"
+          }
+        }
+      }
+    },
+    "/api/user": {
+      "get": {
+        "summary": "Signed-in user's full profile",
+        "description": "Returns name + email + avatar + linked OAuth accounts + registered passkeys. Powers the settings page's connect / disconnect / rename affordances.",
+        "tags": [
+          "User"
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "image": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "accounts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "provider": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "provider"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "passkeys": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "credentialID": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "credentialDeviceType": {
+                            "type": "string",
+                            "enum": [
+                              "singleDevice",
+                              "multiDevice"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "credentialID",
+                          "name",
+                          "credentialDeviceType",
+                          "createdAt"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "image",
+                    "createdAt",
+                    "accounts",
+                    "passkeys"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "id": "usr_owner",
+                  "name": "Sam Owner",
+                  "email": "sam@your-company.com",
+                  "image": "https://api.dicebear.com/9.x/shapes/svg?seed=sam",
+                  "createdAt": "2026-01-15T08:00:00.000Z",
+                  "accounts": [
+                    {
+                      "provider": "google"
+                    },
+                    {
+                      "provider": "github"
+                    }
+                  ],
+                  "passkeys": [
+                    {
+                      "credentialID": "AbCdEfGh-1234567890_ijklMNO-pqrsTUV",
+                      "name": "MacBook Touch ID",
+                      "credentialDeviceType": "singleDevice",
+                      "createdAt": "2026-02-03T14:20:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "404": {
+            "description": "User row missing — should never happen post-auth"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update display name",
+        "description": "Renames the signed-in user. Avatar regeneration has its own endpoint (`POST /api/user/avatar`) — the two actions live in different parts of the profile form.",
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 50
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "name": "Sam Owner"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Name updated"
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Hard-delete the signed-in user's account",
+        "description": "Destructive. Confirmation phrase enforced server-side via `deleteAccountSchema` so a misclick can't wipe the account. One transaction: solo-member orgs are deleted outright (cascades invites + full data hierarchy); shared orgs get ownership transfer so an ownerless org is impossible after the cascade. The user row deletes last — cascades accounts, authenticators, memberships.",
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "confirmation": {
+                    "type": "string",
+                    "const": "delete my account"
+                  }
+                },
+                "required": [
+                  "confirmation"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "confirmation": "delete my account"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Account deleted"
+          },
+          "400": {
+            "description": "Confirmation phrase missing or wrong"
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/user/avatar": {
+      "post": {
+        "summary": "Regenerate the DiceBear avatar seed",
+        "description": "Rolls the avatar seed to a fresh UUID. The `image` URL changes; everything else stays. Returns the new URL so the client updates its avatar slot without a full profile refetch.",
+        "tags": [
+          "User"
+        ],
+        "responses": {
+          "200": {
+            "description": "New avatar URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "image": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "image"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "image": "https://api.dicebear.com/9.x/shapes/svg?seed=cf3a7b2e9d1c4f5a"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/user/locale": {
+      "patch": {
+        "summary": "Update the user's UI locale preference",
+        "description": "Validates against the canonical `LOCALES` tuple. The session refresh + URL prefix swap happen client-side: on `204` the client calls `session.update({})` to force a JWT refresh, then `router.replace(pathname, { locale })` to swap the URL. All three steps are sequenced inside `useUpdateLocaleMutation.onSuccess`.",
+        "tags": [
+          "User"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "locale": {
+                    "type": "string",
+                    "enum": [
+                      "en",
+                      "uk",
+                      "de",
+                      "es",
+                      "pt",
+                      "it"
+                    ]
+                  }
+                },
+                "required": [
+                  "locale"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "locale": "uk"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Locale persisted"
+          },
+          "400": {
+            "description": "Body failed validation (unknown locale)"
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/user/accounts/{provider}": {
+      "delete": {
+        "summary": "Unlink a linked OAuth account",
+        "description": "Only unlinks the local `Account` row — does NOT revoke the provider-side consent (users manage that in Google / GitHub settings). Last-login-method guard runs in a `Serializable` transaction: counts remaining OAuth accounts + passkeys + email-OTP availability AFTER the hypothetical unlink. If zero would remain, returns `409` and the row is preserved — prevents single-click lockout.",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "description": "OAuth provider name (`google`, `github`, etc.)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Account unlinked"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "404": {
+            "description": "No such linked account for this user"
+          },
+          "409": {
+            "description": "Cannot unlink — would leave the user with zero sign-in methods"
+          }
+        }
+      }
+    },
+    "/api/user/passkeys/{credentialId}": {
+      "patch": {
+        "summary": "Rename a registered passkey",
+        "description": "Lets the user distinguish 'MacBook Touch ID' from 'iPhone Face ID' in the authenticators list. Scoped by `(credentialID, userId)` so a credentialID leak can't let another user rename the passkey.",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credentialId",
+            "required": true,
+            "description": "WebAuthn credential id (base64url string)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 50
+                  }
+                },
+                "required": [
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "example": {
+                "name": "iPhone Face ID"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Passkey renamed"
+          },
+          "400": {
+            "description": "Body failed validation"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "404": {
+            "description": "Passkey not found for this user"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unregister a passkey",
+        "description": "Same `(credentialID, userId)` scoping as rename. The account stays usable via other authenticators (OAuth, OTP) as long as at least one remains — there's no equivalent to the OAuth last-method guard here because passkey removal alone never strands a user.",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credentialId",
+            "required": true,
+            "description": "WebAuthn credential id (base64url string)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Passkey unregistered"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "404": {
+            "description": "Passkey not found for this user"
+          }
+        }
+      }
+    },
+    "/api/user/invites": {
+      "get": {
+        "summary": "List pending invites addressed to the caller's email",
+        "description": "Lazy expiry — past-TTL rows are filtered out and status-flipped to `EXPIRED` in the background. The daily cron hard-deletes past-TTL rows overnight; this keeps the schema clean between runs without an extra scheduled job.",
+        "tags": [
+          "User"
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending invite list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": [
+                          "OWNER",
+                          "ADMIN",
+                          "VIEWER"
+                        ]
+                      },
+                      "expiresAt": {
+                        "type": "string"
+                      },
+                      "createdAt": {
+                        "type": "string"
+                      },
+                      "organization": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "image": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "image"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "invitedBy": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "email": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "email"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "role",
+                      "expiresAt",
+                      "createdAt",
+                      "organization",
+                      "invitedBy"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "example": [
+                  {
+                    "id": "inv_w7x8y9z0",
+                    "role": "ADMIN",
+                    "expiresAt": "2026-04-29T10:30:00.000Z",
+                    "createdAt": "2026-04-26T10:30:00.000Z",
+                    "organization": {
+                      "id": "org_partner",
+                      "name": "Partner Corp",
+                      "image": "https://api.dicebear.com/9.x/shapes/svg?seed=partner"
+                    },
+                    "invitedBy": {
+                      "name": "Riley Partner",
+                      "email": "riley@partner-corp.com"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/user/invites/{id}/accept": {
+      "post": {
+        "summary": "Claim a pending invite",
+        "description": "Atomic transaction — `Membership` create + invite `status → ACCEPTED` in one round-trip so a crash between writes can't leave a dangling PENDING row for someone who already has membership. Returns the org id + name so the client can navigate to it without a profile refetch.",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Invite id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invite accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "organizationId": {
+                      "type": "string"
+                    },
+                    "organizationName": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "organizationId",
+                    "organizationName"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "organizationId": "org_partner",
+                  "organizationName": "Partner Corp"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Invite email doesn't match the caller's email"
+          },
+          "404": {
+            "description": "Invite not found, expired, or no longer PENDING"
+          }
+        }
+      }
+    },
+    "/api/user/invites/{id}/decline": {
+      "post": {
+        "summary": "Decline a pending invite",
+        "description": "Hard-delete (not a `DECLINED` status flip) — declined invites carry no audit value (admin-side list renders only PENDING rows) and the extra enum would buy nothing. If an admin still wants the user, they re-send.",
+        "tags": [
+          "User"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "Invite id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invite declined",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "ok": true
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Invite email doesn't match the caller's email"
+          },
+          "404": {
+            "description": "Invite not found, expired, or no longer PENDING"
+          }
+        }
+      }
+    },
+    "/api/cron/daily-cleanup": {
+      "get": {
+        "summary": "Nightly database-hygiene sweep (Vercel Cron)",
+        "description": "Bearer-authenticated. Vercel Cron invokes this endpoint per the schedule in `vercel.json` (currently `30 3 * * *` — 03:30 UTC). Four ordered steps in one run: (1) expired invites, (2) sessions older than `SESSION_RETENTION_DAYS = 90`, (3) tracked users with zero remaining sessions, (4) organisations with zero memberships (after nullifying every `User.activeOrganizationId` that referenced them). The `GET` verb is Vercel Cron's contract — destructive-on-GET is ugly but the alternative is a wrapper that fights the platform.",
+        "tags": [
+          "Cron"
+        ],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": true,
+            "description": "Bearer token matching `CRON_SECRET`. Vercel injects this on scheduled invocations.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cleanup summary — counters per entity removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "invites": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "sessions": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "trackedUsers": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "organizations": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "invites",
+                    "sessions",
+                    "trackedUsers",
+                    "organizations"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "invites": 4,
+                  "sessions": 132,
+                  "trackedUsers": 17,
+                  "organizations": 2
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid `Authorization: Bearer $CRON_SECRET`"
           }
         }
       }
