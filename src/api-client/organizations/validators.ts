@@ -10,7 +10,7 @@ export const updateOrgSchema = z.object({
 });
 
 export const inviteSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),
   role: z.enum(["ADMIN", "VIEWER"], { message: "Role must be Admin or Viewer" }),
 });
 
