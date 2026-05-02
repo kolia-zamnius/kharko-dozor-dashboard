@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/server/auth";
 import { trackedUserQueries } from "@/api-client/tracked-users/queries";
 import { getQueryClient } from "@/lib/query-client";
+import { isHttpError } from "@/server/http-error";
 import { loadTrackedUserDetail } from "@/server/tracked-users";
 import type { TrackedUserId } from "@/types/ids";
 import { UserDetailShell } from "./components/user-detail-shell";
@@ -46,7 +47,24 @@ export default async function UserDetailPage({ params }: { params: Promise<{ use
   // Trust-boundary cast: `userId` enters from a URL param (raw string) —
   // branding it here so the loader's type contract catches any future
   // swap with `requesterId` inside the function body.
-  const trackedUser = await loadTrackedUserDetail(userId as TrackedUserId, session.user.id);
+  // Cross-org guard inside the loader maps the foreign-org case to a
+  // thrown HttpError(404) that we translate into the not-found boundary
+  // below, so a guessed URL with a different-org tracked-user ID looks
+  // exactly like a non-existent one.
+  let trackedUser;
+  try {
+    trackedUser = await loadTrackedUserDetail(
+      userId as TrackedUserId,
+      session.user.id,
+      session.user.activeOrganizationId,
+    );
+  } catch (err) {
+    // Foreign-org / no-active-org / membership failures all map to a
+    // 404 page so the URL gives no information about whether the
+    // resource exists. Anything else is a genuine server error.
+    if (isHttpError(err)) notFound();
+    throw err;
+  }
   if (!trackedUser) notFound();
 
   const queryClient = getQueryClient();

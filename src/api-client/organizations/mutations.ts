@@ -1,8 +1,13 @@
 import { apiFetch } from "@/api-client/fetch";
+import { organizationKeys } from "@/api-client/organizations/keys";
 import { organizationQueries } from "@/api-client/organizations/queries";
+import { projectKeys } from "@/api-client/projects/keys";
 import { routes } from "@/api-client/routes";
+import { sessionKeys } from "@/api-client/sessions/keys";
+import { trackedUserKeys } from "@/api-client/tracked-users/keys";
 import type { Organization, OrganizationInvite, OrganizationMember } from "@/api-client/organizations/types";
 import type { UpdateInviteInput } from "@/api-client/organizations/validators";
+import { useRouter } from "@/i18n/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TranslationValues } from "next-intl";
 import { useSession } from "next-auth/react";
@@ -10,7 +15,20 @@ import { useSession } from "next-auth/react";
 type Role = Organization["role"];
 type InviteRole = OrganizationInvite["role"];
 
+/**
+ * Switch the active organization on the user record + JWT.
+ *
+ * @remarks
+ * Beyond the JWT refresh (`update({})`), every org-scoped TanStack
+ * cache must be invalidated so the user doesn't keep seeing the
+ * previous org's tracked users / sessions / projects on the page they
+ * were already on. RSC pages that prefetched on the server
+ * (e.g. `/settings/organizations`) bypass TanStack entirely, so
+ * `router.refresh()` is the only way to nudge them.
+ */
 export function useSwitchOrgMutation() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const { update } = useSession();
 
   return useMutation({
@@ -19,7 +37,14 @@ export function useSwitchOrgMutation() {
         method: "PATCH",
         body: JSON.stringify({ organizationId: orgId }),
       }),
-    onSuccess: () => update({}),
+    onSuccess: async () => {
+      await update({});
+      void queryClient.invalidateQueries({ queryKey: trackedUserKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: sessionKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+      void queryClient.invalidateQueries({ queryKey: organizationKeys.all() });
+      router.refresh();
+    },
     meta: { errorKey: "settings.mutations.orgs.switch.error" },
   });
 }

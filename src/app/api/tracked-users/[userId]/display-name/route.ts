@@ -1,6 +1,6 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { updateDisplayNameSchema } from "@/api-client/tracked-users/validators";
-import { requireMember } from "@/server/auth/permissions";
+import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
 import { log } from "@/server/logger";
@@ -28,7 +28,7 @@ export const PATCH = withAuth<Params>(async (req, user, { userId }) => {
     throw new HttpError(404, "User not found");
   }
 
-  await requireMember(user.id, trackedUser.project.organizationId, "ADMIN");
+  await requireResourceAccess(user.id, user.activeOrganizationId, trackedUser.project.organizationId, "ADMIN");
 
   const body = updateDisplayNameSchema.parse(await req.json());
 

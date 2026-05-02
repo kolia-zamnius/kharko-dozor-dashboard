@@ -57,8 +57,8 @@ describe("PATCH /api/tracked-users/[userId]/display-name", () => {
   }
 
   it("ADMIN can set customName — resolver returns it", async () => {
-    const { alice, trackedUser } = await seedTrackedUser();
-    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id })));
+    const { alice, team, trackedUser } = await seedTrackedUser();
+    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id, activeOrganizationId: team.id })));
 
     const { status } = await invokeRouteWithParams(displayNameRoute.PATCH, {
       method: "PATCH",
@@ -81,8 +81,8 @@ describe("PATCH /api/tracked-users/[userId]/display-name", () => {
   });
 
   it("ADMIN can set traitKey — resolver walks to the trait value", async () => {
-    const { alice, trackedUser } = await seedTrackedUser();
-    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id })));
+    const { alice, team, trackedUser } = await seedTrackedUser();
+    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id, activeOrganizationId: team.id })));
 
     const { status } = await invokeRouteWithParams(displayNameRoute.PATCH, {
       method: "PATCH",
@@ -105,9 +105,9 @@ describe("PATCH /api/tracked-users/[userId]/display-name", () => {
   });
 
   it("null clears customName — resolver falls through", async () => {
-    const { alice, project, trackedUser } = await seedTrackedUser();
+    const { alice, team, project, trackedUser } = await seedTrackedUser();
     await prisma.trackedUser.update({ where: { id: trackedUser.id }, data: { customName: "Temporary" } });
-    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id })));
+    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id, activeOrganizationId: team.id })));
 
     const { status } = await invokeRouteWithParams(displayNameRoute.PATCH, {
       method: "PATCH",
@@ -131,8 +131,8 @@ describe("PATCH /api/tracked-users/[userId]/display-name", () => {
   });
 
   it("returns 400 when neither field is provided (zod refine guard)", async () => {
-    const { alice, trackedUser } = await seedTrackedUser();
-    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id })));
+    const { alice, team, trackedUser } = await seedTrackedUser();
+    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id, activeOrganizationId: team.id })));
 
     const { status } = await invokeRouteWithParams(displayNameRoute.PATCH, {
       method: "PATCH",
@@ -146,7 +146,7 @@ describe("PATCH /api/tracked-users/[userId]/display-name", () => {
     const { team, trackedUser } = await seedTrackedUser();
     const bob = await createUser();
     await createMembership({ user: bob, organization: team, role: "VIEWER" });
-    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id })));
+    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id, activeOrganizationId: team.id })));
 
     const { status } = await invokeRouteWithParams(displayNameRoute.PATCH, {
       method: "PATCH",

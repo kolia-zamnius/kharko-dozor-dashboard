@@ -20,7 +20,7 @@ type Params = { userId: string };
  */
 export const GET = withAuth<Params>(async (_req, user, { userId }) => {
   // Trust-boundary cast — `userId` arrives as a raw string URL param.
-  const trackedUser = await loadTrackedUserDetail(userId as TrackedUserId, user.id);
+  const trackedUser = await loadTrackedUserDetail(userId as TrackedUserId, user.id, user.activeOrganizationId);
 
   if (!trackedUser) {
     throw new HttpError(404, "User not found");

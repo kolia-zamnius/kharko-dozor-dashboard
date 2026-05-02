@@ -35,14 +35,24 @@ import type { PrismaClient, Role } from "@/generated/prisma/client";
 
 import * as orgDetailRoute from "@/app/api/organizations/[orgId]/route";
 import * as invitesRoute from "@/app/api/organizations/[orgId]/invites/route";
+import * as memberDetailRoute from "@/app/api/organizations/[orgId]/members/[memberId]/route";
 import * as projectsRoute from "@/app/api/projects/route";
 import * as projectDetailRoute from "@/app/api/projects/[projectId]/route";
 import * as projectKeyRoute from "@/app/api/projects/[projectId]/key/route";
 import * as projectRegenRoute from "@/app/api/projects/[projectId]/regenerate-key/route";
+import * as sessionDetailRoute from "@/app/api/sessions/[sessionId]/route";
+import * as trackedUserDisplayNameRoute from "@/app/api/tracked-users/[userId]/display-name/route";
 
 import { buildSession, buildSessionUser } from "../helpers/auth-mock";
 import { getTestPrisma, truncateAll } from "../helpers/db";
-import { createMembership, createOrganization, createProject, createUser } from "../helpers/factories";
+import {
+  createMembership,
+  createOrganization,
+  createProject,
+  createSession,
+  createTrackedUser,
+  createUser,
+} from "../helpers/factories";
 import { invokeRoute, invokeRouteWithParams } from "../helpers/invoke-route";
 import { mockAuth } from "../helpers/mocks";
 
@@ -54,12 +64,21 @@ type ActionName =
   | "rename-project"
   | "delete-project"
   | "get-project-key"
-  | "regenerate-project-key";
+  | "regenerate-project-key"
+  | "remove-member"
+  | "change-member-role"
+  | "session-delete"
+  | "tracked-user-display-name-update";
 
 /**
  * Capability matrix — authoritative expected behaviour per role × action.
  * Mirrors the `src/server/auth/permissions.ts` JSDoc verbatim; a diff
  * between the two surfaces in this test file first.
+ *
+ * Out of scope for the matrix: user-scoped actions whose authorization
+ * doesn't depend on the actor's org role (`active-org-switch`,
+ * `passkey-delete`, `account-unlink`). Those have dedicated per-route
+ * tests under `tests/integration/`.
  */
 const MATRIX: Record<ActionName, Record<Role, boolean>> = {
   "rename-org": { OWNER: true, ADMIN: true, VIEWER: false },
@@ -70,6 +89,13 @@ const MATRIX: Record<ActionName, Record<Role, boolean>> = {
   "delete-project": { OWNER: true, ADMIN: false, VIEWER: false },
   "get-project-key": { OWNER: true, ADMIN: false, VIEWER: false },
   "regenerate-project-key": { OWNER: true, ADMIN: false, VIEWER: false },
+  // Removing OR demoting OTHER members — OWNER only. Self-leave is a
+  // separate flow and is not under test here.
+  "remove-member": { OWNER: true, ADMIN: false, VIEWER: false },
+  "change-member-role": { OWNER: true, ADMIN: false, VIEWER: false },
+  // ADMIN-tier — operational metadata edits.
+  "session-delete": { OWNER: true, ADMIN: true, VIEWER: false },
+  "tracked-user-display-name-update": { OWNER: true, ADMIN: true, VIEWER: false },
 };
 
 const ALL_ROLES: Role[] = ["OWNER", "ADMIN", "VIEWER"];
@@ -104,7 +130,12 @@ describe("RBAC permission matrix", () => {
     await createMembership({ user: actor, organization: team, role: actorRole });
     const project = await createProject({ organization: team });
 
-    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: actor.id })));
+    // Resource-access routes (`session-delete`, `tracked-user-display-name-update`)
+    // require the actor's active org to match the resource's owning org.
+    // Pinning `activeOrganizationId` here keeps the role × action grid
+    // about RBAC alone — cross-org leak coverage lives in
+    // `cross-org-access.test.ts`.
+    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: actor.id, activeOrganizationId: team.id })));
 
     switch (action) {
       case "rename-org": {
@@ -166,11 +197,49 @@ describe("RBAC permission matrix", () => {
         });
         return status;
       }
+      case "remove-member": {
+        // Distinct VIEWER target — actor removes someone other than self,
+        // so the OWNER-only branch in `DELETE members/[memberId]` fires.
+        const targetUser = await createUser();
+        const target = await createMembership({ user: targetUser, organization: team, role: "VIEWER" });
+        const { status } = await invokeRouteWithParams(memberDetailRoute.DELETE, {
+          method: "DELETE",
+          params: { orgId: team.id, memberId: target.id },
+        });
+        return status;
+      }
+      case "change-member-role": {
+        const targetUser = await createUser();
+        const target = await createMembership({ user: targetUser, organization: team, role: "VIEWER" });
+        const { status } = await invokeRouteWithParams(memberDetailRoute.PATCH, {
+          method: "PATCH",
+          body: { role: "ADMIN" },
+          params: { orgId: team.id, memberId: target.id },
+        });
+        return status;
+      }
+      case "session-delete": {
+        const session = await createSession({ project });
+        const { status } = await invokeRouteWithParams(sessionDetailRoute.DELETE, {
+          method: "DELETE",
+          params: { sessionId: session.id },
+        });
+        return status;
+      }
+      case "tracked-user-display-name-update": {
+        const trackedUser = await createTrackedUser({ project });
+        const { status } = await invokeRouteWithParams(trackedUserDisplayNameRoute.PATCH, {
+          method: "PATCH",
+          body: { customName: "Renamed" },
+          params: { userId: trackedUser.id },
+        });
+        return status;
+      }
     }
   }
 
-  // Generate a row per (action, role) combination — 8 actions × 3 roles
-  // = 24 assertions. Each test runs in full isolation (truncate between).
+  // Generate a row per (action, role) combination — 12 actions × 3 roles
+  // = 36 assertions. Each test runs in full isolation (truncate between).
   describe.each(ALL_ACTIONS)("%s", (action) => {
     it.each(ALL_ROLES)(`role=%s`, async (role) => {
       const allowed = MATRIX[action][role];

@@ -110,3 +110,61 @@ export async function requireProjectMember(
   const membership = await requireMember(userId, project.organizationId, minRole);
   return { project, membership };
 }
+
+/**
+ * Resolve the requester's active organization, or fail if there is none.
+ *
+ * @remarks
+ * Sole purpose: turn `string | null | undefined` into `string` with an
+ * explicit `HttpError(400)` on the absent branch. List routes that
+ * scope every query by `activeOrganizationId` repeat the same null
+ * check inline — centralising it keeps the error message consistent
+ * and the caller body one line shorter.
+ *
+ * @throws {HttpError} 400 — the requester has no active organization.
+ */
+export function requireActiveOrg(activeOrganizationId: string | null | undefined): string {
+  if (!activeOrganizationId) {
+    throw new HttpError(400, "No active organization");
+  }
+  return activeOrganizationId;
+}
+
+/**
+ * Cross-org guard for `[resourceId]` routes. Asserts:
+ *   1. The requester has an active organization (400 otherwise).
+ *   2. The resource lives under that active organization (opaque 404
+ *      otherwise — never 403, since 403 leaks the resource's
+ *      existence to a member of an unrelated org).
+ *   3. The requester is a member of that org at `minRole` or above
+ *      (403 otherwise — JWT membership cache may be stale, so this
+ *      DB hit is the authoritative check).
+ *
+ * @remarks
+ * Use this on every route whose resource ID arrives via the URL
+ * (`/api/sessions/[id]`, `/api/tracked-users/[id]/*`). List routes
+ * already scope queries by the active org from the start — they call
+ * `requireActiveOrg` + `requireMember` directly without the existence
+ * check.
+ *
+ * The 404 (instead of 403) on the cross-org branch is deliberate.
+ * GitHub-style: a private resource you cannot see is indistinguishable
+ * from a non-existent one. Otherwise a member of org B who guesses
+ * an org-A session ID gets a confirming 403 and learns that ID exists.
+ *
+ * @throws {HttpError} 400 — no active organization on the requester.
+ * @throws {HttpError} 404 — resource is not in the active organization.
+ * @throws {HttpError} 403 — membership / role check failed.
+ */
+export async function requireResourceAccess(
+  userId: UserId,
+  activeOrganizationId: string | null | undefined,
+  resourceOrgId: string,
+  minRole: Role = "VIEWER",
+): Promise<Membership> {
+  const activeOrgId = requireActiveOrg(activeOrganizationId);
+  if (resourceOrgId !== activeOrgId) {
+    throw new HttpError(404, "Not found");
+  }
+  return requireMember(userId, resourceOrgId, minRole);
+}

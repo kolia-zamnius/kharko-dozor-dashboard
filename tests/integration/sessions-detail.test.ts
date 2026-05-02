@@ -54,7 +54,7 @@ describe("/api/sessions/[sessionId]", () => {
           eventCount: 0,
         },
       });
-      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id })));
+      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id, activeOrganizationId: team.id })));
 
       const { status, json } = await invokeRouteWithParams<
         { sessionId: string },
@@ -90,7 +90,7 @@ describe("/api/sessions/[sessionId]", () => {
           { sessionId: session.id, type: 2, timestamp: BigInt(2), data: { node: {} } },
         ],
       });
-      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id })));
+      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id, activeOrganizationId: team.id })));
 
       const { status, json } = await invokeRouteWithParams<
         { sessionId: string },
@@ -107,19 +107,23 @@ describe("/api/sessions/[sessionId]", () => {
       expect(typeof json.events[0]?.timestamp).toBe("number");
     });
 
-    it("returns 403 for a non-member of the owning org", async () => {
+    it("returns 404 for a non-member querying another org's session", async () => {
       const alice = await createUser();
       const bob = await createUser();
       const team = await createOrganization({ owner: alice });
       const project = await createProject({ organization: team });
       const session = await createSession({ project });
-      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id })));
+      // Bob is active inside his own org. The cross-org guard returns
+      // an opaque 404 rather than 403, so a guessed session ID owned by
+      // a different org gives no signal that the ID is real.
+      const bobOrg = await createOrganization({ owner: bob });
+      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id, activeOrganizationId: bobOrg.id })));
 
       const { status } = await invokeRouteWithParams(sessionRoute.GET, {
         method: "GET",
         params: { sessionId: session.id },
       });
-      expect(status).toBe(403);
+      expect(status).toBe(404);
     });
 
     it("returns 404 for an unknown sessionId", async () => {
@@ -155,7 +159,7 @@ describe("/api/sessions/[sessionId]", () => {
       await prisma.event.create({
         data: { sessionId: session.id, sliceId: slice.id, type: 2, timestamp: BigInt(1), data: {} },
       });
-      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id })));
+      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id, activeOrganizationId: team.id })));
 
       const { status } = await invokeRouteWithParams(sessionRoute.DELETE, {
         method: "DELETE",
@@ -175,7 +179,7 @@ describe("/api/sessions/[sessionId]", () => {
       await createMembership({ user: bob, organization: team, role: "VIEWER" });
       const project = await createProject({ organization: team });
       const session = await createSession({ project });
-      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id })));
+      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id, activeOrganizationId: team.id })));
 
       const { status } = await invokeRouteWithParams(sessionRoute.DELETE, {
         method: "DELETE",
