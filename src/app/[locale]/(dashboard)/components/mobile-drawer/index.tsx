@@ -159,6 +159,7 @@ export function MobileDrawer() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm",
                     isActive ? "bg-primary/10 text-primary font-medium" : "text-foreground hover:bg-muted",

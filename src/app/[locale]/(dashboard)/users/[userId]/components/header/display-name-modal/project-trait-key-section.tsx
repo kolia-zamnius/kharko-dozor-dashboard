@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import { useId } from "react";
 
 import { Input } from "@/components/ui/forms/input";
 import { Button } from "@/components/ui/primitives/button";
@@ -25,6 +26,7 @@ export function ProjectTraitKeySection({ user }: ProjectTraitKeySectionProps) {
   const mutation = useUpdateProjectDisplayNameTraitKeyMutation();
   const serverValue = user.projectDisplayNameTraitKey ?? "";
   const [value, setValue] = useServerSyncedInput(serverValue);
+  const headingId = useId();
 
   const trimmed = value.trim();
   const canSet = trimmed.length > 0 && trimmed !== serverValue;
@@ -44,7 +46,9 @@ export function ProjectTraitKeySection({ user }: ProjectTraitKeySectionProps) {
   return (
     <section className="space-y-2">
       <div>
-        <h3 className="text-sm font-medium">{t("heading")}</h3>
+        <h3 id={headingId} className="text-sm font-medium">
+          {t("heading")}
+        </h3>
         <p className="text-muted-foreground text-xs">
           {t.rich("description", {
             strong: () => <strong>every user</strong>,
@@ -55,6 +59,7 @@ export function ProjectTraitKeySection({ user }: ProjectTraitKeySectionProps) {
       </div>
       <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
         <Input
+          aria-labelledby={headingId}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={t("placeholder")}
