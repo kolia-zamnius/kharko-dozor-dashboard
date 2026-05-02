@@ -5,7 +5,7 @@ import type { TrackedUserDetail } from "@/api-client/tracked-users/types";
 import { deriveUserStatus } from "@/api-client/tracked-users/status";
 import { resolveDisplayName } from "@/api-client/tracked-users/resolve-display-name";
 import { SEVEN_DAYS_MS } from "@/lib/time";
-import { requireMember } from "@/server/auth/permissions";
+import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import type { TrackedUserId, UserId } from "@/types/ids";
 
@@ -14,11 +14,11 @@ import type { TrackedUserId, UserId } from "@/types/ids";
  * and 7-day activity rollup.
  *
  * @remarks
- * Shared between the API route handler (`/api/tracked-users/[userId]`)
- * and the user detail page Server Component (hydration prefetch).
- * Centralizing the payload shape is what lets TanStack Query hydrate
- * from the RSC prefetch without an immediate client refetch — any
- * divergence in fields or formatting would invalidate the cache entry.
+ * Isomorphic loader — consumed both by the JSON route handler and the
+ * RSC hydration prefetch. Centralising the payload shape is what lets
+ * TanStack Query hydrate from the RSC prefetch without an immediate
+ * client refetch — any divergence in fields or formatting would
+ * invalidate the cache entry.
  *
  * `displayName` is resolved here so clients never re-implement the
  * fallback chain. The raw source fields (`customName`,
@@ -31,15 +31,18 @@ import type { TrackedUserId, UserId } from "@/types/ids";
  * select drift or a missing timestamp conversion fails fast here
  * instead of reaching the client.
  *
- * @throws {HttpError} 403 via `requireMember` if the requester is not a
- *   member of the owning organization.
- * @see src/server/auth/permissions.ts — `requireMember`
+ * @throws {HttpError} 400 — no active organization on the requester.
+ * @throws {HttpError} 404 — tracked user lives in a different org than
+ *   the requester's active one (opaque, never 403).
+ * @throws {HttpError} 403 — membership check failed.
+ * @see src/server/auth/permissions.ts — `requireResourceAccess`
  * @see src/app/api/tracked-users/[userId]/route.ts — API route consumer
  * @see src/api-client/tracked-users/response-schemas.ts — DTO schema.
  */
 export async function loadTrackedUserDetail(
   userId: TrackedUserId,
   requesterId: UserId,
+  requesterActiveOrgId: string | null | undefined,
 ): Promise<TrackedUserDetail | null> {
   const trackedUser = await prisma.trackedUser.findUnique({
     where: { id: userId },
@@ -60,7 +63,7 @@ export async function loadTrackedUserDetail(
 
   if (!trackedUser) return null;
 
-  await requireMember(requesterId, trackedUser.project.organizationId, "VIEWER");
+  await requireResourceAccess(requesterId, requesterActiveOrgId, trackedUser.project.organizationId, "VIEWER");
 
   const traits = (trackedUser.traits as Record<string, unknown>) ?? null;
   const projectDisplayNameTraitKey = trackedUser.project.defaultDisplayNameTraitKey ?? null;

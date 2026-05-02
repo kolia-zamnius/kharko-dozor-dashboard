@@ -264,5 +264,53 @@ describe("invite lifecycle", () => {
       const finalInvite = await prisma.invite.findUnique({ where: { id: invite.id } });
       expect(finalInvite?.status).toBe("ACCEPTED");
     });
+
+    it("⭐ concurrency — Serializable isolation rejects double-accept race with 409", async () => {
+      // Scenario: Bob double-clicks "Accept" or has two tabs open. Without
+      // Serializable + race catch, both transactions see PENDING; the
+      // second commit hits the `(userId, organizationId)` unique
+      // constraint as a 500. With the fix one wins (200), the other gets
+      // a clean 409 via P2002 / P2034 collapse.
+      const alice = await createUser();
+      const bob = await createUser({ email: "bob@test.local" });
+      const team = await createOrganization({ owner: alice });
+      const invite = await createInvite({
+        organization: team,
+        email: "bob@test.local",
+        role: "ADMIN",
+        invitedBy: alice,
+      });
+      mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id, email: "bob@test.local" })));
+
+      const results = await Promise.all([
+        invokeRouteWithParams(acceptRoute.POST, {
+          method: "POST",
+          params: { id: invite.id },
+        }).catch((err) => ({ status: 500, error: err as unknown })),
+        invokeRouteWithParams(acceptRoute.POST, {
+          method: "POST",
+          params: { id: invite.id },
+        }).catch((err) => ({ status: 500, error: err as unknown })),
+      ]);
+
+      // KEY invariant — Bob ends up with exactly ONE membership; doubles
+      // would mean the unique constraint failed to catch the race.
+      const memberships = await prisma.membership.findMany({
+        where: { userId: bob.id, organizationId: team.id },
+      });
+      expect(memberships).toHaveLength(1);
+      expect(memberships[0]?.role).toBe("ADMIN");
+
+      const finalInvite = await prisma.invite.findUnique({ where: { id: invite.id } });
+      expect(finalInvite?.status).toBe("ACCEPTED");
+
+      // Exactly one 2xx winner; the other request gets a clean 409 OR
+      // — depending on which side of the Serializable conflict it lands
+      // on — a 4xx via the assertInviteUsableForUser pre-check (already
+      // ACCEPTED). Either way, NO 500s leak: the race is fully tamed.
+      const successes = results.filter((r) => r.status >= 200 && r.status < 300);
+      expect(successes).toHaveLength(1);
+      expect(results.some((r) => r.status >= 500)).toBe(false);
+    });
   });
 });

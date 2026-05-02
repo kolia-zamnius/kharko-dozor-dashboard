@@ -1,6 +1,6 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { sessionEventListSchema } from "@/api-client/sessions/response-schemas";
-import { requireMember } from "@/server/auth/permissions";
+import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
 import { NextResponse } from "next/server";
@@ -33,7 +33,7 @@ export const GET = withAuth<Params>(async (req, user, { sessionId, sliceIndex })
     throw new HttpError(404, "Session not found");
   }
 
-  await requireMember(user.id, session.project.organizationId, "VIEWER");
+  await requireResourceAccess(user.id, user.activeOrganizationId, session.project.organizationId, "VIEWER");
 
   const slice = await prisma.slice.findUnique({
     where: { sessionId_index: { sessionId, index: idx } },

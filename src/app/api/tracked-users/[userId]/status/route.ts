@@ -1,7 +1,7 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { ONLINE_THRESHOLD_MS } from "@/api-client/tracked-users/domain";
 import { userStatusSchema } from "@/api-client/tracked-users/response-schemas";
-import { requireMember } from "@/server/auth/permissions";
+import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
 import { NextResponse } from "next/server";
@@ -28,7 +28,7 @@ export const GET = withAuth<Params>(async (_req, user, { userId }) => {
     throw new HttpError(404, "User not found");
   }
 
-  await requireMember(user.id, trackedUser.project.organizationId, "VIEWER");
+  await requireResourceAccess(user.id, user.activeOrganizationId, trackedUser.project.organizationId, "VIEWER");
 
   const agg = await prisma.session.aggregate({
     where: { trackedUserId: trackedUser.id },

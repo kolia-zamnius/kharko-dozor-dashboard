@@ -72,12 +72,11 @@ const serverEnvSchema = z.object({
   AUTH_GITHUB_ID: z.string().optional(),
   AUTH_GITHUB_SECRET: z.string().optional(),
 
-  // Vercel Cron shared secret. Optional in local dev (cron endpoints
-  // are just open GETs on localhost, you can curl them manually), but
-  // MUST be set in production — the cron handlers verify the
-  // `Authorization: Bearer $CRON_SECRET` header that Vercel Cron adds
-  // to every scheduled request, and without it anyone on the internet
-  // could trigger the cleanup endpoint.
+  // Bearer secret for the cron-cleanup endpoint. Optional at the env
+  // layer because the cron itself is optional — a self-hoster may not
+  // deploy the cleanup schedule at all. The route handler enforces
+  // "must be set in production" at request time so a misconfigured
+  // deploy returns 401, not a boot crash.
   CRON_SECRET: z.string().optional(),
 
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -92,6 +91,11 @@ const serverEnvSchema = z.object({
  * The refine runs after the field-level schema, so by the time this fires
  * we know each individual var is well-typed (or absent). The job here is to
  * assert the joint constraint: `(google || github || otp)` must hold.
+ *
+ * `CRON_SECRET` is intentionally NOT enforced here — cron itself is
+ * optional (a self-hoster may not deploy the daily-cleanup endpoint at
+ * all). Authentication is enforced inside the route handler instead, so
+ * a misconfigured prod deploy is a 401 from the route, not a boot crash.
  */
 const refinedEnvSchema = serverEnvSchema.refine(
   (env) => {

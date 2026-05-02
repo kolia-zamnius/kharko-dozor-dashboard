@@ -1,6 +1,7 @@
 import { corsPreflightResponse } from "@/app/api/_lib/cors";
 import { withPublicKey } from "@/app/api/_lib/with-public-key";
 import { prisma } from "@/server/db/client";
+import { isHttpError } from "@/server/http-error";
 import { log } from "@/server/logger";
 
 import { insertEventsAndUpdateAggregates, loadSliceMapForEvents } from "./_helpers/events";
@@ -34,7 +35,15 @@ export const OPTIONS = corsPreflightResponse;
  * is already bounded by DB write latency, not helper sequencing.
  */
 export const POST = withPublicKey(async ({ project, req }) => {
-  const payload = ingestSchema.parse(await parseIngestBody(req).catch(() => null));
+  const payload = ingestSchema.parse(
+    await parseIngestBody(req).catch((err) => {
+      // Bubble structured size-cap rejections (413) up to the HOF;
+      // only the malformed-body path collapses to `null` so Zod can
+      // surface a per-field 422.
+      if (isHttpError(err)) throw err;
+      return null;
+    }),
+  );
   const { sessionId: externalId, events, metadata, sliceMarkers } = payload;
 
   const session = await upsertSessionAndLinkTrackedUser(project.id, externalId, events, metadata);

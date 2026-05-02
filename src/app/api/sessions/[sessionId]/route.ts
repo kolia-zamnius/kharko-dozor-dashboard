@@ -1,6 +1,6 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { sessionDetailSchema } from "@/api-client/sessions/response-schemas";
-import { requireMember } from "@/server/auth/permissions";
+import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
 import { log } from "@/server/logger";
@@ -50,7 +50,7 @@ export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
     throw new HttpError(404, "Session not found");
   }
 
-  await requireMember(user.id, session.project.organizationId, "VIEWER");
+  await requireResourceAccess(user.id, user.activeOrganizationId, session.project.organizationId, "VIEWER");
 
   // Legacy sessions (no slices) inline their events; post-slice sessions stream per-slice.
   const isLegacy = session.slices.length === 0;
@@ -118,7 +118,7 @@ export const DELETE = withAuth<Params>(async (req, user, { sessionId }) => {
     throw new HttpError(404, "Session not found");
   }
 
-  await requireMember(user.id, session.project.organizationId, "ADMIN");
+  await requireResourceAccess(user.id, user.activeOrganizationId, session.project.organizationId, "ADMIN");
 
   await prisma.session.delete({ where: { id: sessionId } });
 
