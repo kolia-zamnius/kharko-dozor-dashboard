@@ -1,7 +1,12 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
+// `useSearchParams` has no locale-aware twin in next-intl — read it
+// from `next/navigation`. `useRouter` swaps to the locale-aware
+// version so empty-query-string filter clears land on
+// `/{locale}/users` instead of stripping the locale prefix.
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Suspense, useCallback, useMemo, useState } from "react";
 
 import { LastUpdated } from "@/components/last-updated";
@@ -70,7 +75,6 @@ function UsersListShellContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ── URL-driven filter state ──────────────────────────────────────────
   const urlSearch = searchParams?.get("search") ?? "";
   const urlProjectIds = useMemo(() => searchParams?.get("projects")?.split(",").filter(Boolean) ?? [], [searchParams]);
   const urlStatuses = useMemo(
@@ -115,7 +119,6 @@ function UsersListShellContent() {
     [updateUrl],
   );
 
-  // ── Cursor pagination ────────────────────────────────────────────────
   const [cursor, setCursor] = useState<string | undefined>();
   const [prevPages, setPrevPages] = useState<TrackedUserListItem[]>([]);
 
@@ -127,7 +130,6 @@ function UsersListShellContent() {
     setPrevPages([]);
   }
 
-  // ── Queries ──────────────────────────────────────────────────────────
   const listParams = useMemo(
     () => ({
       search: urlSearch || undefined,
