@@ -9,11 +9,10 @@ import { cn } from "@/lib/cn";
  * Radix Popover primitive — anchored floating panel without the dialog semantics.
  *
  * @remarks
- * Compound parts: `PopoverTrigger`, `PopoverContent`, `PopoverAnchor`,
- * `PopoverHeader`, `PopoverTitle`, `PopoverDescription`. No focus
- * trap (unlike Dialog) — use for filter dropdowns, tooltips-with-
- * interaction, field hints. Single-file primitive because the part
- * count is low and every part is a one-liner.
+ * Compound parts: `PopoverTrigger`, `PopoverContent`. No focus trap
+ * (unlike Dialog) — use for filter dropdowns, tooltips-with-interaction,
+ * field hints. Single-file primitive because the part count is low and
+ * every part is a one-liner.
  */
 function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
@@ -45,20 +44,4 @@ function PopoverContent({
   );
 }
 
-function PopoverAnchor({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
-}
-
-function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="popover-header" className={cn("flex flex-col gap-0.5 text-sm", className)} {...props} />;
-}
-
-function PopoverTitle({ className, ...props }: React.ComponentProps<"h2">) {
-  return <div data-slot="popover-title" className={cn("font-heading font-medium", className)} {...props} />;
-}
-
-function PopoverDescription({ className, ...props }: React.ComponentProps<"p">) {
-  return <p data-slot="popover-description" className={cn("text-muted-foreground", className)} {...props} />;
-}
-
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor, PopoverHeader, PopoverTitle, PopoverDescription };
+export { Popover, PopoverTrigger, PopoverContent };
