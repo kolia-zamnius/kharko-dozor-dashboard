@@ -86,7 +86,7 @@ export function enrichTrackedUser(row: RawTrackedUserRow, ctx: EnrichContext): E
     throw new Error(`TrackedUser ${row.id} has no matching project in enrich context`);
   }
 
-  const traits = (row.traits as Record<string, unknown>) ?? null;
+  const traits = (row.traits as SessionTraits | null) ?? null;
 
   let lastEventAt: Date | null = null;
   let activeTime7d = 0;

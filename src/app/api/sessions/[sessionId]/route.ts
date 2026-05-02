@@ -82,7 +82,7 @@ export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
       createdAt: session.createdAt.toISOString(),
       trackedUserId: session.trackedUser?.id ?? null,
       userId: session.trackedUser?.externalId ?? null,
-      userTraits: (session.trackedUser?.traits as Record<string, unknown>) ?? null,
+      userTraits: (session.trackedUser?.traits as SessionTraits | null) ?? null,
       events,
       slices: session.slices.map((s) => ({
         id: s.id,
