@@ -30,8 +30,8 @@ a new `sessionId`.
 | `paused` | `resume()` | `recording` | — |
 | `recording` | `stop()` | `idle` | Flush + `endSession` |
 | `paused` | `stop()` | `idle` | Flush + `endSession` |
-| `recording` | `cancel()` | `idle` | Drop buffer + `DELETE` session |
-| `paused` | `cancel()` | `idle` | Drop buffer + `DELETE` session |
+| `recording` | `cancel()` | `idle` | Drop buffer + cancel session row |
+| `paused` | `cancel()` | `idle` | Drop buffer + cancel session row |
 
 After `stop()` / `cancel()`, the next `start()` mints a fresh
 `sessionId` (the previous one was cleared), so a new recording starts
@@ -58,7 +58,7 @@ record a sensitive flow and decide afterwards whether to send it.
 | Held | `release()` | Transport resumed, held buffer flushes |
 | Held | `release({ discard: true })` | Transport resumed, held buffer is dropped instead |
 | Held | `stop()` | Returns to `idle` — force flush + `endSession`, no data loss |
-| Held | `cancel()` | Returns to `idle` — drop buffer + `DELETE` session |
+| Held | `cancel()` | Returns to `idle` — drop buffer + cancel session row |
 
 `init({ hold: true })` starts the recorder with the transport already
 held — call `release()` later when you decide the events are safe to

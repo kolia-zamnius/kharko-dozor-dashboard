@@ -75,10 +75,12 @@ No soft delete. Full cascade graph in
 
 ## Key handling
 
-The plaintext key leaves the server at exactly **two** endpoints —
-`GET /api/projects/{id}/key` (copy-button click) and
-`POST /api/projects/{id}/regenerate-key` (rotate). Everywhere else the
-key is masked (`dp_a1b2••••••••f7e8`).
+The plaintext key leaves the server at exactly **one** endpoint —
+`GET /api/projects/{id}/key` (copy-button click). Rotating the key
+via `POST /api/projects/{id}/regenerate-key` returns only the masked
+form; the next copy-button click is what actually pulls the new
+plaintext through the dedicated route. Everywhere else the key is
+masked (`dp_a1b2••••••••f7e8`).
 
 The full trust-boundary contract — caching, serialization, brand
 types, redaction — is in
