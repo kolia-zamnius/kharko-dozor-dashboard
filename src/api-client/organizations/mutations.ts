@@ -292,10 +292,16 @@ type MembersOptimisticContext = {
  * server round-trip before the UI agrees. Rollback via snapshot on
  * failure, invalidate on settle to pick up the authoritative shape.
  */
-export function useUpdateMemberRoleMutation() {
+export function useUpdateMemberRoleMutation(orgId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<unknown, Error, { orgId: string; memberId: string; role: Role }, MembersOptimisticContext>({
+    // Stable mutation key so siblings can observe in-flight status via
+    // `useIsMutating({ mutationKey: organizationKeys.memberRoleMutation(orgId) })`.
+    // Lets each row own its own mutation instance while preserving the
+    // org-wide lock that prop-drilling `isPending` from a parent-owned
+    // mutation used to provide.
+    mutationKey: organizationKeys.memberRoleMutation(orgId),
     mutationFn: ({ orgId, memberId, role }) =>
       apiFetch(routes.organizations.member(orgId, memberId), {
         method: "PATCH",
