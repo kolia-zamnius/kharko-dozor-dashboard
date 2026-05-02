@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import { createMDX } from "fumadocs-mdx/next";
 import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
@@ -101,4 +102,24 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default withMDX(withNextIntl(nextConfig));
+/**
+ * Sentry build-time wrapper.
+ *
+ * @remarks
+ * Enables source-map upload during `next build` so production stack
+ * traces resolve to original symbols instead of minified `_0` / `e.t`.
+ * Vendor-neutral: `org` / `project` / `authToken` are all read from
+ * `process.env`, so a self-hoster without a Sentry account leaves them
+ * unset and the wrapper silently skips upload — the build still
+ * succeeds. Same self-host-first contract as `SENTRY_DSN`.
+ *
+ * `silent: true` keeps the build log clean even in CI where stdout is
+ * usually noisy.
+ */
+export default withSentryConfig(withMDX(withNextIntl(nextConfig)), {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: true,
+  widenClientFileUpload: true,
+});

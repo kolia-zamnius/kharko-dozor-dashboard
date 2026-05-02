@@ -39,6 +39,16 @@ Sentry.init({
   dsn: process.env.SENTRY_DSN,
   enabled: Boolean(process.env.SENTRY_DSN),
 
+  // Vendor-neutral release / environment markers. `SENTRY_RELEASE` is
+  // typically the git sha (Vercel: `VERCEL_GIT_COMMIT_SHA`, Fly: a CI
+  // export, Docker self-host: a build arg); `SENTRY_ENVIRONMENT`
+  // distinguishes prod / staging / dev so issues don't pile into one
+  // bucket. Both unset → Sentry falls back to its own defaults
+  // (timestamp release, "production" env). Self-host-first: no Vercel
+  // env names referenced here.
+  release: process.env.SENTRY_RELEASE,
+  environment: process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV,
+
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
 
   // Tighter integration with Next.js stack frames + better source-map

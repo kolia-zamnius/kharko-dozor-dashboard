@@ -7,13 +7,24 @@ import { cn } from "@/lib/cn";
 import { usePlayerStore } from "./store";
 import { extractConsoleLogs, formatTimePrecise } from "./utils";
 
-const LEVEL_STYLE: Record<string, string> = {
+/**
+ * Console-log level → Tailwind class name. Closed key set so adding a
+ * new level here is a compile error at every consumer that needs to
+ * route it.
+ */
+type ConsoleLogLevel = "error" | "warn" | "info" | "debug" | "log";
+
+const LEVEL_STYLE = {
   error: "bg-destructive/10 text-destructive",
   warn: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
   info: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
   debug: "text-muted-foreground",
   log: "",
-};
+} as const satisfies Record<ConsoleLogLevel, string>;
+
+function styleForLevel(level: string): string {
+  return level in LEVEL_STYLE ? LEVEL_STYLE[level as ConsoleLogLevel] : LEVEL_STYLE.log;
+}
 
 /**
  * Console log viewer — extracts console plugin events from the session,
@@ -78,7 +89,7 @@ export function ConsolePanel() {
           </div>
         ) : (
           visibleLogs.map((log, i) => (
-            <div key={i} className={cn("border-border/50 border-b px-3 py-1.5", LEVEL_STYLE[log.level])}>
+            <div key={i} className={cn("border-border/50 border-b px-3 py-1.5", styleForLevel(log.level))}>
               <span className="text-muted-foreground text-[10px]">{formatTimePrecise(log.timeOffset)}</span>
               <p className="break-all">{log.payload.join(" ")}</p>
             </div>

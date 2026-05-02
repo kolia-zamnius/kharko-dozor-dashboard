@@ -71,7 +71,7 @@ export async function upsertSessionAndLinkTrackedUser(
 
   if (metadata?.userIdentity) {
     const { userId, traits } = metadata.userIdentity;
-    const traitsJson = traits ? (traits as Record<string, unknown> & object) : undefined;
+    const traitsJson = traits ? (traits as SessionTraits & object) : undefined;
     const trackedUser = await prisma.trackedUser.upsert({
       where: { projectId_externalId: { projectId, externalId: userId } },
       create: { externalId: userId, projectId, traits: traitsJson },

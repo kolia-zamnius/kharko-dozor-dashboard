@@ -1,17 +1,18 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { DocsBody, DocsDescription, DocsPage, DocsTitle } from "fumadocs-ui/page";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 
-import { APIPage } from "@/lib/openapi";
 import { source } from "@/lib/source";
+import { APIPage } from "./openapi";
 
 /**
  * MDX components map — Fumadocs defaults plus the OpenAPI page renderer.
  *
  * @remarks
  * `<APIPage>` is bound to the repo's committed `openapi.snapshot.json`
- * via `src/lib/openapi.ts`. MDX files under `_content/api/` reference
+ * via the page-local `./openapi.ts`. MDX files under `_content/api/` reference
  * operations as `<APIPage operations={[{ path, method }]} />` and
  * Fumadocs renders the full request/response detail straight from
  * the spec. Editing the spec is a JSON edit; editing the docs is an
@@ -70,7 +71,7 @@ export async function generateStaticParams() {
   return source.generateParams();
 }
 
-export async function generateMetadata({ params }: DocumentationPageProps) {
+export async function generateMetadata({ params }: DocumentationPageProps): Promise<Metadata> {
   const { slug } = await params;
   const page = source.getPage(slug);
   if (!page) return {};

@@ -65,7 +65,7 @@ export async function loadTrackedUserDetail(
 
   await requireResourceAccess(requesterId, requesterActiveOrgId, trackedUser.project.organizationId, "VIEWER");
 
-  const traits = (trackedUser.traits as Record<string, unknown>) ?? null;
+  const traits = (trackedUser.traits as SessionTraits | null) ?? null;
   const projectDisplayNameTraitKey = trackedUser.project.defaultDisplayNameTraitKey ?? null;
 
   const displayName = resolveDisplayName({

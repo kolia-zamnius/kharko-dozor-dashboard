@@ -1,4 +1,5 @@
 import "next-auth";
+import "next-auth/jwt";
 import type { Locale } from "@/i18n/config";
 import type { UserId } from "./ids";
 
@@ -36,5 +37,29 @@ declare module "next-auth" {
       activeOrganizationId: string | null;
       locale: Locale;
     };
+  }
+}
+
+/**
+ * Augmented JWT shape — fields the dashboard writes onto the token in
+ * the `jwt` callback.
+ *
+ * @remarks
+ * All optional because the very first token write happens BEFORE the
+ * callback's "do work" branch populates them. Once the callback narrows
+ * `token.id`, downstream readers can use it as a regular `string` —
+ * removes the four `token.id as string` casts in the jwt callback
+ * itself and the `activeOrganizationId as string | null` cast in the
+ * session callback.
+ *
+ * `email`, `name`, `picture` are NOT redeclared here — Auth.js owns
+ * those fields and types them as `string | null | undefined`. The
+ * session-callback narrowing for those stays explicit.
+ */
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    activeOrganizationId?: string | null;
+    locale?: string;
   }
 }

@@ -101,7 +101,7 @@ export const GET = withAuth(async (req, user) => {
   });
 
   const enriched = sessions.map((s) => {
-    const traits = (s.trackedUser?.traits as Record<string, unknown>) ?? null;
+    const traits = (s.trackedUser?.traits as SessionTraits | null) ?? null;
 
     // Resolve display name using the same 4-level chain as the users list.
     const userDisplayName = s.trackedUser
