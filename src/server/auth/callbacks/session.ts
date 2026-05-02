@@ -4,7 +4,11 @@ import type { NextAuthConfig } from "next-auth";
 import { DEFAULT_LOCALE, LOCALES } from "@/i18n/config";
 import type { UserId } from "@/types/ids";
 
-type SessionCallback = NonNullable<NonNullable<NextAuthConfig["callbacks"]>["session"]>;
+// Auth.js types `callbacks` and `callbacks.session` as independently
+// optional. The chained `NonNullable<>` strips both layers — see the
+// matching block in `jwt.ts` for the same idiom.
+type AuthCallbacks = NonNullable<NextAuthConfig["callbacks"]>;
+type SessionCallback = NonNullable<AuthCallbacks["session"]>;
 
 /**
  * `session` callback — projects the JWT back onto `session.user` so client
@@ -26,7 +30,7 @@ export const sessionCallback: SessionCallback = async ({ session, token }) => {
     session.user.email = token.email as string;
     session.user.name = token.name as string;
     session.user.image = token.picture as string;
-    session.user.activeOrganizationId = token.activeOrganizationId as string | null;
+    session.user.activeOrganizationId = token.activeOrganizationId ?? null;
     // `hasLocale` is a type guard — a stale token (e.g. a locale
     // removed from `LOCALES` between releases) narrows to the default
     // rather than leaking a bogus code out to downstream consumers.

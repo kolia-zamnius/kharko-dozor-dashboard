@@ -3,7 +3,12 @@ import type { NextAuthConfig } from "next-auth";
 import { DEFAULT_LOCALE } from "@/i18n/config";
 import { prisma } from "@/server/db/client";
 
-type JwtCallback = NonNullable<NonNullable<NextAuthConfig["callbacks"]>["jwt"]>;
+// Auth.js types `callbacks` and `callbacks.jwt` as independently optional.
+// The chained `NonNullable<>` strips both layers so the callback shape
+// `({ token, user, trigger }) => Promise<JWT>` can be exported with the
+// exact signature Auth.js expects to receive.
+type AuthCallbacks = NonNullable<NextAuthConfig["callbacks"]>;
+type JwtCallback = NonNullable<AuthCallbacks["jwt"]>;
 
 /**
  * `jwt` callback — runs on every token read/write.
@@ -40,8 +45,15 @@ export const jwtCallback: JwtCallback = async ({ token, user, trigger }) => {
     return token;
   }
 
+  // Both branches above guarantee `token.id` is set: initial sign-in
+  // writes it from `user.id` two lines up; an `update` trigger only
+  // fires after a sign-in already populated the token. Falling here
+  // would mean a malformed JWT — bail rather than crash on `findUnique`.
+  const userId = token.id;
+  if (!userId) return token;
+
   const dbUser = await prisma.user.findUnique({
-    where: { id: token.id as string },
+    where: { id: userId },
     select: { name: true, image: true, activeOrganizationId: true, locale: true },
   });
 
@@ -68,7 +80,7 @@ export const jwtCallback: JwtCallback = async ({ token, user, trigger }) => {
     const membership = await prisma.membership.findUnique({
       where: {
         userId_organizationId: {
-          userId: token.id as string,
+          userId,
           organizationId: activeOrgId,
         },
       },
@@ -78,13 +90,13 @@ export const jwtCallback: JwtCallback = async ({ token, user, trigger }) => {
 
   if (!activeOrgId) {
     const personal = await prisma.organization.findFirst({
-      where: { createdById: token.id as string, type: "PERSONAL" },
+      where: { createdById: userId, type: "PERSONAL" },
     });
     activeOrgId = personal?.id ?? null;
 
     if (activeOrgId) {
       await prisma.user.update({
-        where: { id: token.id as string },
+        where: { id: userId },
         data: { activeOrganizationId: activeOrgId },
       });
     }
