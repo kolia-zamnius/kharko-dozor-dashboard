@@ -14,6 +14,16 @@ import { StatusBadge } from "./status-badge";
  * Single row in the users table. Pure view — receives a tracked user
  * and renders avatar, name, project badge, status, last seen, sessions,
  * and active time. The whole row is a link to the user detail page.
+ *
+ * @remarks
+ * The User cell can show up to three stacked lines: the resolved
+ * `displayName` (always), the `externalId` (only when it differs from
+ * the displayName), and `traits.email` (only when it differs from both).
+ * The de-dup matters because a project that resolves display names from
+ * the `email` trait would otherwise repeat the email twice — once as
+ * the title and once as a subtitle.
+ *
+ * @see resolveDisplayName — the 4-step chain that produces `displayName`
  */
 export function UserRow({ user }: { user: TrackedUserListItem }) {
   const t = useTranslations("users.list.table");
@@ -25,9 +35,18 @@ export function UserRow({ user }: { user: TrackedUserListItem }) {
 
   const email = typeof user.traits?.email === "string" ? user.traits.email : null;
 
-  // When displayName is the externalId fallback, avoid showing the same
-  // string twice. Matches the UserHeader pattern on the detail page.
-  const hasResolvedName = user.displayName !== user.externalId;
+  // Don't show the same string twice. The title is `displayName`; the
+  // sub-lines (`externalId`, `email`) only render when they add new
+  // information.
+  //
+  // Why this matters: `displayName` walks a 4-level resolver chain
+  // (customName → trait → project default → externalId), so when the
+  // project's default trait key is `"email"`, `displayName` ends up
+  // being the email itself — printing the email line again below
+  // would duplicate the title. Same edge case for an SDK that uses
+  // an email-shaped string as `externalId`.
+  const showExternalId = user.displayName !== user.externalId;
+  const showEmail = email !== null && email !== user.displayName && email !== user.externalId;
 
   return (
     <TableRow className="group">
@@ -39,8 +58,8 @@ export function UserRow({ user }: { user: TrackedUserListItem }) {
           </Avatar>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium group-hover:underline">{user.displayName}</p>
-            {hasResolvedName && <p className="text-muted-foreground truncate font-mono text-xs">{user.externalId}</p>}
-            {email && <p className="text-muted-foreground truncate text-xs">{email}</p>}
+            {showExternalId && <p className="text-muted-foreground truncate font-mono text-xs">{user.externalId}</p>}
+            {showEmail && <p className="text-muted-foreground truncate text-xs">{email}</p>}
           </div>
         </Link>
       </TableCell>

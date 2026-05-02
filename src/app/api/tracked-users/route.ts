@@ -45,7 +45,6 @@ export const GET = withAuth(async (req, user) => {
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - SEVEN_DAYS_MS);
 
-  // ── Scope to caller's org projects ────────────────────────────────────
   const orgProjects = await prisma.project.findMany({
     where: { organizationId: activeOrgId },
     select: { id: true, name: true, defaultDisplayNameTraitKey: true },
@@ -64,7 +63,6 @@ export const GET = withAuth(async (req, user) => {
       ? params.projectIds.filter((id) => orgProjectIds.includes(id))
       : orgProjectIds;
 
-  // ── Fetch candidate rows ──────────────────────────────────────────────
   // Over-fetch 500 when status filter is active (status is derived,
   // can't narrow in SQL). Cursor skipped in the same path — combining
   // it with post-fetch drops would produce unstable pagination.
@@ -98,7 +96,6 @@ export const GET = withAuth(async (req, user) => {
     ...(params.cursor && !hasStatusFilter ? { cursor: { id: params.cursor }, skip: 1 } : {}),
   });
 
-  // ── Enrich → filter → sort ────────────────────────────────────────────
   const enriched = rows.map((row) => enrichTrackedUser(row, { projectMap, sevenDaysAgo, now }));
   const filtered = filterEnrichedTrackedUsers(enriched, params);
   const sorted = sortEnrichedTrackedUsers(filtered, params.sort ?? "last-seen", params.sortDir ?? "desc");

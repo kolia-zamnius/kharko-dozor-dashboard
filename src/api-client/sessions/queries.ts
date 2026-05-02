@@ -19,7 +19,6 @@ function buildSessionsUrl(params: SessionListParams): string {
   return qs ? `${base}?${qs}` : base;
 }
 
-// ── Query factories ────────────────────────────────────────────────────────
 
 export const sessionQueries = {
   list: (params: SessionListParams = {}) =>
@@ -61,7 +60,6 @@ export const sessionQueries = {
     }),
 };
 
-// ── Hooks ─────────────────────────────────────────────────────────────────
 // Two flavours per query — classic (`useQuery`) for components that tolerate
 // `data: undefined` (widgets, polling indicators, the replay `use-session-
 // update-indicator` snapshot pattern); Suspense for page shells that prefer

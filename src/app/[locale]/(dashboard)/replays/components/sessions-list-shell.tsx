@@ -1,7 +1,12 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams } from "next/navigation";
+// `useSearchParams` has no locale-aware twin in next-intl — read it
+// from `next/navigation`. `useRouter` swaps to the locale-aware
+// version so empty-query-string filter clears land on
+// `/{locale}/replays` instead of stripping the locale prefix.
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Suspense, useCallback, useMemo, useState } from "react";
 
 import { LastUpdated } from "@/components/last-updated";
@@ -74,7 +79,6 @@ function SessionsListShellContent() {
   // Shared role-derivation hook — see `useCanManageActiveOrg` JSDoc.
   const canManage = useCanManageActiveOrg();
 
-  // ── URL-driven filter state ──────────────────────────────────────────
   const urlSearch = searchParams?.get("search") ?? "";
   const urlProjectIds = useMemo(() => searchParams?.get("projects")?.split(",").filter(Boolean) ?? [], [searchParams]);
   const urlDateRange = parseSessionDateRange(searchParams?.get("range"));
@@ -119,7 +123,6 @@ function SessionsListShellContent() {
     [updateUrl],
   );
 
-  // ── Cursor pagination ────────────────────────────────────────────────
   const [cursor, setCursor] = useState<string | undefined>();
   const [prevPages, setPrevPages] = useState<SessionListItem[]>([]);
 
@@ -131,7 +134,6 @@ function SessionsListShellContent() {
     setPrevPages([]);
   }
 
-  // ── Queries ──────────────────────────────────────────────────────────
   // Suspense queries: Suspense boundary above handled the initial load;
   // subsequent cursor / filter changes flow through `placeholderData:
   // keepPreviousData` in the query options — the table keeps the old

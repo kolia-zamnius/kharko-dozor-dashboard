@@ -144,7 +144,7 @@ Passkey works as an add-on only — first-time sign-up always goes through one o
 | Variable                       | Default | Effect                                                                 |
 | ------------------------------ | ------- | ---------------------------------------------------------------------- |
 | `DATABASE_URL_UNPOOLED`        | unset   | Direct (non-pooled) Postgres URL — only used by `prisma migrate` CLI. **Required only on Neon** (their pooled URL doesn't support session-level features migrations need). On any other host the migrator falls back to `DATABASE_URL`. |
-| `CRON_SECRET`                  | unset   | Bearer token for `/api/cron/*`. Required only if you run the [daily cleanup cron](#8-daily-cleanup-cron-optional) in production. Unset = endpoint is open (fine locally; bad on a public deploy that wires cron). |
+| `CRON_SECRET`                  | unset   | Bearer token for `/api/cron/*`. Required to actually run the [daily cleanup cron](#8-daily-cleanup-cron-optional) in production — in `NODE_ENV=production` an unset value denies every call with a `401`, so a misconfigured deploy stays safe instead of exposing cascading deletes. Unset is fine locally and on instances that don't wire cron. |
 | `SENTRY_DSN`                   | unset   | Error monitoring. Unset → Sentry no-ops; pino still logs to stdout.    |
 | `LOG_LEVEL`                    | `info`  | pino level (fatal / error / warn / info / debug / trace / silent).     |
 | `NEXT_PUBLIC_KHARKO_DEMO_MODE` | unset   | Shows the "this is a demo" banner. Leave unset on a self-hosted instance. |
@@ -157,7 +157,7 @@ With `.env.local` filled in, apply the committed schema to your DB:
 npx prisma migrate deploy
 ```
 
-What this does: replays every file under `prisma/migrations/` against the DB pointed at by `DATABASE_URL_UNPOOLED` (Neon) or `DATABASE_URL` (any other host). For a fresh DB that's a single init migration creating ~16 tables (User / Organization / Project / Session / Slice / Event / Invite / …), 3 enums, all indexes. Idempotent — running it twice on the same DB is a no-op.
+What this does: replays every file under `prisma/migrations/` against the DB pointed at by `DATABASE_URL_UNPOOLED` (Neon) or `DATABASE_URL` (any other host). For a fresh DB that's a single init migration creating 14 tables (User / Organization / Project / Session / Slice / Event / Invite / …), 3 enums, all indexes. Idempotent — running it twice on the same DB is a no-op.
 
 You only run this **once per environment** (your remote DB, then later production if separate). After this, the schema is live and the dashboard can connect.
 
@@ -208,8 +208,8 @@ The two retention windows are constants — bump them in `src/lib/time.ts` (`SES
 
 A shared secret between the scheduler and the endpoint. The endpoint checks `Authorization: Bearer $CRON_SECRET` and rejects any request without a match. Two notes:
 
-- **Locally**, `CRON_SECRET` can be unset — the auth check is skipped, so you can `curl` the endpoint while developing.
-- **In production**, set it. Without it, `/api/cron/daily-cleanup` is unauthenticated; anyone on the internet who guessed the path could trigger a DELETE-heavy job. Generate via `openssl rand -base64 32`.
+- **Outside `NODE_ENV=production`**, `CRON_SECRET` can be unset — the auth check is skipped, so you can `curl` the endpoint while developing.
+- **In production**, set it. The route hard-denies (`401`) when `NODE_ENV=production` and `CRON_SECRET` is unset, so a misconfigured deploy doesn't leak the DELETE-heavy job to the internet. Generate via `openssl rand -base64 32`.
 
 ### Wiring options
 
@@ -256,7 +256,7 @@ On the deployed instance:
 
 The playground exercises the full loop (SDK → ingest → DB → Replays UI) without you having to wire anything into a real app. If it works, your deploy is healthy. Once you're satisfied, follow [Quick start](/documentation/quick-start) to integrate the SDK into your actual product.
 
-Logs live in your host's logging UI (Vercel: project → **Logs**). The dashboard emits structured pino events tagged `domain:entity:action`, e.g. `auth:otp:cooldown_blocked`, `session:ingest:ok` — search by tag.
+Logs live in your host's logging UI (Vercel: project → **Logs**). The dashboard emits structured pino events tagged `domain:entity:action`, e.g. `auth:otp:cooldown_blocked`, `ingest:batch:received` — search by tag.
 
 ## Custom domain `Optional`
 

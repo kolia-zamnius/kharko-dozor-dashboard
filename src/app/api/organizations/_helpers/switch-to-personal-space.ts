@@ -8,17 +8,13 @@ type TransactionClient = Prisma.TransactionClient;
  * Flip a user's `activeOrganizationId` back to their Personal Space.
  *
  * @remarks
- * Called inside transactions that delete an org the user is currently
- * "acting as" — without this step, the org delete would error on the
- * `User.activeOrganizationId` FK (schema does not declare `SetNull`
- * for that pointer). Falls back to `null` when the user somehow has
- * no Personal Space left (shouldn't happen — the sign-up event
- * provisions one — but kept defensive).
- *
- * Consumed by:
- *   - `DELETE /api/organizations/[orgId]` (admin deletes a TEAM org).
- *   - `DELETE /api/organizations/[orgId]/members/[memberId]` (member
- *     leaves or is removed).
+ * Shared transaction step for any flow that detaches a user from the
+ * org they were acting as — without this rebase, the surrounding
+ * transaction would fail the `User.activeOrganizationId` FK after the
+ * org disappears (the schema does not declare `SetNull` for that
+ * pointer). Falls back to `null` when the user somehow has no Personal
+ * Space left (shouldn't happen — the sign-up event provisions one —
+ * but kept defensive).
  *
  * @param tx - Active Prisma transaction client.
  * @param userId - User whose active-org pointer to rebase.

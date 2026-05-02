@@ -195,7 +195,11 @@ Levels:
 - `error` — genuine bugs / 5xx
 
 Pino redacts sensitive fields by default in production
-(`email`/`password`/`token`/`key`/`secret`/`headers.cookie`/`headers.authorization`).
+(`password`/`token`/`key`/`secret`/`headers.cookie`/`headers.authorization`).
+Email addresses are deliberately not in the default redact list —
+they're the primary identifier oncall reaches for when correlating an
+incident to a specific user. Self-hosters who want stricter handling
+can extend `REDACT_PATHS` in `src/server/logger.ts`.
 
 ### Sentry filtering
 

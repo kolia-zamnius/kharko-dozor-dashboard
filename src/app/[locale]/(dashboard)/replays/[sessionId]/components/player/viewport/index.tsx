@@ -136,5 +136,5 @@ export function Viewport() {
     );
   }
 
-  return <div ref={hostRef} className="pointer-events-none h-full w-full overflow-hidden bg-neutral-900" />;
+  return <div ref={hostRef} className="bg-muted pointer-events-none h-full w-full overflow-hidden" />;
 }

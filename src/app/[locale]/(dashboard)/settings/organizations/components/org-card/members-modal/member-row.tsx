@@ -1,6 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/forms/select";
+import { organizationKeys } from "@/api-client/organizations/keys";
+import { useUpdateMemberRoleMutation } from "@/api-client/organizations/mutations";
 import type { Organization, OrganizationMember } from "@/api-client/organizations/types";
+import { useIsMutating } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { ROLE_OPTIONS } from "../../role-options";
 import { MemberRemoveDialog } from "./member-remove-dialog";
@@ -11,25 +14,26 @@ type Props = {
   isOwner: boolean;
   isSelf: boolean;
   isOnlyMember: boolean;
-  onRoleChange: (member: OrganizationMember, role: Organization["role"]) => void;
   /** Called after a successful self-leave so the parent members modal can close itself. */
   onLeaveSuccess: () => void;
-  /** True while a role-change mutation is in flight (disables the role Select). */
-  isRolePending: boolean;
 };
 
-export function MemberRow({
-  org,
-  member,
-  isOwner,
-  isSelf,
-  isOnlyMember,
-  onRoleChange,
-  onLeaveSuccess,
-  isRolePending,
-}: Props) {
+/**
+ * One row in the members list. Owns its own role-change mutation so
+ * the parent doesn't have to thread `isPending` / `onRoleChange` props
+ * down. The org-wide "while one role change is in flight, disable
+ * every Select" UX is preserved via
+ * `useIsMutating({ mutationKey: ... })` — every row sees the same
+ * counter through the shared `QueryClient` regardless of which row
+ * fired the request.
+ */
+export function MemberRow({ org, member, isOwner, isSelf, isOnlyMember, onLeaveSuccess }: Props) {
   const t = useTranslations("settings.orgs.members");
   const tRoles = useTranslations("settings.orgs.roles");
+  const updateRole = useUpdateMemberRoleMutation(org.id);
+  const isAnyRoleMutating =
+    useIsMutating({ mutationKey: organizationKeys.memberRoleMutation(org.id) }) > 0;
+
   return (
     <div className="flex items-center gap-3">
       <Avatar size="sm" className="shrink-0">
@@ -49,9 +53,11 @@ export function MemberRow({
         <Select
           value={member.role}
           onValueChange={(value) => {
-            if (value !== member.role) onRoleChange(member, value as Organization["role"]);
+            if (value !== member.role) {
+              updateRole.mutate({ orgId: org.id, memberId: member.id, role: value as Organization["role"] });
+            }
           }}
-          disabled={isRolePending}
+          disabled={isAnyRoleMutating}
         >
           <SelectTrigger aria-label={t("roleAria")} className="w-32 shrink-0">
             <SelectValue />

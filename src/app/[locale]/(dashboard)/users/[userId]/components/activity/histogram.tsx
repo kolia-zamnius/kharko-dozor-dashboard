@@ -22,14 +22,18 @@ type ActivityHistogramProps = {
  * (the date prefix keeps adjacent buckets unambiguous across midnight).
  */
 function formatBucketRange(bucket: ActivityBucket, bucketMs: number, range: ActivityRange, locale: Locale): string {
-  const start = bucket.t;
-  const end = start + bucketMs;
+  // `bucket.t` is an ISO string off the wire; coerce to ms BEFORE adding
+  // the bucket width so the `+ bucketMs` is numeric arithmetic, not
+  // string concatenation. The defensive guard in `formatDateTime`
+  // surfaces the bug with a helpful error if this ever regresses.
+  const startMs = new Date(bucket.t).getTime();
+  const endMs = startMs + bucketMs;
   const timeOpts: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
-  const startStr = formatDateTime(start, timeOpts, locale);
-  const endStr = formatDateTime(end, timeOpts, locale);
+  const startStr = formatDateTime(startMs, timeOpts, locale);
+  const endStr = formatDateTime(endMs, timeOpts, locale);
 
   if (range === "7d") {
-    const dateStr = formatDateTime(start, { day: "2-digit", month: "2-digit" }, locale);
+    const dateStr = formatDateTime(startMs, { day: "2-digit", month: "2-digit" }, locale);
     return `${dateStr} ${startStr}–${endStr}`;
   }
   return `${startStr}–${endStr}`;

@@ -29,7 +29,7 @@ Vercel cron), follow the [Self-host guide](/documentation/self-host).
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Next.js dev server (Turbopack) |
-| `npm run build` | Production build — runs on every PR via CI |
+| `npm run build` | Production build — run by Vercel on deploy, not in CI |
 | `npm run lint` | ESLint with type-aware rules on `.ts`/`.tsx` |
 | `npm run type-check` | `tsc --noEmit`, strict mode + `noUncheckedIndexedAccess` |
 | `npm run test:unit` | Vitest — pure functions, no Docker |
@@ -104,8 +104,11 @@ The short version reviewers will flag:
   Tag format: `domain:entity:action[:state]`, lowercase + underscores
   inside segments.
 - **Don't put secrets in `data`** — pino redacts a default list
-  (`email`/`password`/`token`/`key`/`secret`/`headers.cookie`/
+  (`password`/`token`/`key`/`secret`/`headers.cookie`/
   `headers.authorization`) but don't even hand them in.
+  Email addresses are deliberately **not** redacted (operational
+  debug data); never put API-key plaintext, OTP codes, or session
+  cookies in `data` regardless of what the redact list catches.
 - **No `console.log` in new code.** Two narrow exceptions:
   `sentry.{server,edge}.config.ts` and `src/server/env.ts` — both run
   before pino is wired.

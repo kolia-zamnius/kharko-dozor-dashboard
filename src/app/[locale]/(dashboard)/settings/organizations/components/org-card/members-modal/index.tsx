@@ -1,9 +1,8 @@
 import { Spinner } from "@/components/ui/feedback/spinner";
 import { Button } from "@/components/ui/primitives/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/overlays/dialog";
-import { useUpdateMemberRoleMutation } from "@/api-client/organizations/mutations";
 import { useMembersQuery } from "@/api-client/organizations/queries";
-import type { Organization, OrganizationMember } from "@/api-client/organizations/types";
+import type { Organization } from "@/api-client/organizations/types";
 import { UsersIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
@@ -43,9 +42,9 @@ export function MembersModal({ org }: { org: Organization }) {
 }
 
 /**
- * Lazy-mounted body for the members dialog. Owns the members query,
- * the role-change mutation, and the current-user identity bits each
- * {@link MemberRow} needs to decide which controls to render.
+ * Lazy-mounted body for the members dialog. Owns the members query
+ * and the current-user identity bits each {@link MemberRow} needs to
+ * decide which controls to render.
  *
  * @remarks
  * `isOwner` gates the role-change Select on every row (OWNER-only per
@@ -55,22 +54,20 @@ export function MembersModal({ org }: { org: Organization }) {
  * server would 409 anyway, but showing a disabled control is kinder
  * than firing a toast).
  *
- * Toast copy for successful role changes comes from the mutation's
- * dynamic `meta.successKey`; remove/leave toasts come from their
- * own mutations inside `MemberRemoveDialog`. No inline toasting here.
+ * Each row owns its own `useUpdateMemberRoleMutation` and observes
+ * org-wide in-flight status via `useIsMutating` against the shared
+ * `mutationKey` — the parent doesn't have to thread `isPending` /
+ * `onRoleChange` callbacks. Toast copy still comes from the mutation's
+ * dynamic `meta.successKey`; remove/leave toasts come from their own
+ * mutations inside `MemberRemoveDialog`. No inline toasting here.
  */
 function MembersContent({ org, close }: { org: Organization; close: () => void }) {
   const t = useTranslations("settings.orgs.members");
   const { data: session } = useSession();
   const { data: members, isLoading } = useMembersQuery(org.id);
-  const updateRole = useUpdateMemberRoleMutation();
 
   const isOwner = org.role === "OWNER";
   const currentUserId = session?.user?.id;
-
-  function handleRoleChange(member: OrganizationMember, role: Organization["role"]) {
-    updateRole.mutate({ orgId: org.id, memberId: member.id, role });
-  }
 
   return (
     <>
@@ -94,9 +91,7 @@ function MembersContent({ org, close }: { org: Organization; close: () => void }
               isOwner={isOwner}
               isSelf={member.user.id === currentUserId}
               isOnlyMember={members.length === 1}
-              onRoleChange={handleRoleChange}
               onLeaveSuccess={close}
-              isRolePending={updateRole.isPending}
             />
           ))}
         </div>
