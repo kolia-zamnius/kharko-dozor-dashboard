@@ -25,7 +25,6 @@ import type { UserActivityStatus } from "./status";
  * `validators.ts::userListParamsSchema`).
  */
 
-// ── Response DTOs (zod-inferred) ───────────────────────────────────────
 
 export type TrackedUserListItem = z.infer<typeof trackedUserListItemSchema>;
 export type TrackedUserDetail = z.infer<typeof trackedUserDetailSchema>;
@@ -43,7 +42,6 @@ export type TimelineSlice = z.infer<typeof timelineSliceSchema>;
 export type TimelineSession = z.infer<typeof timelineSessionSchema>;
 export type UserTimeline = z.infer<typeof userTimelineSchema>;
 
-// ── Request params ─────────────────────────────────────────────────────
 // Shared between `queries.ts` (query fn) and `keys.ts` (cache key).
 
 export type TrackedUserListParams = {

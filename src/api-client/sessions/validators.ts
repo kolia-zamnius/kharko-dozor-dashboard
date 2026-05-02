@@ -5,14 +5,12 @@ import { SESSION_DATE_RANGES } from "./domain";
 /**
  * Zod schema for the sessions list query string.
  *
- * Consumed by:
- *   - The API route handler (`GET /api/sessions`) to validate + narrow
- *     incoming params before hitting Prisma.
- *   - The client-side `buildSessionsUrl` to safely build query strings.
- *
- * Every field is optional — omitting a field means "no filter on this axis".
- * The schema coerces comma-separated strings into arrays for `projectIds`
- * so the URL shape stays human-readable (`?projects=id1,id2`).
+ * @remarks
+ * Used isomorphically — the server validates inbound params before
+ * hitting Prisma; the client builds the same shape before pushing to
+ * the URL. Every field is optional, so omission means "no filter on
+ * this axis". Comma-separated `projectIds` coerce into an array so the
+ * URL stays human-readable (`?projects=id1,id2`).
  */
 export const sessionListParamsSchema = z.object({
   search: z.string().trim().optional(),

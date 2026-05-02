@@ -34,7 +34,6 @@ import type { PlayerState, ReplayerHandle } from "./types";
  * @see ./types — `PlayerState` union + `ReplayerHandle` interface.
  */
 
-// ── Constants ──────────────────────────────────────────────────────────
 
 /**
  * Gaps between consecutive events longer than this are marked as idle
@@ -51,7 +50,6 @@ import type { PlayerState, ReplayerHandle } from "./types";
  */
 const IDLE_THRESHOLD_MS = 10_000;
 
-// ── Idle period detection ──────────────────────────────────────────────
 
 export type IdlePeriod = { start: number; end: number };
 
@@ -85,7 +83,6 @@ function computeIdlePeriods(events: SessionEvent[]): IdlePeriod[] {
   return periods;
 }
 
-// ── Imperative state ───────────────────────────────────────────────────
 
 /**
  * Module-scoped rrweb handle + current RAF id.
@@ -155,7 +152,6 @@ function stopPolling() {
   cancelAnimationFrame(rafId);
 }
 
-// ── Store types ────────────────────────────────────────────────────────
 
 type PlayerStoreState = {
   // Playback
@@ -214,7 +210,6 @@ type PlayerStoreActions = {
   setSliceLoading: (loading: boolean) => void;
 };
 
-// ── Store ──────────────────────────────────────────────────────────────
 
 export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((set, get) => ({
   state: "idle" as PlayerState,
@@ -233,7 +228,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
   consoleOpen: false,
   pendingAutoPlay: false,
 
-  // ── Replayer lifecycle ──────────────────────────────────────────
 
   onReplayerReady: (h) => {
     handle = h;
@@ -280,7 +274,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
     });
   },
 
-  // ── Playback controls ──────────────────────────────────────────
 
   play: () => {
     if (!handle) return;
@@ -312,7 +305,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
     }
   },
 
-  // ── Preferences ────────────────────────────────────────────────
 
   setSpeed: (speed) => {
     handle?.setConfig({ speed });
@@ -322,11 +314,9 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
   toggleSkipInactive: () => set((s) => ({ skipInactive: !s.skipInactive })),
   toggleAutoContinue: () => set((s) => ({ autoContinue: !s.autoContinue })),
 
-  // ── UI ─────────────────────────────────────────────────────────
 
   toggleConsole: () => set((s) => ({ consoleOpen: !s.consoleOpen })),
 
-  // ── Slices ─────────────────────────────────────────────────────
 
   selectSlice: (index) => {
     stopPolling();
@@ -346,7 +336,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
   setSliceLoading: (isSliceLoading) => set({ isSliceLoading }),
 }));
 
-// ── Selectors ──────────────────────────────────────────────────────────
 
 /**
  * `true` while the player's transport controls should be disabled —

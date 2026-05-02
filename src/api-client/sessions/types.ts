@@ -17,7 +17,6 @@ import type {
  * via `validators.ts::sessionListParamsSchema`, not a JSON body).
  */
 
-// ── Response DTOs (zod-inferred) ───────────────────────────────────────
 
 export type SessionListItem = z.infer<typeof sessionListItemSchema>;
 export type SliceInfo = z.infer<typeof sliceInfoSchema>;
@@ -26,7 +25,6 @@ export type SessionEvent = z.infer<typeof sessionEventSchema>;
 export type PaginatedSessions = z.infer<typeof paginatedSessionsSchema>;
 export type SessionsSummary = z.infer<typeof sessionsSummarySchema>;
 
-// ── Request params ─────────────────────────────────────────────────────
 // Separated from response DTOs above but kept in the same file: list
 // params are shared between `queries.ts` (query fn) and `keys.ts` (cache
 // key) — keeping them here avoids a cycle if `keys.ts` ever also needs

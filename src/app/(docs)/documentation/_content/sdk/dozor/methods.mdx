@@ -63,9 +63,10 @@ No-op if already in `idle`.
 ## `dozor.cancel()`
 
 Discards the current session entirely: drops all buffered events
-without flushing, sends a `DELETE` request to remove the session row
-from the server, and returns the recorder to `idle`. The instance is
-reusable — call `start()` afterwards if you want to record again.
+without flushing, sends a `POST /api/sessions/cancel` request to
+remove the session row from the server, and returns the recorder to
+`idle`. The instance is reusable — call `start()` afterwards if you
+want to record again.
 
 Use `cancel()` (not `stop()`) when the user changed their mind —
 e.g. abandoned a checkout you were holding events for. Whatever was

@@ -13,7 +13,6 @@
 
 import { ONE_DAY_MS, ONE_HOUR_MS, ONE_MINUTE_MS, SEVEN_DAYS_MS } from "@/lib/time";
 
-// ── Poll cadences ──────────────────────────────────────────────────────────
 
 /**
  * A tracked user is considered online if their last captured event is
@@ -38,7 +37,6 @@ export const STATUS_POLL_INTERVAL_MS = 30 * 1000;
  */
 export const USER_PAGE_POLL_INTERVAL_MS = 30 * 1000;
 
-// ── Activity range ─────────────────────────────────────────────────────────
 
 /**
  * Activity-range presets. Used by the activity histogram on the user
@@ -94,7 +92,6 @@ export function parseActivityRange(raw: string | null | undefined): ActivityRang
   return DEFAULT_ACTIVITY_RANGE;
 }
 
-// ── Pagination (page-distribution "Show more") ─────────────────────────────
 
 /** Initial number of pageDistribution rows returned by the activity endpoint. */
 export const PAGE_DISTRIBUTION_INITIAL = 5;
@@ -121,7 +118,6 @@ export function parsePageLimit(raw: string | null | undefined): number {
   return Math.min(n, PAGE_DISTRIBUTION_MAX);
 }
 
-// ── Sort options ───────────────────────────────────────────────────────────
 
 export const USER_LIST_SORT_OPTIONS = ["last-seen", "sessions", "active-time", "newest"] as const;
 export type UserListSortBy = (typeof USER_LIST_SORT_OPTIONS)[number];

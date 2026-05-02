@@ -13,10 +13,12 @@
  *
  * Logging goes through {@link log} from `@/server/logger` — `info` for
  * normal flow events, `warn` for rate-limit hits / blocked attempts.
- * Email addresses are auto-redacted in production via the logger's
- * `redact` config, so plaintext emails never reach hosted stdout while
- * dev runs still see them. Auth.js itself logs the `?error=` code on
- * failed callbacks, which is what we actually need for incident triage.
+ * Email addresses are deliberately NOT redacted (operational debug
+ * data — they're how oncall correlates an incident to a specific
+ * user); API-key plaintext, OTP codes, and session cookies must never
+ * land in the data object regardless. Auth.js itself logs the
+ * `?error=` code on failed callbacks, which is what we actually need
+ * for incident triage.
  *
  * @see src/app/(auth)/sign-in/components/sign-in-form/index.tsx — client consumer
  * @see src/app/(auth)/sign-up/components/sign-up-form.tsx — client consumer
@@ -30,7 +32,6 @@ import { env } from "@/server/env";
 import { log } from "@/server/logger";
 import { cookies } from "next/headers";
 
-// ─── Types ───────────────────────────────────────────────
 
 /**
  * Discriminated-union return shape for every Server Action in this file.
@@ -55,7 +56,6 @@ type RateLimitResult = {
   retryAfter?: number;
 };
 
-// ─── Actions ─────────────────────────────────────────────
 
 export async function checkEmailExists(email: string): Promise<ActionResult<CheckEmailResult>> {
   const parsed = signInSchema.safeParse({ email });

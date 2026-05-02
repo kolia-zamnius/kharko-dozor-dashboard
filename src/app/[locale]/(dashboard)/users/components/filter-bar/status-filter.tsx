@@ -2,8 +2,8 @@ import { CheckIcon, FunnelIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/primitives/button";
-import { Badge } from "@/components/ui/primitives/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/overlays/popover";
+import { FilterCountBadge } from "@/app/[locale]/(dashboard)/components/filter-count-badge";
 import { USER_ACTIVITY_STATUSES, type UserActivityStatus } from "@/api-client/tracked-users/status";
 import { STATUS_COLOR } from "@/app/[locale]/(dashboard)/users/lib/status-ui";
 import { cn } from "@/lib/cn";
@@ -33,11 +33,7 @@ export function StatusFilter({ selected, onChange }: StatusFilterProps) {
         <Button variant="outline" size="sm" className="gap-1.5">
           <FunnelIcon size={14} />
           {t("label")}
-          {selectedCount > 0 && (
-            <Badge variant="secondary" className="ml-0.5 size-5 rounded-full p-0 text-[10px]">
-              {selectedCount}
-            </Badge>
-          )}
+          <FilterCountBadge count={selectedCount} />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-1">

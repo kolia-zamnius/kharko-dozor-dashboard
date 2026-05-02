@@ -2,8 +2,8 @@ import { CheckIcon, FunnelIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/primitives/button";
-import { Badge } from "@/components/ui/primitives/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/overlays/popover";
+import { FilterCountBadge } from "@/app/[locale]/(dashboard)/components/filter-count-badge";
 import { useProjectsQuery } from "@/api-client/projects/queries";
 import { cn } from "@/lib/cn";
 
@@ -35,11 +35,7 @@ export function ProjectFilter({ selected, onChange }: ProjectFilterProps) {
         <Button variant="outline" size="sm" className="gap-1.5">
           <FunnelIcon size={14} />
           {t("label")}
-          {selectedCount > 0 && (
-            <Badge variant="secondary" className="ml-0.5 size-5 rounded-full p-0 text-[10px]">
-              {selectedCount}
-            </Badge>
-          )}
+          <FilterCountBadge count={selectedCount} />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-52 p-1">

@@ -2,19 +2,17 @@ import { z } from "zod";
 import { USER_ACTIVITY_STATUSES } from "./status";
 import { USER_LIST_SORT_OPTIONS, SORT_DIRECTIONS } from "./domain";
 
-// ── List params ────────────────────────────────────────────────────────────
 
 /**
  * Zod schema for the tracked-users list query string.
  *
- * Consumed by:
- *   - The API route handler (`GET /api/tracked-users`) to validate + narrow
- *     incoming params before hitting Prisma.
- *   - The client-side `parseUserListParams` to safely read `useSearchParams`.
- *
- * Every field is optional — omitting a field means "no filter on this axis".
- * The schema coerces comma-separated strings into arrays for `projectIds`
- * and `statuses` so the URL shape stays human-readable (`?statuses=ONLINE,ACTIVE_24H`).
+ * @remarks
+ * Used isomorphically — the server validates inbound params before
+ * hitting Prisma; the client builds the same shape from `useSearchParams`
+ * before pushing to the URL. Every field is optional, so omission means
+ * "no filter on this axis". Comma-separated strings coerce into arrays
+ * for `projectIds` and `statuses` so the URL stays human-readable
+ * (`?statuses=ONLINE,ACTIVE_24H`).
  */
 export const userListParamsSchema = z.object({
   search: z.string().trim().optional(),
@@ -36,7 +34,6 @@ export const userListParamsSchema = z.object({
 
 export type UserListParams = z.infer<typeof userListParamsSchema>;
 
-// ── Display-name ───────────────────────────────────────────────────────────
 
 /**
  * Schema for `PATCH /api/tracked-users/[userId]/display-name`.

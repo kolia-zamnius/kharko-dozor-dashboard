@@ -31,7 +31,6 @@ export const GET = withAuth(async (req, user) => {
 
   await requireMember(user.id, activeOrgId, "VIEWER");
 
-  // ── Parse & validate query params ──────────────────────────────────────
   const url = new URL(req.url);
   const raw = Object.fromEntries(url.searchParams.entries());
   const params = sessionListParamsSchema.parse(raw);
@@ -40,7 +39,6 @@ export const GET = withAuth(async (req, user) => {
   const sort = params.sort ?? "date";
   const sortDir = params.sortDir ?? "desc";
 
-  // ── Scope to org's projects ────────────────────────────────────────────
   const orgProjects = await prisma.project.findMany({
     where: { organizationId: activeOrgId },
     select: { id: true, name: true, defaultDisplayNameTraitKey: true },
@@ -61,7 +59,6 @@ export const GET = withAuth(async (req, user) => {
     if (requested.length > 0) projectFilter = requested;
   }
 
-  // ── Build where clause ─────────────────────────────────────────────────
   const where: Prisma.SessionWhereInput = {
     projectId: { in: projectFilter },
     ...(params.search ? { externalId: { contains: params.search, mode: "insensitive" as const } } : {}),
@@ -74,11 +71,9 @@ export const GET = withAuth(async (req, user) => {
   const rangeFrom = dateRangeToFrom(params.range ?? DEFAULT_SESSION_DATE_RANGE);
   where.createdAt = { gte: rangeFrom };
 
-  // ── Sort mapping ───────────────────────────────────────────────────────
   const orderBy: Prisma.SessionOrderByWithRelationInput =
     sort === "duration" ? { duration: sortDir } : { createdAt: sortDir };
 
-  // ── Query ──────────────────────────────────────────────────────────────
   const sessions = await prisma.session.findMany({
     where,
     select: {

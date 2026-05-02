@@ -1,6 +1,5 @@
 import type { SessionEvent, SliceInfo } from "@/api-client/sessions/types";
 
-// ── Player state machine ───────────────────────────────────────────────────
 
 /**
  * Discriminated union for the player lifecycle.
@@ -12,7 +11,6 @@ import type { SessionEvent, SliceInfo } from "@/api-client/sessions/types";
  */
 export type PlayerState = "idle" | "playing" | "paused" | "finished";
 
-// ── Replayer abstraction ───────────────────────────────────────────────────
 
 /**
  * Thin interface over the raw rrweb Replayer instance. The Viewport
@@ -28,7 +26,6 @@ export type ReplayerHandle = {
   on: (event: string, handler: () => void) => void;
 };
 
-// ── Console log entry ──────────────────────────────────────────────────────
 
 /**
  * Single console log entry extracted from rrweb plugin events.
@@ -42,6 +39,5 @@ export type ConsoleLogEntry = {
   trace: string[];
 };
 
-// ── Re-exports for convenience ─────────────────────────────────────────────
 
 export type { SessionEvent, SliceInfo };

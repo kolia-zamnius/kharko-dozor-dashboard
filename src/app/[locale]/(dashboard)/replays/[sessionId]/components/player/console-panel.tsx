@@ -49,7 +49,14 @@ export function ConsolePanel() {
   const wasAtBottomRef = useRef(true);
 
   const allLogs = useMemo(() => extractConsoleLogs(events), [events]);
-  const visibleLogs = allLogs.filter((l) => l.timeOffset <= currentTime);
+  // `currentTime` ticks at ~60fps via RAF in the player store. Without
+  // memoisation, `allLogs.filter(...)` allocates a fresh array every
+  // frame, defeating React's stable-reference reconciliation and
+  // hammering the main thread on long sessions.
+  const visibleLogs = useMemo(
+    () => allLogs.filter((l) => l.timeOffset <= currentTime),
+    [allLogs, currentTime],
+  );
 
   useEffect(() => {
     const el = containerRef.current;

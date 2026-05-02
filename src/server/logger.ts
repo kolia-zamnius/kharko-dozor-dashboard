@@ -46,11 +46,16 @@ import pino, { type Logger } from "pino";
  *
  * ### PII redaction
  *
- * Production-only `redact` paths scrub `email` / `password` / `token` /
- * `key` / `secret` / cookie / auth headers before serialization. Dev runs
- * print full traces. Tests are `silent`. Even with the safety net,
- * **never log API-key plaintext, OTP codes, or session cookies** — keep
- * those out of the data object in the first place.
+ * Production-only `redact` paths scrub `password` / `token` / `key` /
+ * `secret` / cookie / auth headers before serialization. Email
+ * addresses are deliberately **not** redacted — they're the primary
+ * identifier oncall reaches for when correlating an incident to a
+ * specific user, so the value of having them in logs outweighs the
+ * privacy cost. Self-hosters who want stricter handling can extend
+ * the list. Dev runs print full traces. Tests are `silent`. Even
+ * with the safety net, **never log API-key plaintext, OTP codes, or
+ * session cookies** — keep those out of the data object in the first
+ * place.
  *
  * ### Escape hatch
  *

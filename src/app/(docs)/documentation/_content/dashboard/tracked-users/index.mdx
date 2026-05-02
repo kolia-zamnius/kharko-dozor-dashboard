@@ -32,7 +32,7 @@ Single `GET /api/tracked-users/summary` query — one round-trip with
 
 | Column | Content | Sortable? |
 | --- | --- | --- |
-| **User** | Display name resolved via the [4-step chain](/documentation/dashboard/tracked-users/display-name); `externalId` shown as a subtitle when the displayName came from a real source | ✓ (sort by `createdAt`, "newest") |
+| **User** | Display name resolved via the [4-step chain](/documentation/dashboard/tracked-users/display-name). Two optional subtitle lines render under it: `externalId` (when the displayName isn't already the externalId fallback) and `traits.email` (when the email isn't already the displayName or externalId). The duplicate-suppression keeps the row tight: a project that resolves names from the `email` trait shows the email once at the top, not twice. | ✓ (sort by `createdAt`, "newest") |
 | **Project** | Badge with the project label | — |
 | **Status** | Activity bucket — see below | — |
 | **Last seen** | Relative timestamp of the most recent event | ✓ |
