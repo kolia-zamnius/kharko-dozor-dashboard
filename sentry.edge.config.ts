@@ -21,6 +21,11 @@ Sentry.init({
   dsn: process.env.SENTRY_DSN,
   enabled: Boolean(process.env.SENTRY_DSN),
 
+  // Vendor-neutral release / environment markers — see the matching
+  // block in `sentry.server.config.ts` for the full rationale.
+  release: process.env.SENTRY_RELEASE,
+  environment: process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV,
+
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
 
   sendDefaultPii: false,
