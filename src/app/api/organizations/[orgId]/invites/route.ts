@@ -7,6 +7,7 @@ import {
 } from "@/api-client/organizations/response-schemas";
 import { inviteSchema } from "@/api-client/organizations/validators";
 import { resolveLocaleForUser } from "@/i18n/resolve-locale";
+import { getEnabledProviders } from "@/server/auth/enabled-providers";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
@@ -99,6 +100,15 @@ export const GET = withAuth<Params>(async (_req, user, { orgId }) => {
  */
 export const POST = withAuth<Params>(async (req, user, { orgId }) => {
   await requireMember(user.id, orgId, "OWNER");
+
+  // Sending invites requires SMTP — without it the invitee never hears
+  // about the invite, so creating a dangling row is worse than refusing
+  // the request. 503 because this is an instance-config issue (the
+  // self-hoster didn't wire SMTP), not a permission or input problem.
+  if (!getEnabledProviders().otp) {
+    throw new HttpError(503, "Email sending is not configured on this instance");
+  }
+
   // Rate-limit probe BEFORE the work so a capped admin sees the
   // right error instantly, with no DB write or SMTP dispatch on a
   // send that'll 429 anyway.
