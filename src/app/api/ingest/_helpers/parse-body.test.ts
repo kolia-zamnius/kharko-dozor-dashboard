@@ -21,7 +21,7 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
 
-import { ingestSchema } from "./parse-body";
+import { MAX_DECOMPRESSED_INGEST_BYTES, ingestSchema, parseIngestBody } from "./parse-body";
 
 // Minimal valid base used by several properties — the common skeleton
 // callers mutate with `{ ...BASE, events: [...] }` etc.
@@ -163,5 +163,39 @@ describe("ingestSchema", () => {
       pageViews: [{ url: "legacy" }],
     });
     expect(result.success).toBe(true);
+  });
+});
+
+async function gzipBody(text: string): Promise<ArrayBuffer> {
+  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
+  return new Response(stream).arrayBuffer();
+}
+
+describe("parseIngestBody — gzip decompressed cap", () => {
+  it("rejects payloads that decompress past the cap with HttpError(413)", async () => {
+    // Highly-compressible filler — 10 MiB of 'x' shrinks to ~10 KiB
+    // compressed, so the inbound request size stays small even though
+    // the decompressed stream blows past the cap on the first chunk.
+    const oversized = "x".repeat(MAX_DECOMPRESSED_INGEST_BYTES + 1);
+    const body = await gzipBody(oversized);
+    const req = new Request("http://localhost/api/ingest", {
+      method: "POST",
+      headers: { "Content-Encoding": "gzip" },
+      body,
+    });
+
+    await expect(parseIngestBody(req)).rejects.toMatchObject({ status: 413 });
+  });
+
+  it("accepts gzip payloads safely under the cap", async () => {
+    const small = JSON.stringify({ ok: true, foo: "bar" });
+    const body = await gzipBody(small);
+    const req = new Request("http://localhost/api/ingest", {
+      method: "POST",
+      headers: { "Content-Encoding": "gzip" },
+      body,
+    });
+
+    await expect(parseIngestBody(req)).resolves.toEqual({ ok: true, foo: "bar" });
   });
 });
