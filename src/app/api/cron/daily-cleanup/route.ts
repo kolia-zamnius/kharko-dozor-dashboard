@@ -36,16 +36,24 @@ const cronCleanupSummarySchema = z.object({
  *      does not declare `onDelete: SetNull` for that pointer, so
  *      Postgres would otherwise block the delete on referenced rows).
  *
- * Auth: Vercel Cron sends `Authorization: Bearer $CRON_SECRET`. The
- * check is skipped locally when `CRON_SECRET` is unset so the endpoint
- * can be curl'd manually during development.
+ * Auth: caller sends `Authorization: Bearer $CRON_SECRET`. In dev/test
+ * an unset `CRON_SECRET` opens the endpoint so it can be curl'd
+ * manually. In production an unset `CRON_SECRET` denies every call
+ * with 401 — a misconfigured deploy stays safe instead of exposing
+ * cascading deletes to the public internet.
  *
- * `GET` because Vercel Cron issues HTTP GET; destructive-on-GET is
- * ugly but fighting Vercel's contract isn't worth a wrapper.
+ * `GET` because the canonical scheduler (Vercel Cron) issues HTTP GET;
+ * destructive-on-GET is ugly but fighting that contract isn't worth a
+ * wrapper. Self-hosters off Vercel point any scheduler at the same
+ * endpoint with the same bearer header.
  *
- * @see `vercel.json` — cron schedule definition.
+ * @see vercel.json — default cron schedule definition.
  */
 export async function GET(req: Request) {
+  if (process.env.NODE_ENV === "production" && !env.CRON_SECRET) {
+    log.warn("cron:cleanup:unauthorized:secret_unconfigured");
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
   if (env.CRON_SECRET) {
     const auth = req.headers.get("authorization");
     if (auth !== `Bearer ${env.CRON_SECRET}`) {
@@ -59,7 +67,6 @@ export async function GET(req: Request) {
   const now = new Date();
   const sessionCutoff = new Date(now.getTime() - SESSION_RETENTION_DAYS * ONE_DAY_MS);
 
-  // ── Step 1: expired invites ────────────────────────────────────────
   const invites = await prisma.invite.deleteMany({
     where: {
       expiresAt: { lt: now },
@@ -67,17 +74,14 @@ export async function GET(req: Request) {
     },
   });
 
-  // ── Step 2: old sessions (cascades slices + events) ────────────────
   const sessions = await prisma.session.deleteMany({
     where: { createdAt: { lt: sessionCutoff } },
   });
 
-  // ── Step 3: orphaned tracked users ─────────────────────────────────
   const trackedUsers = await prisma.trackedUser.deleteMany({
     where: { sessions: { none: {} } },
   });
 
-  // ── Step 4: empty organizations ────────────────────────────────────
   const emptyOrgs = await prisma.organization.findMany({
     where: { memberships: { none: {} } },
     select: { id: true },
