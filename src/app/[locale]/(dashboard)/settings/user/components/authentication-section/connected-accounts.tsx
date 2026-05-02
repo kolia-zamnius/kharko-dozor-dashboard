@@ -8,10 +8,12 @@ import { DisconnectAccountDialog } from "./disconnect-account-dialog";
  * sent from the server; labels are brand names and stay English across
  * every locale ("Google" and "GitHub" don't localise).
  */
-const PROVIDER_META: Record<string, { label: string; icon: typeof GoogleLogoIcon }> = {
+type OAuthProvider = "google" | "github";
+
+const PROVIDER_META = {
   google: { label: "Google", icon: GoogleLogoIcon },
   github: { label: "GitHub", icon: GithubLogoIcon },
-};
+} as const satisfies Record<OAuthProvider, { label: string; icon: typeof GoogleLogoIcon }>;
 
 export function ConnectedAccounts({ accounts }: { accounts: UserAccount[] }) {
   const t = useTranslations("settings.user.accounts");
@@ -24,7 +26,9 @@ export function ConnectedAccounts({ accounts }: { accounts: UserAccount[] }) {
       ) : (
         <div className="space-y-2">
           {accounts.map((account) => {
-            const meta = PROVIDER_META[account.provider];
+            const meta = account.provider in PROVIDER_META
+              ? PROVIDER_META[account.provider as OAuthProvider]
+              : undefined;
             const Icon = meta?.icon;
             const label = meta?.label ?? account.provider;
             return (
