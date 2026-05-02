@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createOpenAPI } from "fumadocs-openapi/server";
 import { createAPIPage } from "fumadocs-openapi/ui";
 import path from "node:path";
@@ -18,6 +20,10 @@ import path from "node:path";
  * require — `path.resolve` happens once on the server, the rendered
  * MDX stays portable.
  *
+ * Colocated next to its single consumer (`./page.tsx`) per the
+ * page-specific-asset rule. Server-only because `node:path` and
+ * `fumadocs-openapi/server` are both Node-runtime APIs.
+ *
  * @see tests/contract/openapi.test.ts — the spec generator.
  * @see openapi.snapshot.json — the committed source.
  */
@@ -31,8 +37,8 @@ export const openapi = createOpenAPI({
  * The `<APIPage>` component used in MDX files under `_content/api/`.
  *
  * @remarks
- * Wired into MDX components in `[...slug]/page.tsx` so MDX can
- * reference operations as
+ * Wired into MDX components in `./page.tsx` so MDX can reference
+ * operations as
  * `<APIPage document="openapi.snapshot.json" operations={[...]} />`
  * — the path/method tuple looks the operation up in the OpenAPI doc
  * and renders the full request/response detail.
