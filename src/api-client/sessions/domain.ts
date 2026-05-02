@@ -18,7 +18,6 @@
 
 import { SESSION_RETENTION_MS, SEVEN_DAYS_MS, THIRTY_DAYS_MS } from "@/lib/time";
 
-// ── Poll cadences ──────────────────────────────────────────────────────────
 
 /**
  * Poll cadence for the sessions list + summary. 30s is a dashboard-
@@ -44,7 +43,6 @@ export const SESSIONS_LIST_POLL_MS = 30_000;
  */
 export const SESSION_DETAIL_POLL_MS = 10_000;
 
-// ── Date range ─────────────────────────────────────────────────────────────
 
 /**
  * Date-range presets for the sessions list filter.
@@ -97,7 +95,6 @@ export function parseSessionDateRange(raw: string | null | undefined): SessionDa
   return DEFAULT_SESSION_DATE_RANGE;
 }
 
-// ── Sort options ───────────────────────────────────────────────────────────
 
 export const SESSION_LIST_SORT_OPTIONS = ["date", "duration"] as const;
 export type SessionListSortBy = (typeof SESSION_LIST_SORT_OPTIONS)[number];

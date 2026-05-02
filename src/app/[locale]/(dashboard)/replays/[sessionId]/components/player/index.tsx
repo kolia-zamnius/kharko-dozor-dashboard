@@ -24,11 +24,9 @@ type PlayerProps = {
 export function Player({ session }: PlayerProps) {
   const { setSlices, setEvents, setSliceLoading } = usePlayerStore();
 
-  // ── Sync session slices to store ─────────────────────────────────────
   const slices = session.slices;
   useEffect(() => setSlices(slices ?? []), [slices, setSlices]);
 
-  // ── Slice events ─────────────────────────────────────────────────────
   const activeSliceIndex = usePlayerStore((s) => s.activeSliceIndex);
   const consoleOpen = usePlayerStore((s) => s.consoleOpen);
 
@@ -44,7 +42,6 @@ export function Player({ session }: PlayerProps) {
     return [];
   }, [session, hasSlices, sliceEvents, activeSlice]);
 
-  // ── Sync computed data to store ──────────────────────────────────────
   useEffect(() => setEvents(playerEvents), [playerEvents, setEvents]);
   useEffect(() => setSliceLoading(hasSlices && isSliceLoading), [hasSlices, isSliceLoading, setSliceLoading]);
 
@@ -62,8 +59,8 @@ export function Player({ session }: PlayerProps) {
       <div
         className={
           consoleOpen
-            ? "aspect-video overflow-hidden rounded-t-lg border bg-neutral-900 lg:grid lg:grid-cols-[1fr_320px]"
-            : "aspect-video overflow-hidden rounded-t-lg border bg-neutral-900"
+            ? "bg-muted aspect-video overflow-hidden rounded-t-lg border lg:grid lg:grid-cols-[1fr_320px]"
+            : "bg-muted aspect-video overflow-hidden rounded-t-lg border"
         }
       >
         {showLoading ? (

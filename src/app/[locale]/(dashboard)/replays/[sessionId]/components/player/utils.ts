@@ -1,14 +1,12 @@
 import type { SessionEvent, SliceInfo } from "@/api-client/sessions/types";
 import type { ConsoleLogEntry } from "./types";
 
-// ── rrweb event type constants ─────────────────────────────────────────────
 
 const RRWEB_META_TYPE = 4;
 const RRWEB_FULL_SNAPSHOT_TYPE = 2;
 const EVENT_TYPE_PLUGIN = 6;
 const CONSOLE_PLUGIN_NAME = "rrweb/console@1";
 
-// ── Event preparation ──────────────────────────────────────────────────────
 
 /**
  * Ensure slice events start with a Meta event (type 4) before the
@@ -37,7 +35,6 @@ export function ensureMetaEvent(events: SessionEvent[], slice: SliceInfo): Sessi
   return events;
 }
 
-// ── Time formatting ────────────────────────────────────────────────────────
 
 /** Format milliseconds as MM:SS */
 export function formatTime(ms: number): string {
@@ -56,7 +53,6 @@ export function formatTimePrecise(ms: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(cs).padStart(2, "0")}`;
 }
 
-// ── Console log extraction ─────────────────────────────────────────────────
 
 /**
  * Extract console log entries from rrweb plugin events.

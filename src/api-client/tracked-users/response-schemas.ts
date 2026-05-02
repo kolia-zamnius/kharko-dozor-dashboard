@@ -28,13 +28,11 @@ import { USER_ACTIVITY_STATUSES } from "./status";
  * @see src/server/tracked-users.ts — shared loader that parses detail.
  */
 
-// ── Shared primitives ──────────────────────────────────────────────────
 
 const userActivityStatusSchema = z.enum(USER_ACTIVITY_STATUSES);
 const activityRangeSchema = z.enum(ACTIVITY_RANGES);
 const traitsSchema = z.record(z.string(), z.unknown()).nullable();
 
-// ── List + detail ──────────────────────────────────────────────────────
 
 export const trackedUserListItemSchema = z.object({
   id: z.string(),
@@ -61,7 +59,6 @@ export const paginatedTrackedUsersSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 
-// ── Summary (stats strip) ──────────────────────────────────────────────
 
 export const trackedUsersSummarySchema = z.object({
   total: z.number().int().nonnegative(),
@@ -70,14 +67,12 @@ export const trackedUsersSummarySchema = z.object({
   newThisWeek: z.number().int().nonnegative(),
 });
 
-// ── Online-status heartbeat ────────────────────────────────────────────
 
 export const userStatusSchema = z.object({
   online: z.boolean(),
   lastEventAt: z.string().nullable(),
 });
 
-// ── Activity — histogram buckets + page distribution + KPI summary ─────
 
 export const activityBucketSchema = z.object({
   t: z.string(),
@@ -118,7 +113,6 @@ export const userActivitySchema = z.object({
   summary: activitySummarySchema,
 });
 
-// ── Timeline (sessions + slices in a window) ───────────────────────────
 
 export const timelineSliceSchema = z.object({
   url: z.string(),

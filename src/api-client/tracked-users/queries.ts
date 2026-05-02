@@ -28,7 +28,6 @@ function buildListQuery(params: TrackedUserListParams): string {
   return qs ? `?${qs}` : "";
 }
 
-// ── List poll cadence ──────────────────────────────────────────────────────
 
 /**
  * Poll interval for the users list + summary. Reuses the same 30s cadence
@@ -36,7 +35,6 @@ function buildListQuery(params: TrackedUserListParams): string {
  */
 export const USERS_LIST_POLL_MS = USER_PAGE_POLL_INTERVAL_MS;
 
-// ── Query factories ────────────────────────────────────────────────────────
 
 export const trackedUserQueries = {
   list: (params: TrackedUserListParams = {}) =>
@@ -118,7 +116,6 @@ export const trackedUserQueries = {
     }),
 };
 
-// ── Hooks ─────────────────────────────────────────────────────────────────
 // Classic + Suspense pairs per query — pick based on consumer context
 // (see `sessions/queries.ts` for the rationale).
 
