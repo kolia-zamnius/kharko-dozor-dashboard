@@ -41,7 +41,7 @@ const userIdentitySchema = z.object({
  * key would brick customers pinned to old tracker versions.
  */
 export const ingestSchema = z.object({
-  sessionId: z.string().uuid(),
+  sessionId: z.uuid(),
   events: z.array(eventSchema).max(500),
   metadata: z
     .object({
