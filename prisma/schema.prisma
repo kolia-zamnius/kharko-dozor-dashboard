@@ -205,12 +205,14 @@ model Organization {
   image       String
   type        OrgType
   /// The user who created this org. Kept for audit only — not used for
-  /// permissions (role is read from `Membership`, not here).
-  createdById String
+  /// permissions (role is read from `Membership`, not here). Nullable so
+  /// account deletion can null this out instead of FK-Restrict-blocking
+  /// the user's `DELETE /api/user`.
+  createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy      User         @relation(fields: [createdById], references: [id])
+  createdBy      User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
   activeForUsers User[]       @relation("activeOrg")
   memberships    Membership[]
   invites        Invite[]
@@ -252,11 +254,14 @@ model Invite {
   /// math, email copy, and the admin invite modal extend helper).
   expiresAt      DateTime
   organizationId String
-  invitedById    String
+  /// Nullable so account deletion sets this to null instead of FK-Restrict
+  /// blocking the user's `DELETE /api/user`. PENDING invites without an
+  /// inviter are pruned by the daily cleanup cron.
+  invitedById    String?
   createdAt      DateTime     @default(now())
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  invitedBy    User         @relation(fields: [invitedById], references: [id])
+  invitedBy    User?        @relation(fields: [invitedById], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([email])

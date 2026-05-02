@@ -37,16 +37,13 @@ async function findSuccessor(tx: TransactionClient, orgId: string, excludeUserId
  *      successor (the caller already handles the empty-org case).
  *   2. If the departing user was the org creator, reassign
  *      `createdById` to whichever OWNER survives step 1 — the
- *      "fallback on creator leaves" contract downstream.
- *
- * Consumed by:
- *   - `DELETE /api/user` (full account deletion across all shared orgs).
- *   - `DELETE /api/organizations/[orgId]/members/[memberId]` (leave or
- *     remove flow).
+ *      "fallback on creator leaves" contract downstream. Skipped when
+ *      `createdById` is null (creator already deleted earlier).
  *
  * @param tx - Active Prisma transaction client.
  * @param orgId - Organization whose ownership we're handing off.
- * @param createdById - Current `Organization.createdById` value.
+ * @param createdById - Current `Organization.createdById` value, or null
+ *   when the original creator has already been deleted (FK SetNull).
  * @param departingUserId - User being removed.
  * @param departingUserRole - The departing user's role — governs whether
  *   step 1 fires at all.
@@ -54,7 +51,7 @@ async function findSuccessor(tx: TransactionClient, orgId: string, excludeUserId
 export async function transferOrganizationOwnership(
   tx: TransactionClient,
   orgId: string,
-  createdById: string,
+  createdById: string | null,
   departingUserId: string,
   departingUserRole: string,
 ): Promise<void> {
