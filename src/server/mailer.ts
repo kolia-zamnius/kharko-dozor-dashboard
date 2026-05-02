@@ -26,8 +26,22 @@ import nodemailer, { type Transporter } from "nodemailer";
  */
 let cachedTransporter: Transporter | null = null;
 
+/**
+ * SMTP env is optional — a self-hoster can deploy with OAuth-only
+ * sign-in and no invite emails. Callers reaching `sendMail` without
+ * SMTP configured indicate a code path that didn't gate on
+ * `getEnabledProviders().otp` (or its invite-equivalent flag); throw a
+ * clear error rather than letting Nodemailer fail with an opaque "auth
+ * required" message.
+ */
 function getTransporter(): Transporter {
   if (cachedTransporter) return cachedTransporter;
+
+  if (!env.GMAIL_USER || !env.GMAIL_APP_PASSWORD) {
+    throw new Error(
+      "Email transport not configured: GMAIL_USER + GMAIL_APP_PASSWORD env vars are required to send mail. If this fired from a sign-in / invite flow, that flow should have been gated on the env presence.",
+    );
+  }
 
   cachedTransporter = nodemailer.createTransport({
     service: "gmail",
@@ -61,7 +75,7 @@ export async function sendMail({ to, subject, html }: SendMailInput): Promise<vo
   const transporter = getTransporter();
 
   await transporter.sendMail({
-    from: `Kharko Dozor <${env.GMAIL_USER}>`,
+    from: `Dozor <${env.GMAIL_USER!}>`,
     to,
     subject,
     html,

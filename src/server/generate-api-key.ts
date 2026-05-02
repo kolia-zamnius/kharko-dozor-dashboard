@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import type { ApiKeyPlaintext } from "@/lib/mask-api-key";
 
 /**
- * Generate a fresh Kharko Dozor API key.
+ * Generate a fresh Dozor API key.
  *
  * @remarks
  * Server-only — `node:crypto` is not available in the Edge runtime and
