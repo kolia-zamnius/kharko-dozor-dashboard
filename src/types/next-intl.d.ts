@@ -13,22 +13,8 @@ import type users from "@/i18n/messages/en/users.json";
 import type { Locale } from "@/i18n/config";
 
 /**
- * next-intl module augmentation — makes `t("namespace.key")` calls
- * type-safe end-to-end.
- *
- * @remarks
- * `Messages` drives key-level autocomplete and the "missing key"
- * compile error; the English bundle is the canonical shape because
- * every non-default locale must match it (next-intl warns at dev
- * time when a translation file drifts from the type).
- *
- * `Locale` is pinned to our application union (`"en"` today), so
- * typed navigation helpers like `redirect({ locale })` can't be
- * called with a string we don't actually ship.
- *
- * This file lives in `src/types/` because it's a cross-bundle ambient
- * module — feature code imports nothing from it directly, it only
- * reshapes a third-party module's typings.
+ * To add a namespace: import its JSON above, add the entry to `Messages` below.
+ * English is the canonical shape — every other locale must match it.
  */
 declare module "next-intl" {
   interface AppConfig {

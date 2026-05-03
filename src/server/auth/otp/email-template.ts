@@ -4,38 +4,14 @@ import type { getTranslations } from "next-intl/server";
 
 import type { Locale } from "@/i18n/config";
 
-/**
- * Scoped translator for the `emailOtp` namespace. The caller awaits
- * `getTranslations({ locale, namespace: "emailOtp" })` and passes the
- * result in — same injection pattern used by `error-copy.ts`,
- * `auth-errors.ts`, and `formatUpdateTooltip` for helpers that run
- * outside the React tree but still need localised copy.
- */
 type OtpTranslator = Awaited<ReturnType<typeof getTranslations<"emailOtp">>>;
 
 /**
- * Branded HTML email template for OTP verification.
- *
- * @remarks
- * Isolated in its own file because it is a ~70-line inline stylesheet
- * — a visual-content concern that has no business sitting next to the
- * rate-limit domain logic in `rate-limit.ts`. Everything is inline
- * `style=""` on purpose: major email clients (Gmail, Outlook, iOS
- * Mail) strip or sandbox `<style>` blocks inconsistently, so the
- * `<style>` block here only carries the `@media (prefers-color-scheme:
- * dark)` overrides — the light-mode appearance is fully inline and
- * survives every client we've tested.
- *
- * The `dark` overrides exploit a quirk: clients that honour the
- * `prefers-color-scheme` media query also honour `!important`
- * declarations from the `<style>` block even though they typically
- * ignore class selectors — so the pattern is "inline styles for
- * light, `.class { … !important }` overrides for dark".
- *
- * @param token - Six-digit OTP to render in the code box.
- * @param locale - Recipient's preferred locale; drives `<html lang>` and
- *   the translator namespace resolution at the call site.
- * @param t - Pre-resolved translator for the `emailOtp` namespace.
+ * OTP verification email. Light-mode styles are inline `style=""` because email
+ * clients strip `<style>` blocks inconsistently; the `<style>` block carries only
+ * `@media (prefers-color-scheme: dark)` overrides — those clients also honor
+ * `!important` class selectors, which is what makes dark mode work without inline.
+ * `t` is injected because this runs outside the React tree.
  */
 export function otpEmailHtml(token: string, locale: Locale, t: OtpTranslator): string {
   return `<!DOCTYPE html>

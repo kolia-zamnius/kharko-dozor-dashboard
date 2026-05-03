@@ -6,33 +6,15 @@ import { HttpError } from "@/server/http-error";
 import type { UserId } from "@/types/ids";
 
 /**
- * Invite send rate-limit — caps a signed-in user to
- * {@link INVITE_DAILY_LIMIT} invite dispatches per UTC day.
- *
- * @remarks
- * Structural twin of the OTP rate-limit (`src/server/auth/otp/rate-
- * limit.ts`): same `@db.Date` bucket trick for automatic midnight
- * rollover, same read-probe / atomic-bump split so enforcement and
- * accounting can't drift. The key is {@link UserId} rather than an
- * email string because invites are gated on the admin session, not
- * the recipient — rate-limiting by recipient would let an attacker
- * DoS a legitimate user's ability to get invited anywhere.
- *
- * Three entry points, in the order the invite route uses them:
- *   1. {@link assertInviteRateLimit} — throws 429 if today's bucket
- *      is full. Call BEFORE doing the invite work.
- *   2. The route does the actual invite + email send.
- *   3. {@link bumpInviteRateLimit} — atomic upsert increments
- *      today's bucket. Call AFTER the work succeeded so a DB /
- *      SMTP failure doesn't burn the admin's quota on a no-op.
- *
- * @see src/api-client/organizations/constants.ts — `INVITE_DAILY_LIMIT`
- * @see prisma/schema.prisma — `InviteSendRateLimit` model
+ * Caps invite sends per signed-in user per UTC day. Keyed by `UserId` (not
+ * recipient email) — recipient-keyed would let an attacker DoS a user's ability
+ * to be invited anywhere. Three-step pattern: `assertInviteRateLimit` (429 if cap),
+ * do the work, `bumpInviteRateLimit` (only on success — failed sends don't burn quota).
  */
 
 export type InviteRateLimitStatus = {
   allowed: boolean;
-  /** How many sends are still available in today's bucket. */
+  /** Sends still available in today's bucket. */
   remaining: number;
 };
 
@@ -42,13 +24,6 @@ function startOfUtcDay(): Date {
   return d;
 }
 
-/**
- * Read today's invite-send count for `userId` without touching it.
- *
- * @remarks
- * Used by {@link assertInviteRateLimit}; also safe to call from any
- * future UI that wants to surface a "N invites remaining today" hint.
- */
 export async function queryInviteRateLimit(userId: UserId): Promise<InviteRateLimitStatus> {
   const today = startOfUtcDay();
 
@@ -64,14 +39,6 @@ export async function queryInviteRateLimit(userId: UserId): Promise<InviteRateLi
   };
 }
 
-/**
- * Atomically increment today's invite-send count for `userId`.
- *
- * @remarks
- * Upsert so the first send of the day creates the row (starting at 1,
- * per schema default), every subsequent send `{ increment: 1 }`s the
- * existing counter. Single round-trip, no read-modify-write race.
- */
 export async function bumpInviteRateLimit(userId: UserId): Promise<void> {
   const today = startOfUtcDay();
 
@@ -83,14 +50,6 @@ export async function bumpInviteRateLimit(userId: UserId): Promise<void> {
 }
 
 /**
- * Throw {@link HttpError} 429 if the user has hit today's invite cap.
- *
- * @remarks
- * Gate stage for the invite route — call before doing any of the
- * actual invite work so a rate-limited admin sees the right error
- * instantly without the DB write / email dispatch running for
- * nothing.
- *
  * @throws {HttpError} 429 — daily cap reached.
  */
 export async function assertInviteRateLimit(userId: UserId): Promise<void> {

@@ -1,26 +1,14 @@
-import "server-only";
-import type { EnabledProviders } from "@/lib/auth/enabled-providers.types";
+import type { EnabledProviders } from "@/lib/auth/enabled-providers";
 import { env } from "@/server/env";
+import "server-only";
 
 /**
- * Derive provider availability from validated env. Pure function — safe
- * to call repeatedly; `env` is already a frozen object on import.
- *
- * @remarks
- * Self-hosters opt into individual providers by setting their env vars —
- * a missing var pair means the provider isn't available, the FE doesn't
- * render its button, and `createAuthProviders()` doesn't register it
- * with Auth.js. This keeps a single source of truth (env state) and
- * avoids "button shows but click crashes" UX gaps.
- *
- * The boot-time refine in `env.ts` guarantees at least one of `google`,
- * `github`, or `otp` is `true` — consumers can rely on that joint
- * invariant.
- *
- * @returns Boolean flags per primary provider, plus the always-true
- *   `passkey` flag for symmetry at call sites.
- *
- * @see src/lib/auth/enabled-providers.types.ts — client-safe type.
+ * Provider availability from validated env. Missing var pair → button hidden in
+ * the UI and provider not registered with Auth.js (avoids the "button shows but
+ * click crashes" gap for self-hosters who skip a provider). Boot-time refine in
+ * `env.ts` guarantees at least one of `google` / `github` / `otp` is true.
+ * Passkey is always on — it's an add-on registered from Settings, not an
+ * account-creation path.
  */
 export function getEnabledProviders(): EnabledProviders {
   return {

@@ -10,29 +10,10 @@ import { formatRelative, formatRelativeFromSeconds } from "@/lib/format-relative
 type Role = "OWNER" | "ADMIN" | "VIEWER";
 
 /**
- * Locale-aware formatters pre-bound to the active request.
- *
- * @remarks
- * Every client component that used to pull `formatDate`, `formatRole`,
- * etc. directly from `@/lib/format*` now calls this hook instead. The
- * returned object closes over `useLocale()` + the relevant scoped
- * translators, so call sites don't have to thread a locale or fetch a
- * translator manually — `useFormatters()` is the client-side equivalent
- * of passing `(locale, t)` on every invocation server-side.
- *
- * Stable across re-renders via `useMemo`. The scoped translators
- * (`useTranslations(...)`) keep their identity inside next-intl's
- * provider, so the memo effectively rebuilds only on locale change —
- * which is exactly when we WANT cached formatter instances inside
- * `formatDate` / `formatRelativeFromSeconds` to invalidate.
- *
- * `truncateId` is re-exported pass-through for import-symmetry — it
- * has no locale dependency, but exposing it through the same hook
- * means consumers don't have to import from two different modules to
- * format one table row.
- *
- * @see src/lib/format.ts — pure functions this hook wraps.
- * @see src/lib/format-relative.ts — relative-time staircase.
+ * Locale-aware formatters pre-bound to the active request — client equivalent of
+ * threading `(locale, t)` into every server-side format call. Memoized on locale +
+ * scoped translator identities; rebuilds only on locale change, which is exactly
+ * when cached `Intl.*` formatters in {@link src/lib/format.ts} should invalidate.
  */
 export function useFormatters() {
   const locale = useLocale() as Locale;

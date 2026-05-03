@@ -4,34 +4,12 @@ import { getRequestConfig } from "next-intl/server";
 import { routing } from "./routing";
 
 /**
- * Per-request message loader — invoked by next-intl once per incoming
- * request to resolve the active locale and hand every namespace's
- * JSON dictionary to the React tree.
- *
- * @remarks
- * `getRequestConfig` is the **only** place server-side translations
- * are sourced from. Both `getTranslations()` in server components and
- * `<NextIntlClientProvider>` in the root layout read from the object
- * returned here, so this file is effectively the i18n composition
- * root on the server side.
- *
- * **Namespace aggregation is intentionally flat.** All ten namespaces
- * load on every request regardless of the route — next-intl's server
- * API does not support per-layout message scoping, and the total
- * payload is ~12 KB per locale (one locale at a time is ever resolved,
- * so the client bundle carries only the active language). Splitting
- * by page or feature would trade that flat cost for indirection
- * without a real bundle win.
- *
- * **`hasLocale` guards the narrowing.** The `requestLocale` promise
- * can resolve to `undefined` (no prefix → default locale) or to a
- * string we don't recognise (stale bookmark → unreachable locale).
- * `hasLocale(routing.locales, requested)` collapses both cases to
- * `routing.defaultLocale` without ever handing an unknown code to
- * `import()`, which would 500 the request with an opaque MODULE_NOT_FOUND.
- *
- * @see src/i18n/routing.ts — locale registry consumed here
- * @see src/types/next-intl.d.ts — message-shape augmentation for type-safe keys
+ * i18n composition root on the server — the only place translations are sourced
+ * for both `getTranslations()` (server components) and `<NextIntlClientProvider>`
+ * (root layout). All 10 namespaces flat-load per request (~12KB per locale; only
+ * the active language ships to the client, so splitting wouldn't save bundle).
+ * `hasLocale` narrows undefined or unknown values to the default — without it a
+ * stale URL hits `import()` with a bogus locale and surfaces as opaque MODULE_NOT_FOUND.
  */
 export default getRequestConfig(async ({ requestLocale }) => {
   const requested = await requestLocale;

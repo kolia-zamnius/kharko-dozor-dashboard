@@ -4,31 +4,14 @@ import { OTP_COOLDOWN_SECONDS, OTP_DAILY_LIMIT } from "@/lib/auth/otp.constants"
 import { prisma } from "@/server/db/client";
 
 /**
- * OTP rate-limit read + write — the domain-logic half of the OTP pipeline.
- *
- * @remarks
- * Two operations that belong side-by-side because skipping either
- * breaks the rate-limit invariant:
- *
- *   - `queryOtpRateLimit` — pure read. Returns `{ allowed: false }`
- *     when the user has hit the daily cap, or `{ allowed: false,
- *     retryAfter }` when they're inside the cooldown window. Used
- *     by both the server action (pre-flight check on the sign-in
- *     page) and by the Nodemailer provider (safety net on the
- *     actual send).
- *   - `bumpOtpRateLimit` — atomic upsert keyed on `email + UTC day`.
- *     Runs AFTER the read passes, right before we hand the email to
- *     `sendMail`. Previously lived inline inside `providers.ts` —
- *     moved here so read and write can never drift (if the counter
- *     key shape changes, you edit one file, not two).
- *
- * @see src/lib/auth/otp.constants.ts — daily limit + cooldown values
- *   shared with the client countdown UI.
+ * OTP rate-limit. Read + write kept in one file so the counter key
+ * (`email + UTC day`) can't drift. `queryOtpRateLimit` runs twice per send —
+ * pre-flight on the sign-in form and safety net inside the Nodemailer provider.
+ * `bumpOtpRateLimit` runs only after the read returns `allowed: true`.
  */
 
 export type OtpRateLimitStatus = { allowed: true } | { allowed: false; retryAfter?: number };
 
-/** Pure read — checks daily limit and cooldown, does NOT increment. */
 export async function queryOtpRateLimit(email: string): Promise<OtpRateLimitStatus> {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
@@ -51,14 +34,6 @@ export async function queryOtpRateLimit(email: string): Promise<OtpRateLimitStat
   return { allowed: true };
 }
 
-/**
- * Atomically increment the per-email-per-day counter.
- *
- * @remarks
- * Upsert keeps the first send of the day O(1) and every subsequent
- * send a single-row update. Returns the post-increment count so
- * callers can log the remaining quota without a follow-up read.
- */
 export async function bumpOtpRateLimit(email: string): Promise<{ count: number }> {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
