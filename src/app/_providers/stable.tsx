@@ -7,38 +7,14 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 
 /**
- * Filter the React 19 + `next-themes@0.4.x` script-tag warning out of
- * `console.error`.
+ * `next-themes@0.4.x` renders its FOUC-prevention init via `React.createElement("script", ...)`,
+ * and React 19 unconditionally warns about any `<script>` in the tree — false
+ * positive, the SSR'd script already ran before hydration. Replacing
+ * `next-themes` would break Fumadocs (it imports `useTheme` internally), so we
+ * filter the exact message string. HMR-safe via `__patched` flag.
  *
- * @remarks
- * `next-themes` ships its FOUC-prevention init via `React.createElement(
- * "script", { dangerouslySetInnerHTML: ... })`. The script DOES execute
- * (server-rendered into HTML before hydration — that's the point of
- * preventing the flash) and `next-themes` is the de-facto Next.js theme
- * library. React 19's dev mode adds an unconditional warning for any
- * `<script>` element seen in the React tree, on the (overzealous)
- * premise that scripts in the client tree won't execute. For
- * `dangerouslySetInnerHTML` server-rendered scripts that's a false
- * positive — the script already ran from the HTML output before React
- * even hydrated.
- *
- * Removing the warning:
- *   - Replacing `next-themes` would fix it but break Fumadocs (which
- *     imports `useTheme` from the same package internally).
- *   - Forking `next-themes` to move the script outside the React tree
- *     is the canonical upstream fix; the maintainers have an open
- *     discussion (`pacocoursey/next-themes`) but no released version.
- *   - Suppressing this single message is the surgical workaround:
- *     dev-only console noise vs a real refactor with broader risk.
- *
- * The patch is module-scoped, runs once per page load (HMR-safe via
- * the `__patched` flag), and only filters the EXACT warning string —
- * any other `console.error` flows through untouched.
- *
- * Remove this block when:
- *   - `next-themes` 1.x ships with the script outside React tree
- *   - OR React 19 relaxes the warning for `dangerouslySetInnerHTML`
- *   - OR we replace `next-themes` and provide a Fumadocs-compatible shim
+ * Remove when next-themes 1.x ships, React 19 relaxes the warning, or we
+ * provide a Fumadocs-compatible shim.
  */
 type PatchedConsole = Console & { __nextThemesScriptWarningPatched?: boolean };
 if (typeof window !== "undefined") {
@@ -60,58 +36,19 @@ if (typeof window !== "undefined") {
 }
 
 /**
- * App-wide client providers that are **stable across locale
- * navigations**. Mounted from the non-localised root layout
- * (`src/app/layout.tsx`) so that switching `/en` ↔ `/uk` doesn't
- * tear any of these down:
+ * Locale-stable providers — mounted above `[locale]` so locale swaps don't
+ * tear them down. `ThemeProvider` placement is load-bearing: tearing it down
+ * trips the React 19 script-tag warning every locale change.
  *
- *   - `QueryClientProvider` — TanStack Query cache root.
- *   - `SessionProvider`     — Auth.js session context.
- *   - `ThemeProvider`       — `next-themes` class-based dark mode.
- *   - `<Toaster />`         — sonner toast outlet. Mutations surface
- *                             success/error messages through the global
- *                             `MutationCache` handler in `query-client.ts`.
+ * i18n is deliberately split into `./i18n-bridge.tsx` (mounted inside
+ * `[locale]`) — root layouts don't re-render on client-side nav between
+ * sibling segments, so a `NextIntlClientProvider` here would freeze to the
+ * initial-render locale.
  *
- * @remarks
- * Keeping `ThemeProvider` above the `[locale]` segment is load-bearing
- * under React 19: `next-themes@0.4.x` renders its pre-hydration theme-
- * init script through `React.createElement("script", …)`, and React 19
- * logs *"Encountered a script tag while rendering React component"*
- * every time that element is torn down and recreated on the client.
- * Mounting the provider once — outside the segment that re-renders on
- * locale change — means the warning never fires.
- *
- * i18n is deliberately **not** set up here. `NextIntlClientProvider`
- * and the imperative-translator / Zod-error-map bridges that depend on
- * it live in the sibling {@link ./i18n-bridge.tsx}, which is mounted
- * inside the `[locale]` segment and therefore sees the fresh locale on
- * every navigation. If i18n were wired from this file, the context
- * value would freeze to whatever locale was active at initial render
- * and never update on soft navigation — root layouts don't re-render
- * on client-side nav between sibling segments.
- *
- * **When to collapse this split back into a single `providers.tsx`.**
- * The only reason this file and {@link ./i18n-bridge.tsx} are
- * separate is the React 19 + `next-themes@0.4.x` script-warning
- * interaction described above. If any of the following happens, the
- * split is safe to undo:
- *
- *   1. `next-themes` ships a major version that moves the theme-init
- *      script out of the React tree (GitHub head discussion lives on
- *      `pacocoursey/next-themes`; `1.0.0-beta.0` at time of writing
- *      still uses the same pattern).
- *   2. We adopt a custom theme implementation that writes to
- *      `document.documentElement.classList` from `<head>` directly,
- *      bypassing React reconciliation for the script.
- *   3. React 19 relaxes the `<script>`-in-tree warning.
- *
- * Collapse path: move `I18nBridge`'s three effects back into this
- * component, drop the sibling file, and delete the `_providers/`
- * folder in favour of a single `src/app/providers.tsx`. Route group
- * imports update atomically.
- *
- * HeroUI used to live here (`RouterProvider`, `Toast.Provider`) but was
- * removed — the dashboard is fully on Radix + Tailwind + sonner now.
+ * Collapse this split back into one `providers.tsx` when next-themes 1.x
+ * ships (head discussion on `pacocoursey/next-themes`), we adopt a custom
+ * theme that bypasses React for the FOUC script, OR React 19 relaxes the
+ * warning. Move `I18nBridge`'s effects back inline + delete `_providers/`.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();

@@ -13,12 +13,7 @@ import { XIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-/**
- * Confirm dialog for declining an invite. Decline is a hard-delete on
- * the server (no DECLINED status — see the route handler comment), so
- * the copy explicitly warns that the action is final and the admin will
- * need to re-send a new invite if the user changes their mind.
- */
+/** Decline is a hard-delete on the server — copy warns admin will need to resend if the user changes their mind. */
 export function DeclineInviteDialog({ invite }: { invite: UserInvite }) {
   const t = useTranslations("settings.orgs.invitations.decline");
   const [open, setOpen] = useState(false);

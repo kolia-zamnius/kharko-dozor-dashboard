@@ -13,21 +13,13 @@ type DateRangeFilterProps = {
   onChange: (range: SessionDateRange) => void;
 };
 
-/**
- * Date range filter as a popover with preset buttons.
- * Simple preset selection — no custom date picker needed for
- * a session recording dashboard.
- */
 export function DateRangeFilter({ selected, onChange }: DateRangeFilterProps) {
   const t = useTranslations("replays.dateRange");
   const tFilter = useTranslations("replays.list.dateRangeFilter");
   const isDefault = selected === DEFAULT_SESSION_DATE_RANGE;
 
-  // `days` is only consumed by the `"90d"` key's ICU interpolation;
-  // passing it on every `t()` call is a no-op for presets that don't
-  // reference it (ICU ignores unreferenced variables), and it means
-  // changing `SESSION_RETENTION_DAYS` flips the widest-preset label in
-  // every locale at once.
+  // ICU ignores unreferenced vars, so `days` is fed to every `t()` — bumping
+  // `SESSION_RETENTION_DAYS` flips the widest-preset label in every locale.
   const days = SESSION_RETENTION_DAYS;
 
   return (

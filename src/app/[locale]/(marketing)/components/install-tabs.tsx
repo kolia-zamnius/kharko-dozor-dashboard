@@ -6,24 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/naviga
 
 import { CopyButton } from "./copy-button";
 
-/**
- * Interactive client island for the installation snippet — a Radix
- * tabs widget that swaps between the React and Vanilla JS variants of
- * `npm install` + a usage sample.
- *
- * @remarks
- * Lifted out of {@link InstallationSection} so the surrounding copy
- * (heading, numbered steps, escape-hatch buttons) stays in the server
- * component graph. Only this widget needs the Radix runtime + the
- * `CopyButton` clipboard handler; pulling everything into a single
- * client component would needlessly hydrate the static text around it
- * and inflate the marketing-page TBT.
- *
- * Translations come from the same `marketing.installation` namespace
- * the parent reads on the server — the `NextIntlClientProvider`
- * mounted at the locale layout makes the hook resolve to the same
- * messages without re-fetching.
- */
+/** Lifted out of `InstallationSection` so the surrounding copy stays server-rendered — keeps marketing TBT down. */
 export function InstallTabs() {
   const t = useTranslations("marketing.installation");
 
@@ -46,13 +29,6 @@ export function InstallTabs() {
   );
 }
 
-/**
- * Single-line install command with a copy button. The command is
- * verbatim across locales (npm package paths are universal), but the
- * surrounding chrome — including the copy-button aria-label — still
- * flows through translations so screen-reader users hear the action
- * in their UI language.
- */
 function InstallCommand({ command, copyAria }: { command: string; copyAria: string }) {
   return (
     <div className="border-border bg-muted/40 flex items-center gap-2 rounded-lg border p-1 pl-4">
@@ -65,11 +41,7 @@ function InstallCommand({ command, copyAria }: { command: string; copyAria: stri
   );
 }
 
-/**
- * Multi-line usage code block. No copy button — developers must adapt
- * the `publicKey` and wrapper placement, and a one-click copy would
- * ship broken code.
- */
+/** No copy button — devs must adapt `publicKey` and wrapper placement, one-click would ship broken code. */
 function UsageSnippet({ code }: { code: string }) {
   return (
     <pre className="border-border bg-muted/40 overflow-x-auto rounded-lg border p-4 font-mono text-sm leading-relaxed">

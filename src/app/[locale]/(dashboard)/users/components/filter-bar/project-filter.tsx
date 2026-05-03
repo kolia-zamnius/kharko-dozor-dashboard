@@ -12,13 +12,6 @@ type ProjectFilterProps = {
   onChange: (projectIds: string[]) => void;
 };
 
-/**
- * Multi-select project filter as a popover with checkmark list.
- *
- * Reads the org's projects via the existing `useProjectsQuery` — one cache
- * entry shared across any component that needs the project list. The filter
- * shows a badge with the count of selected projects when > 0.
- */
 export function ProjectFilter({ selected, onChange }: ProjectFilterProps) {
   const t = useTranslations("users.list.projectFilter");
   const { data: projects } = useProjectsQuery();

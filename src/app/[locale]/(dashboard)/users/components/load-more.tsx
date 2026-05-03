@@ -8,10 +8,6 @@ type LoadMoreProps = {
   isLoading: boolean;
 };
 
-/**
- * Cursor-pagination trigger. Shows a centered "Load more" button with
- * an inline spinner while the next page is in flight.
- */
 export function LoadMore({ onClick, isLoading }: LoadMoreProps) {
   const t = useTranslations("users.list");
   return (

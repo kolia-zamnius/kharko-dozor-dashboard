@@ -1,28 +1,8 @@
 "use server";
 
 /**
- * Server Actions backing the sign-in / sign-up wizards.
- *
- * @remarks
- * Every action returns {@link ActionResult} — a discriminated union that
- * forces callers to narrow on `result.ok` before touching `data` or
- * `error`. Error codes exchanged between server and client are kept as
- * string sentinels (`"ACCOUNT_EXISTS"`, `"ACCOUNT_NOT_FOUND"`,
- * `"RATE_LIMITED"`) rather than user-facing prose — the client owns the
- * copy so we can swap wording without re-deploying the server.
- *
- * Logging goes through {@link log} from `@/server/logger` — `info` for
- * normal flow events, `warn` for rate-limit hits / blocked attempts.
- * Email addresses are deliberately NOT redacted (operational debug
- * data — they're how oncall correlates an incident to a specific
- * user); API-key plaintext, OTP codes, and session cookies must never
- * land in the data object regardless. Auth.js itself logs the
- * `?error=` code on failed callbacks, which is what we actually need
- * for incident triage.
- *
- * @see src/app/(auth)/sign-in/components/sign-in-form/index.tsx — client consumer
- * @see src/app/(auth)/sign-up/components/sign-up-form.tsx — client consumer
- * @see src/server/auth/otp/rate-limit.ts — OTP rate-limit source of truth
+ * Error codes are string sentinels (`"ACCOUNT_EXISTS"`, `"RATE_LIMITED"`) so
+ * the client owns the copy — wording changes without re-deploying the server.
  */
 
 import { signInSchema, signUpSchema } from "@/app/[locale]/(auth)/validators";
@@ -33,17 +13,6 @@ import { log } from "@/server/logger";
 import { cookies } from "next/headers";
 
 
-/**
- * Discriminated-union return shape for every Server Action in this file.
- *
- * @remarks
- * Callers narrow on `result.ok`:
- * ```ts
- * const result = await prepareSignIn(email);
- * if (!result.ok) return toast.error(result.error);
- * const { hasPasskey } = result.data;
- * ```
- */
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
 type CheckEmailResult = {
@@ -105,7 +74,6 @@ export async function prepareSignUp(name: string, email: string): Promise<Action
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  // Existence check and rate-limit probe are independent — parallelise.
   const [existing, rateLimit] = await Promise.all([
     prisma.user.findUnique({ where: { email: parsed.data.email } }),
     queryOtpRateLimit(parsed.data.email),

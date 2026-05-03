@@ -13,16 +13,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("orgsTitle") };
 }
 
-/**
- * Server Component entrypoint for `/settings/organizations`.
- *
- * @remarks
- * Prefetches the orgs list + pending invites into the query client so
- * the page-level Suspense boundary in `OrganizationsSettings` resolves
- * from cache on first render — same hydration pattern as `/replays`
- * and `/users`. No live polling on this page, so the prefetch payload
- * stays valid through the initial paint.
- */
 export default async function OrganizationsSettingsPage() {
   const session = await auth();
   if (!session?.user?.id) return null;

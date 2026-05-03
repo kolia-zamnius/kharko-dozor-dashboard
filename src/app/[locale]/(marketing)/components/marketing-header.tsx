@@ -10,25 +10,10 @@ import { LocaleSelectCompact } from "./locale-select-compact";
 import { ThemeToggle } from "./theme-toggle";
 
 /**
- * Marketing-zone sticky header — a minimal shell that replaces the
- * dashboard navbar for the `/` landing surface.
- *
- * @remarks
- * Pure Server Component with **no per-request data**. A single primary
- * CTA ("Get started") is the same for every visitor regardless of
- * session state — the marketing surface is overwhelmingly an
- * anonymous-prospect funnel, and the proxy already redirects authed
- * users away from `/sign-up` to the dashboard (`src/proxy.ts:74-75`).
- * A returning logged-in visitor who clicks "Get started" gets a
- * single-hop bounce to `/users`; the gain in exchange is making the
- * entire marketing tree statically generatable, which slashes TTFB and
- * lets Lighthouse mobile LCP clear the 90 threshold. A separate
- * "Sign in" button was deliberately removed — "Get started" is enough
- * for new visitors and returning users land on the dashboard either
- * way once they auth.
- *
- * The locale picker is a small Client Component — that keeps the rest
- * of the header in the Server Component graph.
+ * No per-request data so the marketing tree stays statically generatable —
+ * matters for Lighthouse mobile LCP. Single CTA "Get started" works for
+ * everyone (proxy redirects authed users away from `/sign-up`). Locale
+ * picker is the only client island.
  */
 export async function MarketingHeader() {
   const locale = (await getLocale()) as Locale;
@@ -44,11 +29,9 @@ export async function MarketingHeader() {
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <LocaleSelectCompact currentLocale={locale} />
-        {/* Docs link uses raw `<a href>` because the docs zone lives
-            outside the `[locale]/` pipeline — typed `Link` from
-            `@/i18n/navigation` would prefix `/uk/documentation/...` and
-            404. */}
+        {/* Raw `<a href>` — docs zone is outside `[locale]/`, typed Link would prefix `/uk/documentation/...` and 404. */}
         <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+
           <a href={EXTERNAL_LINKS.docs}>{t("documentation")}</a>
         </Button>
         <Button asChild size="sm">

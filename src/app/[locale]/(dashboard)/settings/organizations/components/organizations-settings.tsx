@@ -10,19 +10,6 @@ import { CreateOrgCard } from "./create-org-card";
 import { OrganizationCard } from "./org-card";
 import { PendingInvitesSection } from "./pending-invites";
 
-/**
- * Composition root for `/settings/organizations`.
- *
- * @remarks
- * Suspense composition root: one page-level `<Suspense>` fallback
- * (single Spinner) wraps both query reads. Errors bubble to the
- * nearest `error.tsx`. Both queries dispatch in parallel inside
- * `OrganizationsSettingsContent` — TanStack kicks off both fetches
- * on mount and Suspense waits for both.
- *
- * Child components are pure: `PendingInvitesSection` takes `invites`
- * as a required prop and knows nothing about loading states.
- */
 export function OrganizationsSettings() {
   const t = useTranslations("settings.orgs");
   return (

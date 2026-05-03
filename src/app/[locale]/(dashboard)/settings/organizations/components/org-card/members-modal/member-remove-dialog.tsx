@@ -23,18 +23,9 @@ type MemberRemoveDialogProps = {
 };
 
 /**
- * Dual-purpose confirmation dialog for the members-modal row actions:
- *   - **Remove other member** (owner removing someone else)
- *   - **Leave organization** (member removing themselves)
- *
- * Both operations hit the same `useRemoveMemberMutation`, but copy and
- * post-success behaviour differ. Using one component keeps the row UI
- * consistent (same icon position, same dialog look) while letting the
- * `isSelf` flag flip the language and trigger the modal close.
- *
- * The mutation lives inside this component (not the parent members modal)
- * so each row's in-flight state is naturally scoped — no need for
- * `mutation.variables === member.id` matching to disable the right row.
+ * Dual-purpose — `isSelf` flips language + post-success behaviour. Mutation
+ * lives per-component so in-flight state is naturally row-scoped (no
+ * `variables === member.id` matching).
  */
 export function MemberRemoveDialog({ org, member, isSelf, onLeaveSuccess }: MemberRemoveDialogProps) {
   const t = useTranslations("settings.orgs.members");
@@ -47,8 +38,7 @@ export function MemberRemoveDialog({ org, member, isSelf, onLeaveSuccess }: Memb
         orgId: org.id,
         memberId: member.id,
         isSelf,
-        // `orgName` only carried for self-leave so the dynamic
-        // `meta.successKey` can render `You left ${orgName}`.
+        // Self-leave only — drives the dynamic `meta.successKey`.
         orgName: isSelf ? org.name : undefined,
       },
       {

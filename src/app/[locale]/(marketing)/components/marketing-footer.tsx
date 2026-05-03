@@ -4,17 +4,6 @@ import Image from "next/image";
 
 import { EXTERNAL_LINKS } from "../lib/external-links";
 
-/**
- * Marketing footer — four columns on desktop collapsing to a stacked
- * layout on mobile. All copy lives in `marketing.footer.*`; the URLs
- * come from {@link EXTERNAL_LINKS} so flipping the docs destination
- * once the public docs site ships is a single-line change.
- *
- * @remarks
- * Icons are imported from `@phosphor-icons/react/dist/ssr` so they
- * render at HTML-response time without dragging the full Phosphor
- * SVG bundle into the Server Component graph.
- */
 export async function MarketingFooter() {
   const t = await getTranslations("marketing.footer");
   const year = new Date().getFullYear();
@@ -44,10 +33,7 @@ export async function MarketingFooter() {
               </a>
             </li>
             <li>
-              {/* Docs is in-app at `/documentation` (see EXTERNAL_LINKS.docs).
-                  Plain `<a href>` because the docs zone lives outside the
-                  `[locale]/` pipeline — typed `Link` from `@/i18n/navigation`
-                  would prefix `/uk/documentation/...` and 404. */}
+              {/* Raw `<a>` — docs zone outside `[locale]/`, typed Link would prefix `/uk/documentation/...` and 404. */}
               <a href={EXTERNAL_LINKS.docs} className="hover:text-foreground transition-colors">
                 {t("resourcesDocs")}
               </a>

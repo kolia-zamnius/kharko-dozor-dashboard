@@ -11,16 +11,7 @@ import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";
 import { INVITE_ROLE_OPTIONS } from "../../role-options";
 
-/**
- * Top-of-modal form for sending a brand-new invite. Pure: takes the org,
- * owns its own form state, fires the mutation, resets on success. The
- * mutation already invalidates the pending-invites query, so the table
- * below refreshes on its own — no shared state / callbacks needed.
- *
- * Stays mounted while the Pending invites table loads, edits, and
- * revokes — the admin's primary "add someone" flow isn't blocked on
- * the list fetch.
- */
+/** Mutation invalidates the pending-invites query — table below refreshes on its own, no shared state needed. */
 export function NewInviteForm({ org }: { org: Organization }) {
   const t = useTranslations("settings.orgs.invite");
   const tRoles = useTranslations("settings.orgs.roles");

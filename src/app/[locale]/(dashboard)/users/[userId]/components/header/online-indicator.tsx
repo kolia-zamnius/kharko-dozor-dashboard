@@ -11,13 +11,7 @@ type OnlineIndicatorProps = {
   fallbackLastSeenAt?: string | null;
 };
 
-/**
- * Live-updating online badge driven by `useUserStatusQuery`, which polls the
- * cheap `/status` endpoint on an interval (see `STATUS_POLL_INTERVAL_MS`).
- *
- * The query keeps its own cache and is independent of the detail query, so
- * polling doesn't churn the heavier payloads.
- */
+/** Polls the cheap `/status` endpoint on its own cache key — heavier detail/activity payloads don't churn. */
 export function OnlineIndicator({ userId, fallbackLastSeenAt }: OnlineIndicatorProps) {
   const t = useTranslations("users.detail.online");
   const { formatRelative, formatDateTime } = useFormatters();

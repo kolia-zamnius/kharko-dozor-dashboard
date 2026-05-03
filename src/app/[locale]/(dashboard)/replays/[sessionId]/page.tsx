@@ -14,20 +14,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * `/replays/[sessionId]` — Server Component entry for the replay
- * player.
- *
- * @remarks
- * Server-side cross-org guard: a guessed URL pointing at a session in
- * a different organization (or no session at all) returns the proper
- * 404 page rather than a 200 shell that silently fails its client
- * fetch. Mirrors the users-detail page pattern.
- *
- * Session detail itself is still fetched client-side via
- * `useSessionQuery` inside the update-indicator hook — there's no
- * prefetch here on purpose. The header polls live, and we want that
- * cadence owned by one place (the hook) rather than split between
- * server prefetch and client polling.
+ * Server-side cross-org guard so a guessed URL returns a real 404 (not a
+ * 200 shell that silently fails). No prefetch — `useSessionQuery` polls live
+ * and that cadence stays owned by one place (the indicator hook).
  */
 export default async function ReplayPage({ params }: { params: Promise<{ sessionId: string }> }) {
   const { sessionId } = await params;

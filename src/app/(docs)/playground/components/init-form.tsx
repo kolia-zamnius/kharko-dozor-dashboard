@@ -8,17 +8,9 @@ import { Field } from "./field";
 import { Section } from "./section";
 
 /**
- * Step 1 — paste the API key, hit Initialize.
- *
- * @remarks
- * Init runs with `privacyMaskInputs: false` and `autoStart: false`
- * so (1) the privacy demo below shows three mechanisms in isolation
- * and (2) the user explicitly clicks Start, exercising the lifecycle
- * state transitions.
- *
- * Identity capture is deliberately NOT here — it lives next to the
- * Identify action in `Controls` so the inputs sit beside the button
- * that consumes them.
+ * `privacyMaskInputs: false` — privacy demo below isolates the three
+ * mechanisms; `autoStart: false` so the user clicks Start manually and
+ * exercises lifecycle transitions.
  */
 export function InitForm() {
   const dozor = useDozor();

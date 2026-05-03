@@ -13,21 +13,10 @@ import { OnlineIndicator } from "./online-indicator";
 
 type UserHeaderProps = {
   user: TrackedUserDetail;
-  /**
-   * OWNER/ADMIN of the active organization. Gates the pencil button that
-   * opens `<DisplayNameModal>` — the underlying
-   * `PATCH /api/tracked-users/[userId]/display-name` is ADMIN-guarded, so
-   * rendering the trigger for viewers would only surface a 403 toast.
-   */
+  /** Gates the edit-display-name trigger. Route is ADMIN-guarded; rendering for viewers would only surface a 403 toast. */
   canManage: boolean;
 };
 
-/**
- * Top-of-page identity card. Intentionally dense: avatar + externalId + live
- * online indicator on the left; three contextual chips (project, first seen,
- * sessions total) on the right. The session count here doubles as a "big
- * number" before the detailed stats grid below.
- */
 export function UserHeader({ user, canManage }: UserHeaderProps) {
   const t = useTranslations("users.detail.header");
   const { formatDate } = useFormatters();

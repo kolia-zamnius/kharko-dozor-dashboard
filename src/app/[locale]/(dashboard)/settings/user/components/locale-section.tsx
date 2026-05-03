@@ -12,30 +12,10 @@ import { DEFAULT_LOCALE, LOCALE_LABELS, LOCALES, type Locale } from "@/i18n/conf
 import { usePathname, useRouter } from "@/i18n/navigation";
 
 /**
- * Language picker on `/settings/user`.
- *
- * @remarks
- * The happy path is a three-step chain that has to settle atomically or
- * the UI flashes inconsistent state:
- *
- *   1. `PATCH /api/user/locale` — persist the preference (mutation).
- *   2. `session.update({})` — force a JWT refresh so `session.user.locale`
- *      tracks the DB. The `jwt` callback re-reads the user row; the
- *      `session` callback narrows it to the session via `hasLocale`.
- *   3. `router.replace(pathname, { locale })` — the typed navigation
- *      helper re-writes the URL prefix (`/en/...` → `/uk/...`) and
- *      remounts the tree under `NextIntlClientProvider`, so every
- *      `useTranslations()` consumer picks up the new messages.
- *
- * Wrapping `session.update` + `router.replace` in `useTransition`
- * keeps the Select disabled through the transition; the select's
- * controlled `value` stays on the previous locale until the navigation
- * commits, so there's no flicker where the picker advertises a locale
- * the tree hasn't switched to yet.
- *
- * @see src/app/api/user/locale/route.ts — server counterpart.
- * @see src/api-client/user/mutations.ts::useUpdateLocaleMutation — write.
- * @see src/server/auth/callbacks/jwt.ts — re-reads `locale` on refresh.
+ * Three-step chain — must settle atomically or the picker flashes a locale
+ * the tree hasn't switched to: PATCH → `session.update({})` (JWT refresh) →
+ * `router.replace({pathname}, {locale})`. `useTransition` keeps the Select
+ * disabled until the navigation commits.
  */
 export function LocaleSection() {
   const t = useTranslations("settings.user.locale");
@@ -58,14 +38,7 @@ export function LocaleSection() {
         onSuccess: () => {
           startTransition(async () => {
             await update({});
-            // Preserve `?query` across the locale swap — `router.replace`
-            // with the string form drops it. Object form threads the
-            // current searchParams through next-intl's typed navigation
-            // so switching locale on `/replays?range=7d&search=foo`
-            // lands on `/uk/replays?range=7d&search=foo` instead of
-            // `/uk/replays`. Hash isn't in searchParams (client-only)
-            // but the browser retains it across `router.replace` by
-            // default, matching the proxy-side redirect behaviour.
+            // Object form preserves `?query` across the swap — the string form drops it.
             const query = searchParams ? Object.fromEntries(searchParams.entries()) : undefined;
             router.replace({ pathname, query }, { locale: next });
           });

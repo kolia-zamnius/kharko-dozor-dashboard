@@ -6,15 +6,6 @@ type SectionProps = {
   children: ReactNode;
 };
 
-/**
- * Numbered/labelled section wrapper used by every playground page.
- *
- * @remarks
- * `description` is optional so the component subsumes the two shapes
- * the playground needs: a bare heading + children (main page steps
- * that lead with their own intro paragraph) and a heading + sub-text
- * + children (interactions page sections with no other intro).
- */
 export function Section({ heading, description, children }: SectionProps) {
   return (
     <section className="space-y-4">

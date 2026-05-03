@@ -32,27 +32,12 @@ type UserDetailShellProps = {
 };
 
 /**
- * Composition root for the user detail page.
+ * One Suspense for the whole tree — four queries (detail/activity/timeline/
+ * first-page-sessions) resolve together so the page streams in once. Range +
+ * pageLimit are hoisted because the activity query key depends on both.
  *
- * @remarks
- * Suspense boundary wraps the entire content — one page-level
- * `<Spinner />` fallback. Errors bubble to
- * `/users/[userId]/error.tsx`. Global `throwOnError` in
- * `lib/query-client.ts` only throws initial-load failures, so
- * background polling flakes stay silent.
- *
- * Every data query lives in `UserDetailShellContent` (detail,
- * activity, timeline, first-page sessions). Suspense waits for all
- * four to resolve, then the full tree streams in at once. Child
- * sections are pure views that receive data as props; the range /
- * pagination state is hoisted here because the `activity` query key
- * depends on both.
- *
- * `SessionsTable` is the one exception — it still calls its own
- * `useTrackedUserSessionsSuspenseQuery` internally for page 2+
- * because it owns the cursor state for "Load more". On first render
- * the same hook returns the first page this shell already warmed,
- * so TanStack dedupes to zero extra network cost.
+ * `SessionsTable` re-calls the same query for page 2+ — TanStack dedupes the
+ * first page to zero network cost.
  */
 export function UserDetailShell({ userId }: UserDetailShellProps) {
   return (
@@ -71,22 +56,16 @@ export function UserDetailShell({ userId }: UserDetailShellProps) {
 function UserDetailShellContent({ userId }: UserDetailShellProps) {
   const { data: user } = useTrackedUserSuspenseQuery(userId);
 
-  // OWNER/ADMIN of the active org may edit `displayName` — shared hook,
-  // see `useCanManageActiveOrg` for the derivation contract.
   const canManage = useCanManageActiveOrg();
 
-  // Range is driven by URL (`?range=6h|24h|7d`) so the view is shareable.
+  // URL-driven so the view is shareable.
   const searchParams = useSearchParams();
   const range = parseActivityRange(searchParams?.get("range"));
 
-  // `pageLimit` is part of the activity query key — clicking "Show more"
-  // triggers a fresh fetch that ALSO refreshes stats and chart as a side
-  // effect, since all three share one query.
+  // `pageLimit` is part of the activity query key — Show More refreshes stats + chart as a side effect.
   const [pageLimit, setPageLimit] = useState(PAGE_DISTRIBUTION_INITIAL);
 
-  // Reset pagination when range changes — a 7d view might have dozens of
-  // unique pages while a 6h view has 3. Uses the "setState during render"
-  // pattern to avoid a redundant render trip.
+  // setState-during-render — `useEffect` would need an extra render trip.
   const [prevRange, setPrevRange] = useState(range);
   if (prevRange !== range) {
     setPrevRange(range);
@@ -101,11 +80,8 @@ function UserDetailShellContent({ userId }: UserDetailShellProps) {
     setPageLimit((n) => Math.max(n - PAGE_DISTRIBUTION_STEP, PAGE_DISTRIBUTION_INITIAL));
   }, []);
 
-  // Hoisted queries — Suspense waits for all to resolve, after which
-  // `placeholderData: keepPreviousData` on each keeps the previous
-  // snapshot visible during subsequent refetches (range changes,
-  // polling ticks, show-more). No loading branch here — Suspense above
-  // handles the initial gate, `LastUpdated` shows the in-flight dot.
+  // `keepPreviousData` on each keeps the previous snapshot visible during
+  // subsequent refetches (range, polling, show-more). `LastUpdated` shows the in-flight dot.
   const activity = useUserActivitySuspenseQuery(userId, range, pageLimit);
   const timeline = useUserTimelineSuspenseQuery(userId, range);
   const initialSessions = useTrackedUserSessionsSuspenseQuery(userId, undefined);

@@ -10,11 +10,6 @@ type StatusBadgeProps = {
   className?: string;
 };
 
-/**
- * Colored status pill for the users table. Pure view — the status is
- * derived on the server and passed as a prop, so this component never
- * calls a hook or computes thresholds.
- */
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   const t = useTranslations("users.status");
   const color = STATUS_COLOR[status];

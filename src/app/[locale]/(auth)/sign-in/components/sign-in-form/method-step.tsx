@@ -1,11 +1,11 @@
 import { checkOtpRateLimit } from "@/app/[locale]/(auth)/actions/auth";
 import { Button } from "@/components/ui/primitives/button";
 import { useRouter } from "@/i18n/navigation";
-import type { EnabledProviders } from "@/lib/auth/enabled-providers.types";
+import type { EnabledProviders } from "@/lib/auth/enabled-providers";
 import { FingerprintIcon } from "@phosphor-icons/react";
-import { useTranslations } from "next-intl";
 import { signIn } from "next-auth/react";
 import { signIn as signInWithPasskey } from "next-auth/webauthn";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,20 +21,10 @@ type MethodStepProps = {
 };
 
 /**
- * Second screen of the sign-in flow: having resolved the email, let
- * the user pick between "send me a one-time code" and "use my passkey".
- *
- * Both actions do a rate-limit check or WebAuthn ceremony inline and
- * report back up:
- *   - OTP sent        → `onOtpRequested()` (orchestrator flips to OTP step)
- *   - Passkey success → direct `router.push(callbackUrl)` (session is live)
- *   - User changed mind → `onBack()` (back to EmailStep)
- *
- * The passkey button is disabled when `hasPasskey` is false — the
- * server already told us there's no authenticator for this email in
- * the previous step. Showing it greyed out instead of hiding is
- * intentional: it educates the user about the feature and nudges
- * them to set it up in Settings after they sign in.
+ * Passkey button shown disabled (not hidden) when `hasPasskey` is false —
+ * educates the user about the feature and nudges Settings setup post-sign-in.
+ * Passkey success is direct `router.push(callbackUrl)` (session live);
+ * OTP-sent reports up via `onOtpRequested` so the orchestrator flips step.
  */
 export function MethodStep({ email, hasPasskey, callbackUrl, enabled, onOtpRequested, onBack }: MethodStepProps) {
   const t = useTranslations("auth");

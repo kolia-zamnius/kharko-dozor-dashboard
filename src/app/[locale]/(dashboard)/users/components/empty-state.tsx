@@ -1,10 +1,6 @@
 import { UsersIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
-/**
- * Empty state shown when no tracked users match the current filters,
- * or when the org has no tracked users at all.
- */
 export function EmptyState({ hasFilters }: { hasFilters: boolean }) {
   const t = useTranslations("users.list.empty");
   return (

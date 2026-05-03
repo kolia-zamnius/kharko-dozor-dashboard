@@ -9,24 +9,9 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 /**
- * Dynamic OpenGraph image for the marketing landing — rendered per
- * locale by Next.js's `opengraph-image.tsx` convention.
- *
- * @remarks
- * Rendered at request time via `next/og`'s `ImageResponse` on the
- * Node runtime (no `export const runtime = "edge"` — the default
- * runtime works fine and keeps this aligned with the rest of the
- * Server Component graph that reads `next-intl` + env on the server).
- * Shares stay in sync with the copy automatically — adjusting the
- * visual or headline is a single-file edit; there's no PNG asset to
- * regenerate.
- *
- * The visual echoes the landing hero: near-black background, muted
- * eyebrow badge, large sans-serif headline, subdued sub-line. Colours
- * are hardcoded hex (not `var(--color-*)`) because `ImageResponse`
- * runs outside the DOM so Tailwind / CSS variables don't resolve.
- * Only inline `style` plus a subset of Tailwind class names are
- * supported; advanced selectors are not.
+ * Hardcoded hex (not `var(--color-*)`) — `ImageResponse` runs outside the DOM
+ * so Tailwind/CSS vars don't resolve. Only inline `style` + a Tailwind class
+ * subset is supported.
  */
 export default async function OpengraphImage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: raw } = await params;

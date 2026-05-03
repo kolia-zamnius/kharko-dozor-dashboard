@@ -11,17 +11,6 @@ type UserStatsProps = {
   range: ActivityRange;
 };
 
-/**
- * Metric grid driven by the activity summary.
- *
- * Pure view — the parent (`UserDetailShell`) hoists `useUserActivityQuery`
- * and passes `data` down as a prop, so this component never reads from
- * the query client directly. Under the hood the shell's query is the
- * same one that powers `ActivityChart` and `PageDistribution` (one key,
- * three consumers, one network request).
- *
- * Layout: 2 cols on mobile → 3 on sm → 6 on xl. Two rows on most screens.
- */
 export function UserStats({ data, range }: UserStatsProps) {
   const t = useTranslations("users.detail.stats");
   const tActivity = useTranslations("users.activity");

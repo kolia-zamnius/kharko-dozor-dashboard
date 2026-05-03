@@ -12,9 +12,6 @@ type FilterBarProps = {
   onDateRangeChange: (range: SessionDateRange) => void;
 };
 
-/**
- * Composite filter bar — search input + project and date range filters.
- */
 export function FilterBar({
   search,
   onSearchChange,

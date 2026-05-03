@@ -12,9 +12,6 @@ type FilterBarProps = {
   onStatusesChange: (statuses: UserActivityStatus[]) => void;
 };
 
-/**
- * Composite filter bar — search input + project and status multi-selects.
- */
 export function FilterBar({
   search,
   onSearchChange,

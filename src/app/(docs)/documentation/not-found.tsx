@@ -6,24 +6,10 @@ import { ArrowLeftIcon, BookOpenIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 /**
- * Docs-zone 404 — fires when the catch-all `[...slug]` page can't
- * resolve a slug to a Fumadocs source entry.
- *
- * @remarks
- * Scoped to the `(docs)` route group so it inherits the docs sidebar
- * + search shell from `layout.tsx` instead of bubbling up to
- * `src/app/global-not-found.tsx` (which would render a localised
- * dashboard 404 — incoherent inside an English-only docs surface).
- *
- * Visual style mirrors Fumadocs's own `DefaultNotFound` (centred
- * column, large 404 number, two CTAs) so a visitor who lands on a
- * dead link sees something consistent with the rest of the docs
- * theme — not a sparse `<DocsPage>` shell.
- *
- * Plain `next/link` is used here rather than the typed
- * `@/i18n/navigation` helpers — the docs zone is deliberately outside
- * the `[locale]` pipeline, so the locale-prefixing typed `Link` would
- * route requests like `/uk/documentation/...` that don't exist.
+ * `(docs)`-scoped so it inherits the docs shell instead of bubbling to
+ * `global-not-found.tsx` (which would render a localised dashboard 404 — wrong
+ * for an English-only zone). Plain `next/link` — typed `i18n/navigation` would
+ * locale-prefix to `/uk/documentation/...` which doesn't exist.
  */
 export default function DocumentationNotFound() {
   return (

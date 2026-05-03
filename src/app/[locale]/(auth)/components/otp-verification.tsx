@@ -15,29 +15,13 @@ type OTPVerificationProps = {
 };
 
 /**
- * Shared OTP entry screen — consumed by both sign-in and sign-up
- * wizards as the terminal step.
+ * Verification is imperative navigation (not `fetch`) — Auth.js contract for
+ * email-OTP providers requires a full browser navigation so the session
+ * cookie sets and the user lands on `callbackUrl`.
  *
- * @remarks
- * Owns three pieces of local state:
- *   - `code` — 6-digit buffer driven by {@link InputOTP}.
- *   - `verifying` — gate set on `onComplete` so the user can't trigger
- *      a second navigation while the callback is in flight.
- *   - `cooldown` — seconds until the user may request a fresh code.
- *      Seeded from `OTP_COOLDOWN_SECONDS`, reset to the precise
- *      `retryAfter` returned by the server when the rate-limit probe
- *      reports a cooldown.
- *
- * Verification is an imperative navigation (not `fetch`) to
- * `/api/auth/callback/nodemailer?token=…` — that's the Auth.js contract
- * for email-OTP providers. The full browser navigation is what lets
- * Auth.js set the session cookie and land the user on `callbackUrl`.
- *
- * Note: `useRouter` here is deliberately imported from `next/navigation`
- * rather than `@/i18n/navigation` because the target is an API route
- * (`/api/auth/callback/…`) that sits outside the `[locale]/` segment;
- * passing it through the intl-aware router would apply locale-prefix
- * logic to a path that must remain untouched.
+ * `useRouter` from `next/navigation` (NOT `@/i18n/navigation`) — target is
+ * `/api/auth/callback/...`, outside `[locale]/`; the intl router would apply
+ * locale-prefix logic to a path that must stay untouched.
  */
 export function OTPVerification({ email, callbackUrl = "/users", onBack }: OTPVerificationProps) {
   const t = useTranslations("auth");
@@ -60,10 +44,8 @@ export function OTPVerification({ email, callbackUrl = "/users", onBack }: OTPVe
     if (verifying) return;
     setVerifying(true);
     const params = new URLSearchParams({ token: otp, email, callbackUrl });
-    // Callback path must match the provider id registered in
-    // `server/auth/providers.ts`. After the Resend → Nodemailer migration
-    // the id is `"nodemailer"`; hitting `/callback/resend` surfaces
-    // `Provider with id "resend" not found` at the Auth.js layer.
+    // Path must match the provider id registered in `server/auth/providers.ts`
+    // — `nodemailer`. `/callback/resend` would 404 at the Auth.js layer.
     router.replace(`/api/auth/callback/nodemailer?${params.toString()}`);
   }
 

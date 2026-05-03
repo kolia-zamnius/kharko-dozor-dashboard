@@ -14,21 +14,9 @@ type ReplayShellProps = {
 };
 
 /**
- * Composition root for the replay page.
- *
- * Delegates snapshot / latest / diff bookkeeping to
- * `useSessionUpdateIndicator`. This component only worries about the
- * three top-level render states (loading, missing, ready) and wires
- * the indicator's outputs into `CompactHeader` (refresh button) and
- * `Player` (stable snapshot + `key`-based remount on apply).
- *
- * The `key={indicator.refreshTick}` on `<Player />` is a pragmatic
- * unmount-remount trigger: rrweb's `Replayer` has no clean
- * re-initialize API that safely swallows a fresh event stream mid-
- * playback, so we tear the whole subtree down and re-init on the new
- * snapshot. The admin already understands this — the refresh button's
- * tooltip advertises it — and resetting to `t=0` is acceptable for an
- * explicit user action.
+ * `key={refreshTick}` on `<Player />` forces unmount-remount on apply — rrweb
+ * has no clean re-init API that swallows a fresh event stream mid-playback.
+ * The reset to t=0 is acceptable for an explicit refresh action.
  */
 export function ReplayShell({ sessionId }: ReplayShellProps) {
   const t = useTranslations("replays.detail");

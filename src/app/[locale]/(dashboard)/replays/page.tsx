@@ -12,23 +12,15 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("listTitle") };
 }
 
-/**
- * Server Component entrypoint for the replays list page.
- *
- * Prefetches the default list (no filters, first page) and summary
- * into the query client so the shell's hooks resolve instantly from
- * cache on first render — zero waterfall. Filter-driven queries are
- * NOT prefetched — they're triggered by client interaction.
- */
+/** Prefetches default-list + summary so the shell's hooks resolve from cache — zero waterfall. */
 export default async function ReplaysPage() {
   const session = await auth();
 
-  // Defensive — proxy.ts should have redirected unauthenticated users.
+  // Defensive — proxy.ts should have redirected anon callers.
   if (!session?.user?.id) return null;
 
   const queryClient = getQueryClient();
 
-  // Prefetch default list + summary in parallel.
   await Promise.all([
     queryClient.prefetchQuery(sessionQueries.list()),
     queryClient.prefetchQuery(sessionQueries.summary()),

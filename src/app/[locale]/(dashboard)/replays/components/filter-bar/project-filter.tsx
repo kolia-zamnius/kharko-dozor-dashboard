@@ -12,10 +12,6 @@ type ProjectFilterProps = {
   onChange: (projectIds: string[]) => void;
 };
 
-/**
- * Multi-select project filter as a popover with checkmark list.
- * Identical pattern to the users page — shared cache via `useProjectsQuery`.
- */
 export function ProjectFilter({ selected, onChange }: ProjectFilterProps) {
   const t = useTranslations("replays.list.projectFilter");
   const { data: projects } = useProjectsQuery();

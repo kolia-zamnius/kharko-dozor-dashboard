@@ -12,14 +12,10 @@ type ProjectTraitKeySectionProps = {
 };
 
 /**
- * Priority-3 editor: project-wide default trait key.
- *
- * Unlike the other two sections, this one mutates a `Project` field rather
- * than `TrackedUser` — it applies to every user in the project that
- * doesn't have a local override. The mutation's `onSuccess` invalidates
- * the entire `["tracked-users", "detail"]` query scope, so any currently
- * mounted user detail refetches and picks up the new resolved
- * `displayName` side-effect-style.
+ * Priority 3 — mutates `Project.defaultDisplayNameTraitKey` (NOT `TrackedUser`).
+ * Affects every user in the project without a local override; mutation
+ * invalidates the whole `["tracked-users", "detail"]` scope so mounted detail
+ * pages refetch.
  */
 export function ProjectTraitKeySection({ user }: ProjectTraitKeySectionProps) {
   const t = useTranslations("users.detail.displayName.project");

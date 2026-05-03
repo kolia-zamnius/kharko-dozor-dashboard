@@ -6,22 +6,9 @@ import { MarketingFooter } from "./components/marketing-footer";
 import { MarketingHeader } from "./components/marketing-header";
 
 /**
- * Marketing route group layout — minimal shell hosting the public-facing
- * landing surface. Replaces the dashboard navbar + drawer with a lean
- * header/footer pair so the viewport is dominated by content rather
- * than chrome.
- *
- * @remarks
- * Intentionally distinct from `(dashboard)/layout.tsx` — marketing is
- * always anonymous-accessible, never force-dynamic, and has no
- * per-page auth guard. The header reads session server-side for its
- * CTA (Sign in vs. Go to dashboard), so a logged-in author sees the
- * same page their visitors see.
- *
- * A "Skip to content" link is rendered as the first focusable element
- * — visually hidden until it receives focus, at which point it snaps
- * into view below the header. Keyboard and screen-reader users can
- * bypass the full navigation in a single Tab/Enter.
+ * Anonymous-accessible — no per-page auth guard. Header CTA reads session
+ * server-side. "Skip to content" is the first focusable element (visually
+ * hidden until focused) — keyboard/screen-reader bypass in one Tab/Enter.
  */
 export default async function MarketingLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations("common.a11y");

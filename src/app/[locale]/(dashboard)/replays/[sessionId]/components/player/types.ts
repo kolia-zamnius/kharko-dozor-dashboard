@@ -1,22 +1,11 @@
 import type { SessionEvent, SliceInfo } from "@/api-client/sessions/types";
 
 
-/**
- * Discriminated union for the player lifecycle.
- *
- * - "idle"            — no replayer mounted yet (initial / after reset)
- * - "playing"         — actively playing
- * - "paused"          — user-paused or replayer just became ready
- * - "finished"        — playback reached the end, user can replay or switch
- */
+/** `idle` = no replayer (initial/post-reset); `paused` = either user-paused or just-ready. */
 export type PlayerState = "idle" | "playing" | "paused" | "finished";
 
 
-/**
- * Thin interface over the raw rrweb Replayer instance. The Viewport
- * creates the Replayer and exposes this handle upward — consumers
- * (useReplayer, ControlBar) never touch the raw instance directly.
- */
+/** Thin interface over the raw rrweb Replayer — Viewport creates it, consumers only get this handle. */
 export type ReplayerHandle = {
   play: (timeOffset?: number) => void;
   pause: (timeOffset?: number) => void;
@@ -27,12 +16,8 @@ export type ReplayerHandle = {
 };
 
 
-/**
- * Single console log entry extracted from rrweb plugin events.
- * Single source of truth — consumed by extractConsoleLogs and ConsolePanel.
- */
 export type ConsoleLogEntry = {
-  /** Milliseconds offset from the first event in the session. */
+  /** ms offset from the first event in the session. */
   timeOffset: number;
   level: string;
   payload: string[];

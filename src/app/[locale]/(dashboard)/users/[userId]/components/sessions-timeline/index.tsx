@@ -18,45 +18,19 @@ type SessionsTimelineProps = {
   range: ActivityRange;
 };
 
-/** Height of one timeline lane in px. */
 const LANE_HEIGHT = 22;
-
-/**
- * Vertical gap between lanes in px. Kept small so the chart stays
- * compact even when concurrent sessions push the lane count past 4-5
- * on a busy day — a larger gap would push the whole card below the
- * fold at common viewport heights.
- */
+/** Compact gap — concurrent-session days can push lane count past 4-5; larger gaps push the card below the fold. */
 const LANE_GAP = 4;
 
-/**
- * Absolute timestamp for tooltip display (DD.MM HH:mm in the active
- * locale). Takes locale as an explicit arg — the helper lives outside
- * the component's render scope and can't hit `useLocale()` directly.
- */
+/** Locale arg is explicit — helper lives outside the render scope, no `useLocale()`. */
 function formatAbsolute(iso: string, locale: Locale): string {
   return formatDateTime(iso, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }, locale);
 }
 
 /**
- * Lane-packed session timeline for the selected activity range.
- *
- * @remarks
- * {@link assignLanes} does greedy interval scheduling so concurrent
- * sessions stack into parallel rows using the minimum number of lanes
- * — optimal vertical footprint. Still-open sessions (`endedAt: null`)
- * extend to the right edge of the window and render in emerald; it's
- * the only colour signal, intentionally sparse so the admin's eye
- * catches "this user is live right now" without the bar wall becoming
- * a traffic light.
- *
- * Each bar is a `<Link>` to `/replays/[sessionId]` — the tooltip
- * surfaces externalId, start/end times, duration, and slice count
- * without requiring a click. Empty state (no sessions in range)
- * renders a dashed placeholder for the same reason the histogram does.
- *
- * Pure view — `UserDetailShell` hoists the timeline query; this
- * component reads zero queries.
+ * `assignLanes` does greedy interval scheduling — minimum lanes for concurrent
+ * sessions. Open sessions (`endedAt: null`) extend to the window edge in
+ * emerald — the only colour signal, sparse so the wall doesn't become a traffic light.
  */
 export function SessionsTimeline({ data, range }: SessionsTimelineProps) {
   const t = useTranslations("users.detail.timeline");
@@ -189,13 +163,6 @@ export function SessionsTimeline({ data, range }: SessionsTimelineProps) {
   );
 }
 
-/**
- * Extract the layout computation so it can be memoized cheaply and
- * the render function stays small. Returns everything the render
- * needs: lane rows (from {@link assignLanes}), the window bounds used
- * by each bar's `left`/`width` math, and the axis labels (shared with
- * the histogram via {@link buildAxisLabels}).
- */
 function computeLayout(data: UserTimeline, locale: Locale) {
   const windowStart = new Date(data.from).getTime();
   const windowEnd = new Date(data.to).getTime();

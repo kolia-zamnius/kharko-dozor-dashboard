@@ -7,19 +7,7 @@ import { PrivacyDemo } from "./components/privacy-demo";
 import { Section } from "./components/section";
 import { StatusPanel } from "./components/status-panel";
 
-/**
- * Playground main page — composition root.
- *
- * @remarks
- * Each section reads SDK state through `useDozor()` directly, so the
- * page itself owns no state — it's pure composition. Sections were
- * extracted along the natural seams of the user's path: paste a key
- * (1), watch state (2), drive lifecycle + identify (3), explore
- * privacy attributes (4), navigate away (5).
- *
- * No server-side data, no auth, no localisation: the page sits inside
- * the `(docs)` route group and is bypassed in `proxy.ts`.
- */
+/** Pure composition — each section reads SDK state via `useDozor()` directly, page owns no state. */
 export default function PlaygroundPage() {
   return (
     <div className="space-y-10">

@@ -17,20 +17,9 @@ type PageDistributionProps = {
 };
 
 /**
- * Dense ranked list of pathnames the tracked user visited in the selected
- * range, sorted by time spent.
- *
- * Pure view — `UserDetailShell` hoists `useUserActivityQuery` and hands
- * `data` down as a prop. This component shares the data with `UserStats`
- * and `ActivityHistogram` under the same query key; the shell renders
- * all three with the same `data` reference.
- *
- * Pagination: server-side, growth-based. `pageLimit` is owned by the shell
- * and included in the query key. Clicking "Show more" bumps `pageLimit`
- * there, which changes the key and triggers a refetch; `keepPreviousData`
- * on the query means the current rows stay visible while page 2 lands.
- * `summary.uniquePages` carries the true total so we always know when
- * everything is visible.
+ * Pure view — shell hoists the activity query, all three children render off
+ * the same `data` reference. Server-side growth pagination — `pageLimit`
+ * lives in the query key; `summary.uniquePages` carries the true total.
  */
 export function PageDistribution({ data, pageLimit, onShowMore, onShowLess }: PageDistributionProps) {
   const t = useTranslations("users.detail.pages");

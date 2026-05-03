@@ -11,10 +11,7 @@ type CustomNameSectionProps = {
   user: TrackedUserDetail;
 };
 
-/**
- * Priority-1 editor: literal override, wins over every other resolver step.
- * Stored on `TrackedUser.customName`. Reset → sets the field to `null`.
- */
+/** Priority 1 — `TrackedUser.customName`, wins over every other resolver step. Reset → `null`. */
 export function CustomNameSection({ user }: CustomNameSectionProps) {
   const t = useTranslations("users.detail.displayName.custom");
   const mutation = useUpdateTrackedUserDisplayNameMutation();
@@ -27,9 +24,7 @@ export function CustomNameSection({ user }: CustomNameSectionProps) {
   const canReset = serverValue.length > 0;
   const busy = mutation.isPending;
 
-  // Success toasts come from `meta.successKey` in the mutation hook —
-  // it inspects the variables (set vs clear) and dispatches the right
-  // string via the global `MutationCache.onSuccess` handler.
+  // Toasts via `meta.successKey` — dispatch on set vs clear via the global `MutationCache.onSuccess` handler.
   function handleSet() {
     if (!canSet) return;
     mutation.mutate({ userId: user.id, customName: trimmed });

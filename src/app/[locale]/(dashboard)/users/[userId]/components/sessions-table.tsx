@@ -11,34 +11,14 @@ import { useFormatters } from "@/lib/use-formatters";
 
 type SessionsTableProps = {
   userId: string;
-  /**
-   * First page of sessions, pre-fetched by `UserDetailShell` and passed
-   * down so the initial render has data immediately — no internal
-   * loading state, no flash. Subsequent pages are fetched via the
-   * cursor state below.
-   */
+  /** First page from `UserDetailShell` — same query key, TanStack dedupes to zero network cost. */
   initialPage: PaginatedSessions;
 };
 
 /**
- * Paginated sessions table.
- *
- * Initial render: `initialPage` is passed in by `UserDetailShell`, which
- * has already warmed the underlying query under the same key. When this
- * component mounts it calls `useTrackedUserSessionsQuery(userId,
- * undefined)` for cursor=undefined; TanStack dedupes against the shell's
- * call and returns the cached first page synchronously — zero network
- * cost, zero loading flash.
- *
- * Load More: the cursor state is owned here (button-scoped, not
- * page-scoped, so it doesn't belong in the shell). Clicking "Load more"
- * swaps in the next cursor; the query re-fires with a new key,
- * `keepPreviousData` on the query keeps the current rows visible while
- * the next page is in flight, and on success we append into the local
- * `prevPages` accumulator. The button shows "Loading…" while the new
- * page is fetching — that's the one place a loading indicator appears
- * on this page after the initial mount, and it's button-scoped, which
- * is a different UX tier from full-page loading.
+ * Cursor state lives here (button-scoped, not page-scoped). `keepPreviousData`
+ * holds rows visible while the next page is in flight — Load More button is
+ * the only loading indicator post-mount.
  */
 export function SessionsTable({ userId, initialPage }: SessionsTableProps) {
   const t = useTranslations("users.detail.sessions");
@@ -46,8 +26,7 @@ export function SessionsTable({ userId, initialPage }: SessionsTableProps) {
   const [cursor, setCursor] = useState<string | undefined>();
   const { data = initialPage, isFetching } = useTrackedUserSessionsQuery(userId, cursor);
 
-  // Deduplication by id prevents duplicate keys when keepPreviousData
-  // holds the previous page's data while the next page is in flight.
+  // Dedup by id — `keepPreviousData` holds the previous page during fetch, would otherwise produce duplicate keys.
   const [prevPages, setPrevPages] = useState<SessionListItem[]>([]);
   const sessions = useMemo(() => {
     if (!cursor) return data.data;

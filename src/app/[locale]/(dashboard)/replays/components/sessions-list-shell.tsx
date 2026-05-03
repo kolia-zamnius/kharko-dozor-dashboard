@@ -1,10 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-// `useSearchParams` has no locale-aware twin in next-intl — read it
-// from `next/navigation`. `useRouter` swaps to the locale-aware
-// version so empty-query-string filter clears land on
-// `/{locale}/replays` instead of stripping the locale prefix.
+// next-intl has no locale-aware `useSearchParams` — read raw from `next/navigation`.
+// `useRouter` IS locale-aware so empty-query clears land on `/{locale}/replays`.
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { Suspense, useCallback, useMemo, useState } from "react";
@@ -31,31 +29,13 @@ import { StatsStrip } from "./stats-strip";
 import { SessionsTable } from "./sessions-table";
 
 /**
- * Composition root for the `/replays` page.
+ * URL-driven list shell — paired with `UsersListShell`. URL is the source of
+ * truth (every filter combo is shareable); `cursor`+`prevPages` accumulate
+ * pages with id-based Set dedup.
  *
- * @remarks
- * Implements the **"URL-driven list shell"** pattern — the same shape
- * shared with {@link UsersListShell}. Both shells:
- *   1. Read filter/sort state from `useSearchParams()` (URL is the
- *      source of truth, so every filter combination is shareable).
- *   2. Write updates via `router.replace(qs, { scroll: false })`,
- *      clearing `cursor` on any filter change.
- *   3. Keep `cursor` + `prevPages` in local state so "Load more"
- *      accumulates pages with `Set`-based dedup on id.
- *   4. Wrap a single page-level `<Spinner />` in `Suspense`; initial-
- *      load failures bubble to the nearest `error.tsx` via the global
- *      `throwOnError` policy, polling flakes stay in toast pipeline.
- *
- * Additional concern unique to this shell: it derives `canManage`
- * from the active-org role and threads it to `<SessionsTable>` so the
- * per-row delete control only renders for OWNER/ADMIN. The underlying
- * `DELETE /api/sessions/[id]` is ADMIN-guarded regardless (RBAC
- * double-validation).
- *
- * See `UsersListShell` JSDoc for the rule-of-3 deferral rationale
- * behind the ~38 % duplication between the two shells.
- *
- * @see ../../users/components/users-list-shell.tsx — sibling shell.
+ * `canManage` is threaded to `SessionsTable` so the delete control only
+ * renders for OWNER/ADMIN. The route is ADMIN-guarded regardless (double
+ * validation).
  */
 export function SessionsListShell() {
   return (
@@ -76,7 +56,6 @@ function SessionsListShellContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Shared role-derivation hook — see `useCanManageActiveOrg` JSDoc.
   const canManage = useCanManageActiveOrg();
 
   const urlSearch = searchParams?.get("search") ?? "";
@@ -108,9 +87,7 @@ function SessionsListShellContent() {
     [updateUrl],
   );
   const handleDateRangeChange = useCallback(
-    // Keep the URL clean when the user picks the default preset — no
-    // `?range=90d` noise, symmetric with how `sort` / `dir` handle defaults
-    // above.
+    // Default-preset omitted from URL (no `?range=90d` noise); symmetric with sort/dir.
     (range: SessionDateRange) => updateUrl({ range: range === DEFAULT_SESSION_DATE_RANGE ? undefined : range }),
     [updateUrl],
   );
@@ -134,10 +111,7 @@ function SessionsListShellContent() {
     setPrevPages([]);
   }
 
-  // Suspense queries: Suspense boundary above handled the initial load;
-  // subsequent cursor / filter changes flow through `placeholderData:
-  // keepPreviousData` in the query options — the table keeps the old
-  // page until the new one lands.
+  // Suspense handles initial load; cursor/filter changes use `placeholderData: keepPreviousData` (table keeps old page until new lands).
   const listParams = useMemo(
     () => ({
       search: urlSearch || undefined,
@@ -153,8 +127,7 @@ function SessionsListShellContent() {
   const list = useSessionsSuspenseQuery(listParams);
   const summary = useSessionsSummarySuspenseQuery();
 
-  // Accumulate pages for cursor-based Load More. `list.data` is always
-  // defined under Suspense, so we can drop the `!list.data` guard.
+  // `list.data` always defined under Suspense — no `!list.data` guard needed.
   const sessions = useMemo(() => {
     if (!cursor) return list.data.data;
     const seen = new Set(prevPages.map((s) => s.id));
@@ -196,11 +169,7 @@ function SessionsListShellContent() {
         onDateRangeChange={handleDateRangeChange}
       />
 
-      {/*
-       * SR-only live region — see the matching comment in
-       * `users-list-shell.tsx`. Announces filter/sort/pagination result
-       * count changes to assistive tech without any sighted-user UI.
-       */}
+      {/* SR-only live region — announces result-count changes to assistive tech (paired with `users-list-shell`). */}
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {hasFilters
           ? t("liveAnnounceFiltered", { count: sessions.length })

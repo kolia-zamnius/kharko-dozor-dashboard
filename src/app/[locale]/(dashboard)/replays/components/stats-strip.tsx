@@ -9,12 +9,6 @@ type StatsStripProps = {
   data: SessionsSummary;
 };
 
-/**
- * Four KPI cards at the top of the replays list page.
- *
- * Pure view — data comes from the parent shell. Layout: 2 cols on mobile,
- * 4 on sm+. Mirrors the users page stats strip pattern.
- */
 export function StatsStrip({ data }: StatsStripProps) {
   const t = useTranslations("replays.list.stats");
   const { formatCount, formatDuration } = useFormatters();

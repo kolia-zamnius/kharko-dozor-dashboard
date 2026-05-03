@@ -3,66 +3,28 @@ import { create } from "zustand";
 import type { PlayerState, ReplayerHandle } from "./types";
 
 /**
- * Player store — Zustand root for rrweb playback state.
+ * Zustand (not Context+`useReducer`) for precise subscription boundaries —
+ * SeekBar re-renders at ~60fps on `currentTime` but not on `consoleOpen`;
+ * ControlBar is the inverse. Per-field selectors (or `useShallow`) achieve
+ * this without a provider tree.
  *
- * @remarks
- * Zustand was chosen over React context + `useReducer` because the
- * store is read from five sibling components (`ControlBar`, `SeekBar`,
- * `SlicePicker`, `ConsolePanel`, `Viewport`) with wildly different
- * subscription patterns:
- *   - `SeekBar` polls `currentTime` at ~60 fps and MUST re-render on
- *      each tick, but must NOT re-render when unrelated state changes
- *      (e.g. the console panel toggling).
- *   - `ControlBar` re-renders on `state` / `speed` / `skipInactive` /
- *      `autoContinue` / `consoleOpen`, but not on `currentTime`.
- *   - `ConsolePanel` reads `events` + `currentTime`.
- *
- * Zustand + per-field selectors (or `useShallow` when multiple fields
- * are needed) give us precise subscription boundaries without a
- * provider tree. Consumers import {@link selectIsPlayerDisabled}
- * instead of re-deriving the "disabled while idle or mid-slice-load"
- * gate across components — single source of truth.
- *
- * Module-scoped `handle` and `rafId` keep the imperative rrweb
- * integration out of React state. The rrweb `Replayer` instance is not
- * a value React should own: it mutates on calls (play/pause/seek), not
- * on render, and its lifecycle is driven by the Viewport's effect, not
- * by rendering. The Viewport creates and destroys the Replayer; the
- * store just caches the handle so playback actions can reach it.
- *
- * @see ./viewport — Replayer instantiation + Shadow DOM isolation.
- * @see ./types — `PlayerState` union + `ReplayerHandle` interface.
+ * Module-scoped `handle`/`rafId` are intentionally OUTSIDE Zustand — the
+ * rrweb `Replayer` mutates on calls (play/pause/seek) not on render, its
+ * lifecycle is driven by Viewport's effect. React shouldn't own it.
  */
 
 
 /**
- * Gaps between consecutive events longer than this are marked as idle
- * periods on the seek bar (amber segments) and jumped past when
- * "Skip idle" is enabled.
- *
- * @remarks
- * 10 seconds is a product-level tuning knob: rrweb emits at least one
- * interaction event (mousemove, scroll, input) every few seconds
- * during active use, so a 10-second gap is an unambiguous signal the
- * user stopped interacting. Shorter thresholds (3-5 s) produce noisy
- * amber segments during normal reading; longer (30 s+) hides genuine
- * drop-offs from the timeline.
+ * 10s — rrweb emits ≥1 event every few seconds during active use, so a 10s
+ * gap is an unambiguous "stopped interacting" signal. 3-5s is noisy during
+ * normal reading; 30s+ hides genuine drop-offs from the timeline.
  */
 const IDLE_THRESHOLD_MS = 10_000;
 
 
 export type IdlePeriod = { start: number; end: number };
 
-/**
- * Scan an event array for gaps longer than {@link IDLE_THRESHOLD_MS}.
- *
- * @remarks
- * Times are expressed as offsets from the first event (milliseconds),
- * matching rrweb's internal timeline so `handle.getCurrentTime()` and
- * the returned boundaries share the same reference. Called once per
- * slice on `setEvents` — results are cached in the store rather than
- * recomputed per render.
- */
+/** Times are offsets from the first event (matches rrweb's internal timeline so `handle.getCurrentTime()` shares the reference). */
 function computeIdlePeriods(events: SessionEvent[]): IdlePeriod[] {
   const first = events[0];
   if (!first || events.length < 2) return [];
@@ -85,39 +47,18 @@ function computeIdlePeriods(events: SessionEvent[]): IdlePeriod[] {
 
 
 /**
- * Module-scoped rrweb handle + current RAF id.
- *
- * @remarks
- * Deliberately NOT stored in Zustand state: the handle is a live
- * object reference that mutates in place and whose identity should
- * never be snapshotted into React rendering. `selectSlice` /
- * `onReplayerReady` are the only paths that reassign `handle` — every
- * other code path reads it. `rafId` is similar: it's a short-lived
- * integer whose only purpose is `cancelAnimationFrame`.
- *
- * Safety note: when the Viewport unmounts without `selectSlice` being
- * called first (e.g. page navigation), `handle` may linger pointing at
- * a destroyed Replayer. Every action that uses it either guards with
- * `if (!handle) return` or catches the "Replayer destroyed" throw
- * inside the RAF tick — there's no code path that can corrupt state
- * by touching a stale handle.
+ * Live object refs whose identity should never enter React rendering.
+ * Stale `handle` after Viewport unmount is safe — every action guards `if
+ * (!handle) return` or catches the "Replayer destroyed" throw in the RAF tick.
  */
 let handle: ReplayerHandle | null = null;
 let rafId = 0;
 
 /**
- * Start per-frame polling of `handle.getCurrentTime()` so the store's
- * `currentTime` field tracks the replayer. Also handles the custom
- * skip-idle jump when the cursor lands inside an idle period.
- *
- * @remarks
- * We drive the store from the replayer (not the other way round) because
- * rrweb applies timing internally and we'd fight its clock if we tried
- * to scrub by setting `currentTime` from React state. A fresh RAF loop
- * replaces any previous one — `cancelAnimationFrame(rafId)` at the top
- * guarantees at most one active loop at a time. The try/catch swallows
- * the specific throw rrweb emits when the Replayer is destroyed mid-
- * frame (e.g. during slice switch), so a teardown race can't break the
+ * Store is driven FROM the replayer, not vice versa — rrweb applies timing
+ * internally; setting `currentTime` from React would fight its clock. The
+ * try/catch swallows rrweb's "Replayer destroyed" throw mid-frame (slice
+ * switch teardown race).
  * render loop.
  */
 function startPolling(set: (partial: Partial<PlayerStoreState>) => void, get: () => PlayerStoreState) {
@@ -181,17 +122,7 @@ type PlayerStoreState = {
   // UI
   consoleOpen: boolean;
 
-  /**
-   * Cross-mount bridge for the auto-continue flow.
-   *
-   * When `finish` fires and auto-continue is on, we bump
-   * `activeSliceIndex` and set this flag. The Viewport subsequently
-   * unmounts and remounts for the new slice, then calls
-   * `onReplayerReady` — at which point we read the flag, auto-play
-   * from t=0, and clear it. Without this bridge, the React render that
-   * kicks off the new Viewport would have no way to know "start
-   * playing immediately" vs. "wait for user to press play".
-   */
+  /** Cross-mount bridge — set on finish+auto-continue, read by `onReplayerReady` after the new Viewport mounts to decide auto-play vs paused. */
   pendingAutoPlay: boolean;
 };
 
@@ -253,10 +184,8 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
 
       if (autoContinue && totalSlices > 0 && activeSliceIndex < totalSlices - 1) {
         set({ currentTime: tt });
-        // Tiny delay lets the "completed" state paint before the
-        // Viewport tears down for the next slice — without it the user
-        // sees the playhead snap back to 0 without ever reaching the
-        // end, which reads as a skipped finish.
+        // Delay so the "completed" frame paints before Viewport teardown —
+        // without it the playhead snaps back to 0 and the finish reads as skipped.
         setTimeout(() => {
           stopPolling();
           handle = null;
@@ -337,22 +266,5 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
 }));
 
 
-/**
- * `true` while the player's transport controls should be disabled —
- * either no replayer is mounted yet (`state === "idle"`), or slice
- * events are still loading and the current replayer is about to be
- * replaced.
- *
- * @remarks
- * Lifted out of individual components so `ControlBar`, `SeekBar`, and
- * any future consumer share one disabled-gate definition. Using this
- * selector (rather than re-deriving inline) means adjusting the gate
- * — e.g. also disabling during refresh-button transitions — is a
- * one-line edit here.
- *
- * @example
- * ```ts
- * const isDisabled = usePlayerStore(selectIsPlayerDisabled);
- * ```
- */
+/** Single source of truth for the disabled-gate — adjusting it (e.g. during refresh transitions) is a one-line edit. */
 export const selectIsPlayerDisabled = (s: PlayerStoreState) => s.state === "idle" || s.isSliceLoading;

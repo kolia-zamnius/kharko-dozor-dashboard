@@ -1,14 +1,7 @@
 /**
- * Official rrweb replayer CSS — injected into Shadow DOM to isolate
- * from the dashboard's Tailwind styles.
- *
- * Copied from rrweb/dist/style.css to avoid build-time CSS import
- * issues with Next.js. Lives in a separate file so viewport.tsx
- * stays focused on component logic.
- *
- * Additions over stock rrweb CSS:
- *   - `.replayer-wrapper > iframe { border: none }` — removes the
- *     default iframe border that shows as a white line.
+ * Inlined from `rrweb/dist/style.css` — Next.js CSS imports don't reach
+ * Shadow DOM. Adds `iframe { border: none }` over stock to kill the white
+ * border line.
  */
 export const REPLAYER_CSS = `
 .replayer-wrapper {

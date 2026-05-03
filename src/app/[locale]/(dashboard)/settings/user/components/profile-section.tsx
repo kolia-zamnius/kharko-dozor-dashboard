@@ -12,21 +12,7 @@ import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 
-/**
- * Profile section on `/settings/user` — avatar + name edit + email
- * readout.
- *
- * @remarks
- * The name field uses RHF with `values: { name: profile.name ?? "" }`
- * so the input stays in sync with the server snapshot after the
- * mutation's `onSuccess` invalidates the profile query. `mode:
- * "onChange"` keeps `isValid` live so the Save button flips to
- * enabled the moment the user types a valid name.
- *
- * Avatar regen and name edit are independent mutations — either can
- * run without blocking the other. The only coupling is that both are
- * part of the same visual card.
- */
+/** RHF `values:` keeps the input synced to the post-invalidation snapshot. Avatar regen and name edit are independent mutations. */
 export function ProfileSection({ profile }: { profile: UserProfile }) {
   const t = useTranslations("settings.user.profile");
   const updateProfile = useUpdateProfileMutation();

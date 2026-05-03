@@ -7,11 +7,7 @@ import { cn } from "@/lib/cn";
 import { usePlayerStore } from "./store";
 import { extractConsoleLogs, formatTimePrecise } from "./utils";
 
-/**
- * Console-log level → Tailwind class name. Closed key set so adding a
- * new level here is a compile error at every consumer that needs to
- * route it.
- */
+/** Closed union — adding a level is a compile error at every consumer. */
 type ConsoleLogLevel = "error" | "warn" | "info" | "debug" | "log";
 
 const LEVEL_STYLE = {
@@ -27,17 +23,9 @@ function styleForLevel(level: string): string {
 }
 
 /**
- * Console log viewer — extracts console plugin events from the session,
- * filters to entries at or before the current playback time, and
- * follows the tail when the user is scrolled to the bottom.
- *
- * @remarks
- * Uses the "stick to bottom" pattern: we only auto-scroll when the
- * user was already at the bottom on their last manual scroll. Once
- * they scroll up to inspect an earlier log, we stop following — so
- * mid-replay inspection isn't ripped away by the next log append.
- * Reads `events`, `currentTime`, and `isSliceLoading` from the player
- * store; zero props.
+ * Stick-to-bottom — auto-scroll only when the user was at the bottom on the
+ * last manual scroll. Inspection of an earlier log isn't ripped away by the
+ * next append.
  */
 export function ConsolePanel() {
   const t = useTranslations("replays.detail.player.console");

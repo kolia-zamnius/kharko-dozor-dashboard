@@ -5,24 +5,12 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 /**
- * Playground layout — wraps every `/playground/*` route in a
- * `<DozorProvider>` without auto-init.
+ * Provider mount is at layout (not page) level so SDK state survives `<Link>`
+ * navigation between sub-pages — that navigation is exactly what the
+ * playground demonstrates (slice-marker creation on SPA route change).
  *
- * @remarks
- * Lives in the `(docs)` route group, alongside `/documentation`, so it
- * inherits the non-localised root layout and skips the locale pipeline +
- * auth (handled in `src/proxy.ts` `bypassPaths`). The playground is
- * deliberately public: anyone with an API key can paste it and try the
- * SDK. English-only by the same monolingual-design rule that applies to
- * the docs zone.
- *
- * `DozorProvider` is mounted with no `options` so it doesn't auto-init —
- * the user has to paste their API key first. `useDozor().init({ ... })`
- * runs on form submit. Provider mount is at the layout (not page) level
- * so SDK state survives `<Link>` navigation between `/playground` and
- * `/playground/interactions` — that navigation is exactly what the
- * playground is meant to demonstrate (slice-marker creation on SPA
- * route change).
+ * No `options` so it doesn't auto-init — `useDozor().init({...})` runs on
+ * form submit. Public surface, English-only (same rule as docs zone).
  */
 export default function PlaygroundLayout({ children }: { children: ReactNode }) {
   return (

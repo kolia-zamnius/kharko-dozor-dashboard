@@ -1,10 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-// `useSearchParams` has no locale-aware twin in next-intl — read it
-// from `next/navigation`. `useRouter` swaps to the locale-aware
-// version so empty-query-string filter clears land on
-// `/{locale}/users` instead of stripping the locale prefix.
+// next-intl has no locale-aware `useSearchParams` — read raw from `next/navigation`.
+// `useRouter` IS locale-aware so empty-query clears land on `/{locale}/users`.
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { Suspense, useCallback, useMemo, useState } from "react";
@@ -31,30 +29,10 @@ import { StatsStrip } from "./stats-strip";
 import { UsersTable } from "./users-table";
 
 /**
- * Composition root for the `/users` page.
- *
- * @remarks
- * Implements the **"URL-driven list shell"** pattern — the same shape
- * shared with {@link SessionsListShell}. Both shells:
- *   1. Read filter/sort state from `useSearchParams()` (URL is the
- *      source of truth, so every filter combination is shareable).
- *   2. Write updates via `router.replace(qs, { scroll: false })`,
- *      clearing `cursor` on any filter change.
- *   3. Keep `cursor` + `prevPages` in local state so "Load more"
- *      accumulates pages with `Set`-based dedup on id.
- *   4. Wrap a single page-level `<Spinner />` in `Suspense`; initial-
- *      load failures bubble to the nearest `error.tsx` via the global
- *      `throwOnError` policy, polling flakes stay in toast pipeline.
- *
- * Duplicated LOC between the two shells (~38 % at audit time) is a
- * deliberate rule-of-3 deferral: with two consumers, a shared hook
- * would be premature — the filter DTO shapes differ (users has
- * `statuses`, replays has `range`) and extracting too early freezes
- * the abstraction before we understand what the third consumer needs.
- * When a third list page lands, fold the common parts into
- * `useUrlFilterState()` + `useCursorPagination()` hooks.
- *
- * @see ../../replays/components/sessions-list-shell.tsx — sibling shell.
+ * URL-driven list shell — paired with `SessionsListShell`. ~38% LOC
+ * duplication is rule-of-3 deferral: filter DTOs differ (`statuses` vs
+ * `range`); extract `useUrlFilterState()` + `useCursorPagination()` when a
+ * third list page lands.
  */
 export function UsersListShell() {
   return (
@@ -145,9 +123,7 @@ function UsersListShellContent() {
   const list = useTrackedUsersSuspenseQuery(listParams);
   const summary = useTrackedUsersSummarySuspenseQuery();
 
-  // Accumulate pages for cursor-based Load More. `list.data` is always
-  // defined under Suspense; `keepPreviousData` holds the previous page
-  // while the next one is in flight for dedup.
+  // `list.data` always defined under Suspense; `keepPreviousData` holds the previous page while the next is in flight.
   const users = useMemo(() => {
     if (!cursor) return list.data.data;
     const seen = new Set(prevPages.map((u) => u.id));
@@ -189,13 +165,7 @@ function UsersListShellContent() {
         onStatusesChange={handleStatusesChange}
       />
 
-      {/*
-       * SR-only live region — announces filter/sort/pagination result
-       * count changes without surfacing anything to sighted users. The
-       * table itself is a static rerender from a screen-reader POV, so
-       * without this region the count change (e.g. after applying a
-       * status filter) is invisible to assistive tech.
-       */}
+      {/* SR-only — table re-render is silent to assistive tech without this region. */}
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {hasFilters ? t("liveAnnounceFiltered", { count: users.length }) : t("liveAnnounce", { count: users.length })}
       </p>
