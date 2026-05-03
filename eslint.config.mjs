@@ -3,21 +3,10 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
 /**
- * ESLint baseline = Next.js + TypeScript presets + three type-aware
- * rules that catch whole classes of bugs the base preset misses:
- *
- *   - `consistent-type-imports` — force `import type` for type-only
- *     imports so the bundler can drop them and intent is explicit.
- *   - `no-floating-promises` — any promise that isn't `await`ed,
- *     `.catch`-handled, or prefixed with `void` is a bug waiting for
- *     a production incident.
- *   - `switch-exhaustiveness-check` — compile-time exhaustiveness on
- *     discriminated unions without needing an `assertNever` at every
- *     `switch` site.
- *
- * All three need the TS program, so we scope a `languageOptions` block
- * with `parserOptions.project: true` to TS/TSX files. `src/generated/`
- * is excluded because it's Prisma output we don't hand-maintain.
+ * Three type-aware rules on top of the Next preset: `consistent-type-imports`
+ * (intent-explicit, bundler can drop), `no-floating-promises` (unhandled
+ * promises = production incidents), `switch-exhaustiveness-check`. All three
+ * need the TS program, so the `parserOptions.project` block is scoped to TS/TSX.
  */
 const eslintConfig = defineConfig([
   ...nextVitals,
