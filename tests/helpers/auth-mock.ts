@@ -1,27 +1,7 @@
 /**
- * Helpers for mocking `@/server/auth::auth()` in route-handler tests.
- *
- * @remarks
- * Usage pattern in an integration test file:
- *
- * ```ts
- * import { vi } from "vitest";
- * vi.mock("@/server/auth", () => ({ auth: vi.fn() }));
- *
- * import { auth } from "@/server/auth";
- * import { buildSession, buildSessionUser } from "tests/helpers/auth-mock";
- *
- * beforeEach(() => {
- *   vi.mocked(auth).mockResolvedValue(buildSession(buildSessionUser({ id: alice.id })));
- * });
- * ```
- *
- * `vi.mock` is hoisted to the top of the file by Vitest — the factory
- * must not reference anything that isn't either hoisted or imported
- * at module load. That's why we export plain builders here rather than
- * a "do everything" helper that would need to `vi.mock` itself.
- *
- * @see src/types/next-auth.d.ts — canonical `Session["user"]` shape.
+ * Builders for `Session` shape returned by `auth()`. Defaults match what the
+ * production JWT/session callbacks produce post-sign-in, so test bodies only
+ * pass the fields they actually exercise.
  */
 
 import type { Session } from "next-auth";
@@ -40,11 +20,6 @@ type SessionUserOverrides = {
   locale?: Locale;
 };
 
-/**
- * Build a fully-formed `Session["user"]` from partial overrides. Every
- * optional field gets a deterministic default so the session matches what
- * the production JWT/session callbacks would produce post-sign-in.
- */
 export function buildSessionUser(overrides: SessionUserOverrides): SessionUser {
   return {
     id: overrides.id as UserId,
@@ -56,11 +31,7 @@ export function buildSessionUser(overrides: SessionUserOverrides): SessionUser {
   };
 }
 
-/**
- * Wrap a `SessionUser` in the full `Session` envelope `auth()` returns.
- * Expiry set an hour out so tests running slow machines don't trip the
- * NextAuth expiry check.
- */
+/** Expiry one hour out so slow CI machines don't trip the NextAuth expiry check. */
 export function buildSession(user: SessionUser): Session {
   return {
     user,

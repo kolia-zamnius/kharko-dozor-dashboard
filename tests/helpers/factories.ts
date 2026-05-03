@@ -1,20 +1,8 @@
 /**
- * Typed builder functions for test DB fixtures.
- *
- * @remarks
- * Deliberately plain functions, not a factory library (`fishery`, `rosie`).
- * Mature OSS projects (Drizzle, Hono, tRPC) moved away from factory libs
- * in 2025+ because plain async functions compose with real Prisma
- * semantics — id generation, FK constraints, `@updatedAt` triggers —
- * automatically. The ~10% LOC savings a library offers isn't worth the
- * extra dependency + the "who runs the seeded traits" question.
- *
- * Each factory accepts an explicit `{ owner }` / `{ organization }` / etc.
- * argument instead of auto-seeding its FKs. This makes test bodies read
- * declaratively — `const org = await createOrganization({ owner: alice })`
- * — and removes the "what random user owns my org?" cognitive load.
- *
- * @see tests/helpers/db.ts — the prisma client every factory writes to.
+ * Plain async factories — not `fishery`/`rosie`. Real Prisma writes give us id
+ * generation, FK constraints, and `@updatedAt` triggers for free, and explicit
+ * `{ owner }` / `{ organization }` args make test bodies read declaratively
+ * instead of asking "what random user owns my org?".
  */
 
 import { randomBytes, randomUUID } from "node:crypto";
@@ -48,10 +36,7 @@ type UserOverrides = Partial<{
   activeOrganizationId: string | null;
 }>;
 
-/**
- * Create a platform user. Email defaults to a unique `user-<uuid>@test.local`
- * so factory calls without args never collide on the `email @unique` index.
- */
+/** Email defaults to `user-<uuid>@test.local` so unargumented calls don't collide on `email @unique`. */
 export async function createUser(overrides: UserOverrides = {}): Promise<User> {
   const prisma = await getTestPrisma();
   const id = randomUUID();
@@ -66,11 +51,7 @@ export async function createUser(overrides: UserOverrides = {}): Promise<User> {
   });
 }
 
-/**
- * Create an organisation with an owner `Membership` pre-wired in a single
- * transaction. Matches the Auth.js `createUser` event's behaviour for
- * personal orgs — every org has at least one member the instant it exists.
- */
+/** Creates the OWNER `Membership` in the same transaction — mirrors the Auth.js `createUser` event for personal orgs. */
 export async function createOrganization(args: {
   owner: User;
   type?: OrgType;
@@ -94,10 +75,6 @@ export async function createOrganization(args: {
   });
 }
 
-/**
- * Attach an existing user to an existing org with the given role.
- * Intended for scenarios like "Alice is OWNER, add Bob as VIEWER".
- */
 export async function createMembership(args: {
   user: User;
   organization: Organization;
@@ -155,12 +132,7 @@ export async function createSession(args: {
   externalId?: string;
   startedAt?: Date;
   endedAt?: Date | null;
-  /**
-   * Explicit `createdAt` for tests that assert on the session-list
-   * date-range filter or the retention cron — by default Prisma stamps
-   * `createdAt` at insertion time, which makes "older than 7 days"
-   * scenarios un-seedable without this override.
-   */
+  /** Backdating hook for date-range filter and retention-cron tests — Prisma stamps `createdAt` at insert by default. */
   createdAt?: Date;
 }): Promise<Session> {
   const prisma = await getTestPrisma();
@@ -177,13 +149,8 @@ export async function createSession(args: {
 }
 
 /**
- * Create an OAuth `Account` row (Google / GitHub / future providers).
- *
- * Intended for tests that assert on the account-unlink flow or the
- * last-login-method guard in `DELETE /api/user/accounts/[provider]`.
- * The `providerAccountId` is randomised per call so repeated factory
- * invocations can't collide on the adapter's `(provider,
- * providerAccountId)` unique index.
+ * `providerAccountId` is randomised per call so repeated invocations don't
+ * collide on the adapter's `(provider, providerAccountId)` unique index.
  */
 export async function createAccount(args: { user: User; provider: string }): Promise<Account> {
   const prisma = await getTestPrisma();
@@ -198,12 +165,8 @@ export async function createAccount(args: { user: User; provider: string }): Pro
 }
 
 /**
- * Create a WebAuthn `Authenticator` row (a passkey).
- *
- * Mirrors the shape that `@simplewebauthn/server` writes on successful
- * registration — the fields outside `name` / `userId` are dummy values
- * that never get exercised cryptographically in the route handlers we
- * test (rename + delete only inspect `(credentialID, userId)`).
+ * Crypto fields are dummy — the rename + delete handlers we test only inspect
+ * `(credentialID, userId)`, never verify a signature.
  */
 export async function createAuthenticator(args: { user: User; name?: string }): Promise<Authenticator> {
   const prisma = await getTestPrisma();

@@ -1,16 +1,8 @@
 /**
- * Integration tests for `/api/organizations` + `/api/organizations/[orgId]`.
- *
- * @remarks
- * Exercises the CRUD lifecycle against a real Postgres worker DB:
- *   - POST → creates TEAM org + owner Membership in one transaction.
- *   - PATCH → ADMIN+ renames the org.
- *   - DELETE → OWNER-only; flips affected users' active org back to
- *     Personal Space, wipes invites, cascades projects.
- *
- * Every test resets state via `truncateAll` so order-independence is
- * total — test files can be read individually without a reviewer having
- * to track accumulated fixtures in their head.
+ * `/api/organizations` + `/api/organizations/[orgId]`. POST creates TEAM + owner
+ * Membership in one tx; PATCH is ADMIN+; DELETE is OWNER-only and flips
+ * affected users' active org back to Personal Space, wipes invites, cascades
+ * projects.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

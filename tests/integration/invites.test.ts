@@ -1,21 +1,11 @@
 /**
- * Integration tests for the invite lifecycle:
- *   - `POST /api/organizations/[orgId]/invites`           — create/refresh
- *   - `PATCH /api/organizations/[orgId]/invites/[inviteId]` — change-role / extend
- *   - `DELETE /api/organizations/[orgId]/invites/[inviteId]` — revoke
- *   - `POST /api/user/invites/[id]/accept`                 — accept from user side
+ * Invite lifecycle: create/refresh, change-role/extend, revoke, user-side accept.
+ * State machine: pending → refresh-in-place → extend → role change → accept
+ * (membership created) | revoke (row deleted).
  *
- * @remarks
- * Covers the state machine: pending → refresh-in-place → extend → role change
- * → accept (membership created) / revoke (row deleted).
- *
- * Per-file mocks below **override** the shared stubs from
- * `tests/setup/integration-mocks.ts`:
- *   - `next-intl/server` needs `t.markup` support (the invite email uses
- *     `t.markup("body", { strong: ... })` for inline HTML).
- *   - `@/server/mailer` stubbed so no real SMTP connection is attempted.
- *   - `@/server/invite-rate-limit` stubbed to a no-op so multi-invite
- *     tests don't trip the daily cap.
+ * Per-file `vi.mock`s override the shared stubs — `next-intl/server` needs
+ * `t.markup` (invite email uses it); mailer stubbed so no SMTP fires; rate
+ * limit no-op'd so multi-invite tests don't trip the daily cap.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -24,7 +14,7 @@ import type { getTranslations } from "next-intl/server";
 vi.mock("next-intl/server", () => ({
   getTranslations: vi.fn(async () => {
     const t = ((key: string) => key) as unknown as Awaited<ReturnType<typeof getTranslations>>;
-    // `inviteEmailHtml` uses `t.markup(...)` for HTML-in-messages; fake it.
+    // `inviteEmailHtml` calls `t.markup(...)` for HTML-in-messages.
     (t as unknown as { markup: (k: string) => string }).markup = (k: string) => k;
     return t;
   }),
@@ -266,11 +256,9 @@ describe("invite lifecycle", () => {
     });
 
     it("⭐ concurrency — Serializable isolation rejects double-accept race with 409", async () => {
-      // Scenario: Bob double-clicks "Accept" or has two tabs open. Without
-      // Serializable + race catch, both transactions see PENDING; the
-      // second commit hits the `(userId, organizationId)` unique
-      // constraint as a 500. With the fix one wins (200), the other gets
-      // a clean 409 via P2002 / P2034 collapse.
+      // Bob double-clicks Accept (or two tabs). Naive: both txns see PENDING,
+      // second commit hits `(userId, organizationId)` unique → 500. With the
+      // fix one wins (200), the other gets 409 via P2002/P2034 collapse.
       const alice = await createUser();
       const bob = await createUser({ email: "bob@test.local" });
       const team = await createOrganization({ owner: alice });
@@ -293,8 +281,7 @@ describe("invite lifecycle", () => {
         }).catch((err) => ({ status: 500, error: err as unknown })),
       ]);
 
-      // KEY invariant — Bob ends up with exactly ONE membership; doubles
-      // would mean the unique constraint failed to catch the race.
+      // Invariant — exactly one membership; doubles = unique constraint missed the race.
       const memberships = await prisma.membership.findMany({
         where: { userId: bob.id, organizationId: team.id },
       });
@@ -304,10 +291,8 @@ describe("invite lifecycle", () => {
       const finalInvite = await prisma.invite.findUnique({ where: { id: invite.id } });
       expect(finalInvite?.status).toBe("ACCEPTED");
 
-      // Exactly one 2xx winner; the other request gets a clean 409 OR
-      // — depending on which side of the Serializable conflict it lands
-      // on — a 4xx via the assertInviteUsableForUser pre-check (already
-      // ACCEPTED). Either way, NO 500s leak: the race is fully tamed.
+      // Exactly one 2xx winner — the other lands at 409 or a 4xx from the
+      // assertInviteUsableForUser pre-check (already ACCEPTED). No 500s.
       const successes = results.filter((r) => r.status >= 200 && r.status < 300);
       expect(successes).toHaveLength(1);
       expect(results.some((r) => r.status >= 500)).toBe(false);

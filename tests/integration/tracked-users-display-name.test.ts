@@ -1,13 +1,8 @@
 /**
- * Integration tests for `PATCH /api/tracked-users/[userId]/display-name`.
- *
- * @remarks
- * Small but high-leverage: the display-name resolver chain at
- * `src/api-client/tracked-users/resolve-display-name.ts` reads the two
- * override fields (`customName`, `displayNameTraitKey`) this route
- * writes. The ADMIN gate + the zod `refine` ("at least one of
- * `customName` or `traitKey` must be provided") + the three modes
- * (set / clear / leave-unchanged per field) all live here.
+ * `PATCH /api/tracked-users/[userId]/display-name`. Writes the two override
+ * fields (`customName`, `displayNameTraitKey`) read by the resolver chain.
+ * Covers the ADMIN gate, the zod `refine` ("at least one of customName or
+ * traitKey"), and the three per-field modes (set / clear / leave-unchanged).
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

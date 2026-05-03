@@ -1,17 +1,8 @@
 /**
- * Integration tests for `GET /api/cron/daily-cleanup`.
- *
- * @remarks
- * The nightly database-hygiene sweep is not session-authenticated — it
- * verifies a `Bearer` token that matches `CRON_SECRET`. The four
- * cleanup steps cascade in order; this suite seeds each scenario in
- * isolation and asserts both the top-level counter AND the DB side
- * effect (matching row count / cascaded children).
- *
- * `.env.test` sets `CRON_SECRET=test-cron-secret`, so the route's
- * auth-header check fires; the unauth test drops the header entirely.
- * This route uses Bearer auth (not `withAuth`), so `mockAuth` isn't
- * used — the shared setup still installs it, but it sits unused.
+ * `GET /api/cron/daily-cleanup`. Bearer-token auth (`CRON_SECRET`) — not
+ * `withAuth`, so `mockAuth` is unused even though shared setup installs it.
+ * Seeds each of the four cleanup steps in isolation and asserts both the
+ * counter AND the DB side effect (row count + cascaded children).
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

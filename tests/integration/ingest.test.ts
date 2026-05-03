@@ -1,15 +1,8 @@
 /**
- * Integration tests for the SDK-facing `/api/ingest` endpoint.
- *
- * @remarks
- * The ingest route is the ONE external-contract surface shared with the
- * published `@kharko/dozor` npm SDK — every self-hoster depends on it
- * behaving identically across releases. These tests exercise the full
- * pipeline end-to-end: public-key auth → body parse (gzip-aware) →
- * session upsert → slice markers → event insert → CORS response.
- *
- * Public-key endpoint — does not use `mockAuth`. The shared setup file
- * installs the auth/prisma/intl mocks; this test only adds fixtures.
+ * `/api/ingest` — the only external contract shared with the published
+ * `@kharko/dozor` SDK, so behaviour must stay identical across releases. Full
+ * pipeline: public-key auth → body parse (gzip-aware) → session upsert →
+ * slice markers → event insert → CORS response.
  */
 
 import { gzipSync } from "node:zlib";
@@ -134,9 +127,7 @@ describe("POST /api/ingest", () => {
         "content-type": "application/json",
         "content-encoding": "gzip",
       },
-      // A Buffer is a Uint8Array — Request accepts both. Copy to plain
-      // ArrayBuffer so Node's fetch impl doesn't complain about Buffer
-      // not being a valid BodyInit in strict runtimes.
+      // Plain Uint8Array — Node's fetch rejects bare Buffer as BodyInit in strict runtimes.
       body: new Uint8Array(gz),
     });
     const response = await ingestRoute.POST(req);
@@ -236,10 +227,8 @@ describe("POST /api/ingest", () => {
     });
     await ingestRoute.POST(req);
 
-    // `lastUsedAt` is bumped fire-and-forget. Give the microtask queue a
-    // chance to settle before we read — awaiting the response is not a
-    // guarantee it's committed. A 100ms nudge is the cheapest reliable
-    // wait for an orphan `prisma.project.update` to finish.
+    // `lastUsedAt` is fire-and-forget — awaiting the response doesn't guarantee
+    // commit. 100ms is the cheapest reliable wait for the orphan update.
     await new Promise((r) => setTimeout(r, 100));
 
     const refreshed = await prisma.project.findUnique({ where: { id: project.id } });
