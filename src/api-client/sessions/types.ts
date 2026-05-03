@@ -10,14 +10,6 @@ import type {
   sliceInfoSchema,
 } from "./response-schemas";
 
-/**
- * Type barrel for the `sessions` feature. Response DTOs are inferred
- * from zod schemas in `response-schemas.ts`; request-side list params
- * stay here as a plain type (they're parsed from `URLSearchParams`
- * via `validators.ts::sessionListParamsSchema`, not a JSON body).
- */
-
-
 export type SessionListItem = z.infer<typeof sessionListItemSchema>;
 export type SliceInfo = z.infer<typeof sliceInfoSchema>;
 export type SessionDetail = z.infer<typeof sessionDetailSchema>;
@@ -25,11 +17,7 @@ export type SessionEvent = z.infer<typeof sessionEventSchema>;
 export type PaginatedSessions = z.infer<typeof paginatedSessionsSchema>;
 export type SessionsSummary = z.infer<typeof sessionsSummarySchema>;
 
-// Separated from response DTOs above but kept in the same file: list
-// params are shared between `queries.ts` (query fn) and `keys.ts` (cache
-// key) — keeping them here avoids a cycle if `keys.ts` ever also needs
-// response types (e.g. for typed `setQueryData` helpers).
-
+/** Plain type (URL params, not a JSON body) shared between `queries.ts` queryFn and `keys.ts` cache key. */
 export type SessionListParams = {
   projectIds?: string[];
   search?: string;

@@ -8,31 +8,10 @@ import { EXTERNAL_LINKS } from "../lib/external-links";
 import { InstallTabs } from "./install-tabs";
 
 /**
- * Installation / "how to start" section — three numbered steps, a
- * React/Vanilla-JS tabbed snippet pair (install command + minimal
- * usage sample), and two escape-hatch links (full docs + dashboard).
- *
- * @remarks
- * Server Component — heading, steps, and the docs/dashboard buttons
- * are static markup with server-resolved translations. The interactive
- * tab widget (Radix Tabs + `CopyButton`) lives in {@link InstallTabs},
- * a small client island; keeping it isolated stops the surrounding
- * copy from leaking into the client bundle and shortens the
- * marketing-page TBT.
- *
- * Each tab inside `InstallTabs` shows two blocks: (1) the `npm install`
- * line with a copy button for instant paste, and (2) a multi-line usage
- * snippet that actually demonstrates how to wire the SDK — matches the
- * section's "install in under a minute" promise. Usage snippets are
- * **not** copyable because developers need to adapt the `publicKey`
- * and wrapper placement to their own app; a copy button would falsely
- * imply drop-in code.
- *
- * Typed `Link` from `@/i18n/navigation` for the dashboard button
- * (locale-aware); docs link stays a plain `<a>` because the docs zone
- * lives outside the `[locale]/` pipeline (typed `Link` would prefix the
- * URL and 404). Phosphor icon comes from `/dist/ssr` so it emits at
- * HTML-response time.
+ * Server Component — interactive Radix tabs live in `InstallTabs` so the
+ * surrounding copy doesn't leak into the client bundle. Phosphor icon from
+ * `/dist/ssr` so it emits at HTML-response time. Docs link uses raw `<a>`
+ * because the docs zone lives outside `[locale]/`.
  */
 export async function InstallationSection() {
   const t = await getTranslations("marketing.installation");

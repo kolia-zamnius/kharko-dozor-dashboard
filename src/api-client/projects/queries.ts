@@ -28,9 +28,8 @@ export function useOrgProjectsQuery(organizationId: string, enabled = true) {
 }
 
 /**
- * Fetch plaintext API key on demand — for copy-to-clipboard.
- * Not wrapped in useQuery on purpose: consumers call this from an event handler
- * so the plaintext never lingers in React Query cache.
+ * Plaintext API key on demand — called from the copy-button click handler so the
+ * key never lands in TanStack cache. The route is `Cache-Control: no-store`.
  */
 export async function fetchProjectKey(projectId: string): Promise<string> {
   const { key } = await apiFetch<{ key: string }>(routes.projects.key(projectId));

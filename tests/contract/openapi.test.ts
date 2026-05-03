@@ -1,33 +1,16 @@
 /**
- * REST contract — OpenAPI 3.1 snapshot derived from the repo's zod
- * validators. Public SDK surface (`/api/ingest`) plus the dashboard's
- * internal API.
+ * Diffs the committed `openapi.snapshot.json` against a contract assembled from
+ * the repo's zod validators. The snapshot IS the documented contract — any
+ * shape change surfaces as a readable JSON diff in the PR, and the Fumadocs API
+ * reference renders straight off it.
  *
- * @remarks
- * The committed `openapi.snapshot.json` is the documented contract for
- * the dashboard. Any change to a request/response shape surfaces as a
- * readable JSON diff in the PR — a reviewer doesn't have to read a
- * stack trace to decide whether a schema rename breaks downstream
- * consumers (the Fumadocs API reference renders straight from this
- * file via `fumadocs-openapi`).
+ * Deliberate change: `UPDATE_OPENAPI=1 npm run test:contract` rewrites the
+ * snapshot in the same run, so the resulting diff lands in the PR for review.
  *
- * Dev workflow:
- *   - Accidental change: test fails, pointing at the exact path that
- *     drifted. Revert the schema OR acknowledge the breaking change in
- *     PR copy + bump the contract explicitly.
- *   - Deliberate change: run `UPDATE_OPENAPI=1 npm run test:contract`
- *     to regenerate the snapshot, commit the JSON alongside the schema
- *     change. The diff is then part of the PR for explicit review.
- *
- * Implementation: OpenAPI 3.1 is a strict superset of JSON Schema, so
- * we lean on Zod 4's native `z.toJSONSchema()` for body / query / response
- * shapes and assemble the rest (paths, parameters, status codes) from
- * an inline manifest. Simpler than zod-to-openapi, zero library-version
- * coupling, handles `z.unknown()` natively (emits `true` per JSON Schema).
- *
- * @see openapi.snapshot.json — the committed contract.
- * @see src/app/(docs)/documentation/_content/api/ — Fumadocs reference
- *   pages that consume this snapshot via `<APIPage>`.
+ * OpenAPI 3.1 is a JSON Schema superset, so Zod 4's native `z.toJSONSchema()`
+ * handles body/query/response shapes; the manifest below assembles paths,
+ * parameters, and status codes by hand. Simpler than zod-to-openapi, no
+ * library-version coupling, handles `z.unknown()` natively.
  */
 
 import { readFile, writeFile } from "node:fs/promises";
@@ -98,19 +81,11 @@ import {
 } from "@/api-client/user-invites/response-schemas";
 
 /**
- * Tiny inline schemas for endpoints whose body lives inline in the
- * route file rather than in `validators.ts`. Mirrored here so the
- * contract test surfaces them in the OpenAPI snapshot — the alternative
- * (importing the route module) would drag in Prisma + Auth.js + the
- * whole server runtime.
- *
- * Drift is policed indirectly: if the route's inline schema diverges
- * from the version below, no test fails BUT the docs render the wrong
- * shape. Acceptable trade-off for the two endpoints that have inline
- * bodies; if more inline schemas appear, hoist them into validators.ts.
- *
- * @see src/app/api/organizations/active/route.ts — `switchOrgSchema`
- * @see src/app/api/organizations/[orgId]/members/[memberId]/route.ts — `updateRoleSchema`
+ * Mirrors of schemas that live inline in route files (not in `validators.ts`) —
+ * importing the route module would drag in Prisma + Auth.js + the whole server
+ * runtime. Drift is unguarded: if a route's inline schema diverges, the docs
+ * render the wrong shape but no test fails. Acceptable for the handful of
+ * inline bodies; hoist into `validators.ts` if more appear.
  */
 const switchOrgSchema = z.object({
   organizationId: z.string().min(1, "organizationId is required"),
@@ -120,19 +95,14 @@ const updateMemberRoleSchema = z.object({
   role: z.enum(["OWNER", "ADMIN", "VIEWER"], { message: "Invalid role" }),
 });
 
-/** @see src/app/api/sessions/cancel/route.ts — `cancelSchema` */
 const cancelSessionSchema = z.object({
   sessionId: z.uuid(),
 });
 
 /**
- * Query-param schemas for tracked-user sub-routes. The routes
- * themselves parse these inline (`url.searchParams.get` + helper
- * functions like `parseActivityRange`) rather than via a Zod schema,
- * so we mirror the accepted values here for the OpenAPI snapshot only.
- *
- * @see src/api-client/tracked-users/domain.ts — `parseActivityRange`,
- *   `parsePageLimit`
+ * Tracked-user sub-routes parse query strings inline via helpers like
+ * `parseActivityRange`/`parsePageLimit` rather than a Zod schema, so these
+ * schemas exist only for the OpenAPI snapshot.
  */
 const userActivityRangeSchema = z.object({
   range: z.enum(["6h", "24h", "7d"]).optional(),
@@ -148,7 +118,6 @@ const userSessionsCursorSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
-/** @see src/app/api/cron/daily-cleanup/route.ts — `cronCleanupSummarySchema` */
 const cronCleanupSummarySchema = z.object({
   invites: z.number().int().nonnegative(),
   sessions: z.number().int().nonnegative(),
@@ -159,30 +128,12 @@ const cronCleanupSummarySchema = z.object({
 const here = dirname(fileURLToPath(import.meta.url));
 const SNAPSHOT_PATH = resolve(here, "..", "..", "openapi.snapshot.json");
 
-/**
- * Manifest entry — declarative description of one HTTP operation.
- *
- * Designed so the most common case (auth-gated route, JSON body, JSON
- * response, standard status codes) is a few lines of literal data; only
- * unusual shapes need the optional fields.
- */
 type AuthModel = "session" | "publicKey" | "cron" | "public";
 
 /**
- * Body shape — bare `ZodType` when no example is attached, full
- * `BodySpec` when the operation ships a concrete request example.
- *
- * @remarks
- * The union exists so endpoints can opt into examples one at a time
- * rather than forcing a flag-day rewrite of all 48 manifest entries.
- * Both branches reach `requestBody` with the same JSON Schema; the spec
- * branch additionally emits an OpenAPI `example` field that
- * Fumadocs's `<APIPage>` renders as a syntax-highlighted JSON block
- * plus realistic generated cURL / JS / Python samples.
- *
- * Examples are validated against the schema via `parseExamples` (a
- * dedicated test below) so contract drift surfaces immediately — a
- * stale example fails the suite specifically, not silently.
+ * Union with bare `ZodType` exists so endpoints opt into examples one at a time
+ * — no flag-day rewrite of all 48 manifest entries. Examples are validated
+ * against their schema in a dedicated test below (drift fails specifically).
  */
 type BodySpec = {
   schema: ZodType;
@@ -191,13 +142,8 @@ type BodySpec = {
 
 interface ResponseSpec {
   description: string;
-  /** Zod schema for the response body — converted via `z.toJSONSchema`. */
   schema?: ZodType;
-  /**
-   * Concrete JSON example. Validated against `schema` if both are set.
-   * Optional even when `schema` is set — empty-body statuses (`204`)
-   * carry neither.
-   */
+  /** Validated against `schema` when both are set. Both optional — `204` carries neither. */
   example?: unknown;
 }
 
@@ -208,55 +154,32 @@ interface PathParam {
 }
 
 interface OperationManifest {
-  /** Filesystem-style path with `[param]` placeholders — converted to `{param}` for OpenAPI. */
+  /** FS-style path with `[param]` placeholders — converted to `{param}` for OpenAPI. */
   path: string;
   method: "get" | "post" | "patch" | "put" | "delete" | "options";
   summary: string;
   description?: string;
   auth: AuthModel;
-  /** Path parameters in declaration order. Names must match `[param]` placeholders. */
+  /** Names must match `[param]` placeholders. */
   pathParams?: PathParam[];
-  /** Query string schema (validated server-side via `safeParse(searchParams)`). */
   query?: ZodType;
-  /**
-   * Request body schema. Bare `ZodType` for endpoints without a curated
-   * example; `BodySpec` to ship a concrete JSON example into the rendered
-   * reference.
-   */
   body?: ZodType | BodySpec;
-  /** Tag for grouping in the rendered docs (matches the API resource group). */
   tags?: string[];
-  /** Response status → spec. Always include the success status; common error statuses too. */
   responses: Record<string, ResponseSpec>;
 }
 
-/**
- * Type-guard — distinguishes the bare-schema body shape from the
- * spec-with-example shape. Both branches expose `.parse()`-able `schema`
- * to downstream code; only `BodySpec` carries `example`.
- */
 function isBodySpec(body: ZodType | BodySpec): body is BodySpec {
   return "schema" in body && "example" in body;
 }
 
-/** Extract the `ZodType` from either body shape — single accessor used everywhere. */
 function bodySchema(body: ZodType | BodySpec): ZodType {
   return isBodySpec(body) ? body.schema : body;
 }
 
-/**
- * Convert a filesystem-style path (`/api/projects/[projectId]`) to the
- * OpenAPI `{}`-style (`/api/projects/{projectId}`).
- */
 function toOpenApiPath(fsPath: string): string {
   return fsPath.replace(/\[([^\]]+)\]/g, "{$1}");
 }
 
-/**
- * Header parameters added by the auth model. Documented as OpenAPI
- * `parameters[]` entries so the rendered reference shows visitors what
- * to send.
- */
 function authHeaders(auth: AuthModel): unknown[] {
   switch (auth) {
     case "session":
@@ -915,8 +838,7 @@ const manifest: OperationManifest[] = [
     ],
     body: {
       schema: updateInviteSchema,
-      // Showcase the 'change-role' branch — covers the discriminator
-      // pattern; the 'extend' branch is described in the route summary.
+      // 'change-role' branch — the 'extend' branch is described in the route summary.
       example: { action: "change-role", role: "VIEWER" },
     },
     tags: ["Invites"],
@@ -1019,8 +941,7 @@ const manifest: OperationManifest[] = [
           trackedUserId: "tu_t5u6v7w8",
           userId: "usr_abc123",
           userTraits: { plan: "pro", email: "alex@your-app.com" },
-          // Slice events ship via the per-slice endpoint — `events`
-          // here is empty for modern (post-slice) recordings.
+          // Empty for modern recordings — slice events ship via the per-slice endpoint.
           events: [],
           slices: [
             {
@@ -1727,11 +1648,7 @@ function serialise(contract: unknown): string {
   return JSON.stringify(contract, null, 2) + "\n";
 }
 
-/**
- * A canonical SDK payload — the shape a real `@kharko/dozor` SDK call
- * produces. Drift-detection: the production `ingestSchema` must accept
- * it, so a silent shape tightening surfaces here immediately.
- */
+/** Drift sentry: shape a real `@kharko/dozor` SDK call produces. The prod `ingestSchema` must accept it. */
 const canonicalPayload = {
   sessionId: "550e8400-e29b-41d4-a716-446655440000",
   events: [
@@ -1756,9 +1673,7 @@ describe("REST contract — OpenAPI snapshot", () => {
   it("matches the committed openapi.snapshot.json", async () => {
     const current = serialise(buildContract());
 
-    // Escape hatch for deliberate contract changes. Generates or refreshes
-    // the snapshot so the test passes on the SAME run — the resulting
-    // diff is then part of the PR for reviewer inspection.
+    // Escape hatch for deliberate changes — passes on the same run so the diff lands in the PR.
     if (process.env.UPDATE_OPENAPI === "1") {
       await writeFile(SNAPSHOT_PATH, current, "utf8");
       return;
@@ -1775,23 +1690,16 @@ describe("REST contract — OpenAPI snapshot", () => {
   });
 
   it("drift sanity: canonical payload parses through the production ingestSchema", () => {
-    // If this fails, the prod schema tightened silently — the committed
-    // contract would then advertise a payload the live route rejects.
-    // Either revert the tightening or regenerate the snapshot explicitly.
+    // Failure = prod schema tightened silently → committed contract advertises
+    // a payload the live route rejects. Revert or regenerate the snapshot.
     const result = ingestSchema.safeParse(canonicalPayload);
     expect(result.success).toBe(true);
   });
 
   it("every manifest example parses through its declared schema", () => {
-    // Examples are concrete JSON values shipped into the rendered API
-    // reference (Fumadocs `<APIPage>` renders them as syntax-highlighted
-    // blocks plus realistic auto-generated cURL / JS / Python samples).
-    // If a schema tightens and an example becomes invalid, the rendered
-    // docs would advertise a payload the live route would reject — so
-    // we validate every example here.
-    //
-    // Failure surfaces the offending operation + status + zod issues,
-    // pointing the reader straight at the manifest entry to fix.
+    // Examples ship into the rendered Fumadocs `<APIPage>` (cURL/JS/Python samples).
+    // A stale example would advertise a payload the live route rejects — failure
+    // surfaces operation + status + zod issues, pointing at the manifest entry.
     const failures: string[] = [];
 
     for (const op of manifest) {

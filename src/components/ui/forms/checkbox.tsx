@@ -6,14 +6,6 @@ import { Checkbox as CheckboxPrimitive } from "radix-ui";
 import { cn } from "@/lib/cn";
 import { CheckIcon } from "@phosphor-icons/react";
 
-/**
- * Radix Checkbox primitive — 16px square with `CheckIcon` indicator.
- *
- * @remarks
- * Supports `checked` / `onCheckedChange` for controlled mode and
- * `defaultChecked` for uncontrolled. Invalid state styles surface via
- * `aria-invalid` — no separate error variant needed.
- */
 function Checkbox({ className, ...props }: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
   return (
     <CheckboxPrimitive.Root

@@ -5,14 +5,6 @@ import { Separator as SeparatorPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/cn";
 
-/**
- * Radix Separator primitive — 1px horizontal or vertical divider.
- *
- * @remarks
- * Defaults to `decorative={true}` (hidden from the accessibility tree).
- * Pass `decorative={false}` when the separator genuinely splits logical
- * regions — screen readers will then announce it as a role separator.
- */
 function Separator({
   className,
   orientation = "horizontal",

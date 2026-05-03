@@ -4,17 +4,7 @@ import { EnvelopeIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { InvitesTable } from "./invites-table";
 
-/**
- * "My invitations" — pure view for the invitations block on
- * `/settings/organizations`.
- *
- * By design this component does NOT read the user-invites query
- * directly. Its parent (`OrganizationsSettings`) is the composition
- * root for the page and hoists both the organizations and invites
- * queries into a single loading/error surface. By the time this
- * component renders, `invites` is guaranteed to be a real array
- * (possibly empty) — no pending state, no error state, no `undefined`.
- */
+/** Pure view — parent shell hoists both queries into one Suspense boundary, so `invites` is guaranteed defined here. */
 export function PendingInvitesSection({ invites }: { invites: UserInvite[] }) {
   const t = useTranslations("settings.orgs.invitations");
   return (

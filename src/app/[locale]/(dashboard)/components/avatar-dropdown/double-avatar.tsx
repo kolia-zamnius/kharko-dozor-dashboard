@@ -7,11 +7,6 @@ type DoubleAvatarProps = {
   hasNotification?: boolean;
 };
 
-/**
- * Stacked user + org avatar with an optional notification dot.
- * The org avatar sits slightly behind the user avatar so the
- * eye lands on the person first, then notices the org context.
- */
 export function DoubleAvatar({ user, orgImage, hasNotification }: DoubleAvatarProps) {
   return (
     <div className="relative">

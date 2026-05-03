@@ -13,11 +13,6 @@ export const userQueries = {
     }),
 };
 
-/**
- * Suspense-flavoured — consumer must be under a `<Suspense>` boundary.
- * Returns `{ data: UserProfile }` — never `undefined`. Failures bubble
- * to the nearest Next.js `error.tsx`.
- */
 export function useUserProfileQuery() {
   return useSuspenseQuery(userQueries.profile());
 }

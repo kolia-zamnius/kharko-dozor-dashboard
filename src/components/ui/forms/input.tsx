@@ -2,14 +2,6 @@ import * as React from "react";
 
 import { cn } from "@/lib/cn";
 
-/**
- * Styled `<input>` — borders, focus ring, invalid state, disabled state, dark-mode aware.
- *
- * @remarks
- * Thin wrapper; all native input attributes (`type`, `value`,
- * `onChange`, etc.) pass through. Pair with `Label` + `htmlFor` for
- * accessibility.
- */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <input

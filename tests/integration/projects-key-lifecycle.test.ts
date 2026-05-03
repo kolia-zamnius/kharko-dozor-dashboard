@@ -1,12 +1,7 @@
 /**
- * Integration tests for the project API-key lifecycle.
- *
- * @remarks
- * The key is the dashboard's highest-sensitivity credential — plaintext
- * leaves the server at exactly ONE route (`GET /api/projects/[id]/key`),
- * every other response carries the masked form. Regeneration atomically
- * invalidates the old key; delete cascades to sessions. This suite
- * enforces those invariants end-to-end against a real DB.
+ * Project API-key lifecycle. Plaintext leaves the server at exactly ONE route
+ * (`GET /api/projects/[id]/key`); every other response carries the masked form.
+ * Regeneration atomically invalidates the old key; delete cascades to sessions.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -74,9 +69,7 @@ describe("project API-key lifecycle", () => {
 
       const { status } = await invokeRoute(projectsRoute.POST, {
         method: "POST",
-        // Name must satisfy `.min(2).trim()` in `createProjectSchema` so
-        // the request reaches the permission check (OWNER gate) — a
-        // one-char name would fail zod with 400 before the 403 fires.
+        // Name ≥2 chars so zod passes — otherwise 400 fires before the 403 we want to test.
         body: { name: "Project X", organizationId: team.id },
       });
       expect(status).toBe(403);
@@ -163,8 +156,7 @@ describe("project API-key lifecycle", () => {
       expect(refreshed?.key).not.toBe(oldKey);
       expect(refreshed?.lastUsedAt).toBeNull();
 
-      // Old key no longer resolves to any project (the unique index was
-      // updated in place by the single `update` call).
+      // Old key no longer resolves — unique index updated in place by the single `update` call.
       const byOldKey = await prisma.project.findUnique({ where: { key: oldKey } });
       expect(byOldKey).toBeNull();
     });

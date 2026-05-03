@@ -5,11 +5,6 @@ import { describePlaygroundState } from "../labels";
 import { Section } from "./section";
 import { StatusRow } from "./status-row";
 
-/**
- * Read-only snapshot of the SDK lifecycle. Subscribes to `useDozor()`
- * directly so the rows re-render reactively when the underlying
- * recorder state changes — no prop drilling needed from the page.
- */
 export function StatusPanel() {
   const dozor = useDozor();
 

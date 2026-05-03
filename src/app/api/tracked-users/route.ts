@@ -11,24 +11,11 @@ import { filterEnrichedTrackedUsers } from "./_helpers/filter";
 import { sortEnrichedTrackedUsers } from "./_helpers/sort";
 
 /**
- * `GET /api/tracked-users` — cursor-paginated tracked-user list scoped to the active org.
- *
- * VIEWER+. Search by external id OR resolved display name, project
- * scope, status filter, sort by last-seen / sessions / active-time /
- * newest.
- *
- * @remarks
- * Pipeline is linear: parse params → scope projects → fetch rows →
- * {@link enrichTrackedUser} → {@link filterEnrichedTrackedUsers} →
- * {@link sortEnrichedTrackedUsers} → {@link buildCursorResponse}.
- *
- * In-JS filter/sort is fast because the Prisma query caps at
- * `limit + 1` rows (or 500 when status-filtering, since status is
- * derived and not indexable). Past ~10k users per org, the next step
- * is a `$queryRaw` CTE with indexed `MAX(sessions.endedAt)` —
- * flagged here so future-you doesn't discover it as a surprise.
- *
- * @see {@link trackedUsersListOptions} — client-side consumer.
+ * Pipeline: parse → scope → fetch → enrich → filter → sort → cursor. Status
+ * is derived in-JS (not indexable), so status-filter takes the over-fetch
+ * path (500 rows, no cursor — combining cursor with post-fetch drops produces
+ * unstable pagination). Past ~10k users/org the upgrade is a `$queryRaw` CTE
+ * with indexed `MAX(sessions.endedAt)`.
  */
 export const GET = withAuth(async (req, user) => {
   const activeOrgId = user.activeOrganizationId;
@@ -57,15 +44,12 @@ export const GET = withAuth(async (req, user) => {
   const projectMap = new Map<string, ProjectMetadata>(orgProjects.map((p) => [p.id, p]));
   const orgProjectIds = orgProjects.map((p) => p.id);
 
-  // Always intersect `?projectIds=` with caller's org — stray ids are dropped, not trusted.
+  // Re-intersect with caller's org — stray ids are dropped, not trusted.
   const projectFilter =
     params.projectIds?.length && params.projectIds.some((id) => orgProjectIds.includes(id))
       ? params.projectIds.filter((id) => orgProjectIds.includes(id))
       : orgProjectIds;
 
-  // Over-fetch 500 when status filter is active (status is derived,
-  // can't narrow in SQL). Cursor skipped in the same path — combining
-  // it with post-fetch drops would produce unstable pagination.
   const hasStatusFilter = Boolean(params.statuses?.length);
 
   const rows = await prisma.trackedUser.findMany({

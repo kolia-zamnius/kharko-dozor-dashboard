@@ -1,13 +1,8 @@
 /**
- * Integration tests for `PATCH /api/user/locale`.
- *
- * @remarks
- * Small route with a large blast radius — every authenticated user hits
- * it once per locale change, and an invalid write would desync
- * `User.locale` from the JWT callback's `hasLocale` narrow, eventually
- * causing a `MODULE_NOT_FOUND` at `import("./messages/{locale}/…")`.
- * The zod enum derived from `LOCALES` is the guard; these tests prove
- * it fires at the boundary.
+ * `PATCH /api/user/locale`. An invalid write would desync `User.locale` from
+ * the JWT callback's `hasLocale` narrow and eventually `MODULE_NOT_FOUND` at
+ * `import("./messages/{locale}/…")`. The zod enum derived from `LOCALES` is
+ * the guard; these tests prove it fires at the boundary.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

@@ -2,15 +2,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/cn";
 
-/**
- * Card container — padded rounded surface with subtle ring.
- *
- * @remarks
- * Compound parts: `CardHeader`, `CardContent`, `CardFooter`. Size
- * propagates via `data-size` so children pick up compact spacing
- * without a repeated prop. Leading/trailing `<img>` children
- * automatically round to the card's corners.
- */
+/** Leading/trailing `<img>` children inherit corner rounding automatically. */
 function CardRoot({
   className,
   size = "default",

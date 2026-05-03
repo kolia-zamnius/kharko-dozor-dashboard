@@ -10,11 +10,6 @@ type OrgListProps = {
   onSelect: (id: string) => void;
 };
 
-/**
- * Vertical list of membership rows for the mobile drawer's
- * "Switch organization" accordion. Pure view — mutation lives in
- * the parent.
- */
 export function OrgList({ orgs, activeOrgId, onSelect }: OrgListProps) {
   const { formatRole } = useFormatters();
   return (

@@ -17,23 +17,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /**
- * Server Component entrypoint for the user detail page.
- *
- * Strategy:
- * 1. Resolve the current auth session (middleware already guarantees it exists
- *    for `(dashboard)` routes, but we still need `user.id` for permission
- *    checks in the loader).
- * 2. Load the tracked user directly from Prisma via `loadTrackedUserDetail` —
- *    the same helper the API route handler uses, so the data shape is
- *    identical and hydration works without a client-side refetch.
- * 3. On 404, bail to the not-found boundary.
- * 4. Hydrate the TanStack Query cache under the same key the client would use
- *    (`trackedUserQueries.detail(userId)`) so `useTrackedUserQuery` in the
- *    shell resolves instantly from cache instead of firing a network request.
- *
- * The activity and status queries deliberately stay client-driven — they
- * change on interaction (range selector, polling) and their initial fetches
- * are cheap, so there's no meaningful gain from prefetching them here.
+ * Hydrates `trackedUserQueries.detail` from `loadTrackedUserDetail` (same
+ * helper the API route uses → byte-identical shape, no client refetch).
+ * Activity/status stay client-driven — they change on interaction and
+ * prefetching wouldn't help.
  */
 export default async function UserDetailPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = await params;
@@ -44,13 +31,9 @@ export default async function UserDetailPage({ params }: { params: Promise<{ use
     notFound();
   }
 
-  // Trust-boundary cast: `userId` enters from a URL param (raw string) —
-  // branding it here so the loader's type contract catches any future
-  // swap with `requesterId` inside the function body.
-  // Cross-org guard inside the loader maps the foreign-org case to a
-  // thrown HttpError(404) that we translate into the not-found boundary
-  // below, so a guessed URL with a different-org tracked-user ID looks
-  // exactly like a non-existent one.
+  // Trust-boundary cast — `userId` is a raw URL param. The loader's
+  // foreign-org guard throws `HttpError(404)`; we translate to `notFound()`
+  // so URLs give no signal about resource existence.
   let trackedUser;
   try {
     trackedUser = await loadTrackedUserDetail(
@@ -59,9 +42,6 @@ export default async function UserDetailPage({ params }: { params: Promise<{ use
       session.user.activeOrganizationId,
     );
   } catch (err) {
-    // Foreign-org / no-active-org / membership failures all map to a
-    // 404 page so the URL gives no information about whether the
-    // resource exists. Anything else is a genuine server error.
     if (isHttpError(err)) notFound();
     throw err;
   }

@@ -30,27 +30,9 @@ import { navItems } from "../nav-items";
 import { OrgList } from "./org-list";
 
 /**
- * Mobile replacement for the desktop `AvatarDropdown` + horizontal
- * navigation.
- *
- * @remarks
- * Uses a Radix Sheet instead of a Dropdown because dropdowns on
- * touch devices clip against the viewport edge and have poor scroll
- * behaviour. The sheet slides in from the right and stacks content
- * vertically:
- *   1. Identity header (user + active-org rows).
- *   2. Collapsible "Switch organization" accordion — we render the
- *      org list inline rather than in a nested sub-sheet because
- *      stacked sheets on mobile feel heavy-handed and break the
- *      expected back-gesture.
- *   3. Main nav (driven by the same `navItems` config the desktop
- *      navbar consumes — single source of truth).
- *   4. Settings + theme + sign-out actions.
- *
- * `onOpenChange` collapses the org accordion when the drawer closes
- * so the next open doesn't start mid-expanded. Sheet title is
- * visually hidden — Radix requires one for a11y but the identity
- * header below already communicates context.
+ * Sheet (not Dropdown) — dropdowns clip against viewport edge on touch and
+ * scroll poorly. Org switcher renders inline (no nested sub-sheet) — stacked
+ * sheets on mobile break the back-gesture expectation.
  */
 export function MobileDrawer() {
   const t = useTranslations("shell");

@@ -1,14 +1,8 @@
 /**
- * Integration tests for member management —
- *   - `PATCH /api/organizations/[orgId]/members/[memberId]` — change role (OWNER-only)
- *   - `DELETE /api/organizations/[orgId]/members/[memberId]` — remove or self-leave
- *
- * @remarks
- * Covers the governance surface that `permissions-matrix.test.ts` doesn't
- * touch: ownership transfer on the last-owner leave, the 409 when the
- * only-member tries to leave, Personal-Space protection on leave, and
- * `activeOrganizationId` flipping back to Personal Space for a removed
- * user.
+ * Member PATCH (role change, OWNER-only) + DELETE (remove + self-leave).
+ * Covers edges past the matrix: last-owner-leave ownership transfer,
+ * only-member 409, Personal-Space leave protection, and a removed user's
+ * `activeOrganizationId` flipping back to Personal Space.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

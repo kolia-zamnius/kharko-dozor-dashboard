@@ -38,8 +38,7 @@ export function DangerZoneSection() {
   function onSubmit(data: DeleteAccountInput) {
     deleteAccount.mutate(data, {
       onSuccess: () => {
-        // Toast comes from `useDeleteAccountMutation`'s `meta.successKey`.
-        // Sign out fires immediately; the toast briefly shows on the auth page.
+        // Toast comes from `useDeleteAccountMutation.meta.successKey` — briefly visible on /sign-in after redirect.
         void signOut({ redirectTo: "/sign-in" });
       },
     });

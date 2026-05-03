@@ -21,16 +21,9 @@ type DisplayNameModalProps = {
 };
 
 /**
- * Editor for the 4-level display-name resolver chain. One modal, three
- * independently-savable sections (matching the resolver priority top → bottom):
- *   1. {@link CustomNameSection}       — this user only, explicit override
- *   2. {@link LocalTraitKeySection}    — this user only, `traits[key]`
- *   3. {@link ProjectTraitKeySection}  — every user in the project, `traits[key]`
- *
- * Each section owns its local input state, its mutation, and its set/reset
- * actions — there is no "save all" button. Sections re-sync their inputs
- * to fresh server state after every successful mutation via the
- * {@link useServerSyncedInput} hook.
+ * Three independently-savable sections matching the resolver priority — no
+ * "save all" button. Sections re-sync inputs to fresh server state via
+ * `useServerSyncedInput` after every mutation.
  */
 export function DisplayNameModal({ user }: DisplayNameModalProps) {
   const tHeader = useTranslations("users.detail.header");

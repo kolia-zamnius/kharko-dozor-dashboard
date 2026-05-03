@@ -1,24 +1,10 @@
 /**
- * Integration smoke test — plumbing-only assertions that the full test-
- * infrastructure pipeline is healthy:
+ * Plumbing-only — Testcontainers → `db push` → worker clone → PrismaClient →
+ * factories → roundtrip. Exists for diagnostic narrowing: when the suite goes
+ * red, smoke answers "plumbing or my code?" in ~2 seconds. Red smoke = setup/
+ * or helpers/ regression; green smoke + downstream red = route/factory bug.
  *
- *   Testcontainers Postgres → `prisma db push` → worker DB clone →
- *   PrismaClient via `@prisma/adapter-pg` → factory inserts → row reads back.
- *
- * @remarks
- * One might ask: why keep this file at all, since every OTHER integration
- * test implicitly relies on the same pipeline — if Testcontainers breaks,
- * everything fails, not just smoke? The answer is **diagnostic narrowing**.
- * When `npm run test:integration` returns a wall of red, the on-call
- * reviewer's first question is: "plumbing or my code?" `smoke.test.ts`
- * answers it in ~2 seconds — a red smoke = `tests/setup/global-setup.ts`
- * or `tests/helpers/db.ts` regression; a green smoke with downstream red
- * = route / factory regression. Without this file that diagnostic
- * question takes minutes of `docker logs` spelunking instead.
- *
- * Deliberately minimal — three tests, no mocks beyond the shared setup
- * file. Do NOT add business-logic tests here; they belong in a
- * behaviour-scoped file like `organizations.test.ts` or `invites.test.ts`.
+ * Do NOT add business-logic tests here — they belong in behaviour-scoped files.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -65,8 +51,7 @@ describe("infrastructure smoke", () => {
   });
 
   it("truncates user-owned tables between tests for isolation", async () => {
-    // If the `beforeEach` TRUNCATE ran, no orgs should have leaked from
-    // the previous test in this file.
+    // No orgs should leak from the previous test if `beforeEach` TRUNCATE ran.
     const count = await prisma.organization.count();
     expect(count).toBe(0);
   });

@@ -11,16 +11,7 @@ import { useDisconnectAccountMutation } from "@/api-client/user/mutations";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-/**
- * Confirmation dialog for OAuth account disconnection. The destructive
- * weight here is real: removing the only sign-in method for a user could
- * lock them out of their own account, so a single accidental click should
- * never be enough.
- *
- * Each row owns its own dialog instance — the in-flight `disabled` from
- * `useDisconnectAccountMutation` naturally scopes to the row being
- * disconnected, no need for `mutation.variables === provider` matching.
- */
+/** Per-row dialog so `mutation.isPending` naturally scopes to the row being disconnected — no `variables === provider` matching. Server's last-login-method guard returns 409 if this would lock the user out. */
 export function DisconnectAccountDialog({ provider, providerLabel }: { provider: string; providerLabel: string }) {
   const t = useTranslations("settings.user.accounts");
   const [open, setOpen] = useState(false);

@@ -10,12 +10,8 @@ type PageDistRow = {
 };
 
 /**
- * Page-distribution snapshot — full list + invariant totals.
- *
- * @remarks
- * Returning both from one helper means the route can't build a
- * response where `uniquePages` / `topPage` / `share` drift when the
- * client changes `?pageLimit=`. Type-level invariant.
+ * Snapshot returns full list + totals together — `uniquePages`/`topPage`/`share`
+ * can't drift when the client changes `?pageLimit=`.
  */
 export type PageDistributionSnapshot = {
   readonly rows: readonly PageDistRow[];
@@ -24,17 +20,7 @@ export type PageDistributionSnapshot = {
   readonly topPathname: string | null;
 };
 
-/**
- * Run the page-distribution query and compute invariant totals.
- *
- * @remarks
- * Ordered `duration_total DESC` so `topPathname` is row 0. `visits` is
- * kept for the UI even though it doesn't feed the share computation.
- *
- * @param trackedUserId - Internal tracked-user primary key.
- * @param from - Window start (inclusive).
- * @param to - Window end (exclusive).
- */
+/** Ordered `duration_total DESC` so `topPathname` is row 0. */
 export async function computePageDistribution(
   trackedUserId: string,
   from: Date,
@@ -64,14 +50,7 @@ export async function computePageDistribution(
   };
 }
 
-/**
- * Project a snapshot + `pageLimit` into the response shape.
- *
- * @remarks
- * `share` is computed against `totalSliceDuration` — the full-
- * distribution total — so percentages stay correct no matter how
- * small `pageLimit` is.
- */
+/** `share` is against the full-distribution total so percentages stay correct under any `pageLimit`. */
 export function projectPageDistribution(snapshot: PageDistributionSnapshot, pageLimit: number): PageDistribution[] {
   const { rows, totalSliceDuration } = snapshot;
   return rows.slice(0, pageLimit).map((r) => ({

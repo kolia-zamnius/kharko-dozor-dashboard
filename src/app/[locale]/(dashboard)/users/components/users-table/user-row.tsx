@@ -10,21 +10,7 @@ import type { TrackedUserListItem } from "@/api-client/tracked-users/types";
 import { useFormatters } from "@/lib/use-formatters";
 import { StatusBadge } from "./status-badge";
 
-/**
- * Single row in the users table. Pure view — receives a tracked user
- * and renders avatar, name, project badge, status, last seen, sessions,
- * and active time. The whole row is a link to the user detail page.
- *
- * @remarks
- * The User cell can show up to three stacked lines: the resolved
- * `displayName` (always), the `externalId` (only when it differs from
- * the displayName), and `traits.email` (only when it differs from both).
- * The de-dup matters because a project that resolves display names from
- * the `email` trait would otherwise repeat the email twice — once as
- * the title and once as a subtitle.
- *
- * @see resolveDisplayName — the 4-step chain that produces `displayName`
- */
+/** User cell de-dups `displayName`/`externalId`/`traits.email` — a project resolving display names from the `email` trait would otherwise repeat the email. */
 export function UserRow({ user }: { user: TrackedUserListItem }) {
   const t = useTranslations("users.list.table");
   const { formatCount, formatDate, formatDuration, formatRelative } = useFormatters();

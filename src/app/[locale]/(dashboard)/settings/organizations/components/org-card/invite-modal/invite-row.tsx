@@ -10,28 +10,9 @@ import { useTranslations } from "next-intl";
 import { INVITE_ROLE_OPTIONS } from "../../role-options";
 
 /**
- * Single row in the pending-invites admin table.
- *
- * Three edit affordances live inline:
- *   - **Role** — a `Select` of `ADMIN | VIEWER` that fires a PATCH the
- *     moment the value changes. Optimistic update makes the new role
- *     persist visually before the network round-trip completes.
- *   - **Extend** — a ghost button that bumps `expiresAt` back to a
- *     fresh `INVITE_EXPIRY_DAYS` window without touching `role`. No
- *     email is sent; resending is handled by the top-of-modal form's
- *     idempotent POST.
- *   - **Revoke** — one-click destructive delete. No confirmation
- *     dialog: (a) the action is trivially reversible — the admin can
- *     re-send the invite with the same email in the form above, and
- *     (b) the optimistic removal means a misclick surfaces itself
- *     loudly (row disappears), so the cost of a rollback via "invite
- *     again" is tiny. Nested dialogs were considered and rejected —
- *     the ergonomic cost of modal-in-modal outweighs the protection
- *     for an easily-recreated resource.
- *
- * Mutation state is owned per-row: both hooks here scope `isPending`
- * to this invite's edits without needing to compare `variables.inviteId`
- * at a higher level. Cleaner UX, no cross-row disabled-state bleed.
+ * Revoke is one-click — trivially reversible (just re-invite the email above)
+ * and modal-in-modal has worse ergonomics than a misclick recovery cost.
+ * Per-row mutations so `isPending` doesn't bleed across rows.
  */
 export function InviteRow({ orgId, invite }: { orgId: string; invite: OrganizationInvite }) {
   const t = useTranslations("settings.orgs.invite.pending");

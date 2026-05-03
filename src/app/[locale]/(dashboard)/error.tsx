@@ -8,19 +8,11 @@ import { Button } from "@/components/ui/primitives/button";
 import { getErrorCopy } from "@/lib/error-copy";
 
 /**
- * Root error boundary for all `(dashboard)/*` routes.
- *
- * @remarks
- * Next.js App Router mounts this automatically when a route segment
- * throws. Most network failures are handled globally by TanStack
- * Query's `QueryCache` → toast; this fires for rendering errors,
- * unhandled rejections, and anything that blows past the per-segment
- * boundaries (`users/error.tsx`, `replays/error.tsx`, etc.).
- *
- * Copy is differentiated by {@link getErrorCopy} — 404 reads as "not
- * found", 403 as "permission denied", etc. — so the user sees a
- * specific sentence instead of a generic "something went wrong".
- * Fallback for non-API errors is still the generic message.
+ * Network failures are handled globally by `QueryCache` → toast; this fires
+ * for render errors, unhandled rejections, and anything that escapes the
+ * per-segment boundaries. `getErrorCopy` differentiates by status (404 →
+ * "not found", 403 → "permission denied", ...) so the user sees a specific
+ * sentence instead of a generic "something went wrong".
  */
 export default function DashboardError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const t = useTranslations("common.error");

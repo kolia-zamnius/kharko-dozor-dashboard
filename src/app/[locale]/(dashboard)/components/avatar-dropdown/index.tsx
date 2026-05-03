@@ -34,29 +34,10 @@ import { useOptimistic, useTransition } from "react";
 import { DoubleAvatar } from "./double-avatar";
 
 /**
- * Desktop account menu triggered from the navbar's avatar.
- *
- * @remarks
- * Four concerns live here — in this order because it matches the
- * reading order in the menu itself:
- *   1. Identity block — user + active-org header cards (two rows so
- *      the admin sees their current context without opening a sub-
- *      menu).
- *   2. Org switcher sub-menu — every membership as a row with
- *      `CheckIcon` on the active one. Uses `useSwitchOrgMutation`
- *      which updates `User.activeOrganizationId` server-side and
- *      invalidates the org scope in the TanStack cache.
- *   3. Settings deep-links (`/settings/organizations`,
- *      `/settings/user`). Pending-invite count renders as a
- *      destructive badge on the organizations link so the signal
- *      surfaces without a dedicated inbox.
- *   4. Theme toggle + sign-out. `onSelect={(e) => e.preventDefault()}`
- *      on the theme item so clicking it doesn't close the menu — the
- *      admin may want to fine-tune and keep browsing.
- *
- * Organizations + invites are read through classic (non-Suspense)
- * hooks because the navbar renders before any page-level Suspense
- * boundary — we tolerate the in-flight `undefined` with `?.`.
+ * Orgs + invites read via classic (non-Suspense) hooks — navbar renders
+ * before any page-level Suspense boundary. In-flight `undefined` tolerated
+ * with `?.`. `onSelect={(e) => e.preventDefault()}` on the theme toggle so
+ * clicking doesn't dismiss the menu.
  */
 export function AvatarDropdown() {
   const t = useTranslations("shell");
@@ -70,13 +51,9 @@ export function AvatarDropdown() {
   const { resolvedTheme, setTheme } = useTheme();
 
   const activeOrgId = user?.activeOrganizationId ?? null;
-  // Optimistic active-org id — `useOptimistic` renders the picked org as
-  // active the moment the admin clicks a switcher item, then
-  // auto-reverts to the session value when the transition completes
-  // (either because `update({})` inside `useSwitchOrgMutation.onSuccess`
-  // pulled in a fresh JWT, or because the mutation failed and rolled
-  // back). Keeps the checkmark + identity card feeling instant even
-  // though the Auth.js session refetch takes a beat.
+  // `useOptimistic` flips the checkmark + identity card on click; auto-reverts
+  // when the transition ends (success → fresh JWT via session.update; failure →
+  // rolls back). Hides the Auth.js refetch latency.
   const [optimisticActiveOrgId, setOptimisticActiveOrgId] = useOptimistic(activeOrgId);
   const [, startTransition] = useTransition();
   const activeOrg = orgs.find((o) => o.id === optimisticActiveOrgId) ?? null;
@@ -90,8 +67,7 @@ export function AvatarDropdown() {
       try {
         await switchOrg.mutateAsync(orgId);
       } catch {
-        // `useOptimistic` auto-reverts when the transition ends;
-        // the toast is fired by the global `MutationCache.onError`.
+        // `useOptimistic` auto-reverts; toast fires via global `MutationCache.onError`.
       }
     });
   };

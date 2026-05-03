@@ -5,19 +5,10 @@ import type { Prisma } from "@/generated/prisma/client";
 type TransactionClient = Prisma.TransactionClient;
 
 /**
- * Flip a user's `activeOrganizationId` back to their Personal Space.
- *
- * @remarks
- * Shared transaction step for any flow that detaches a user from the
- * org they were acting as — without this rebase, the surrounding
- * transaction would fail the `User.activeOrganizationId` FK after the
- * org disappears (the schema does not declare `SetNull` for that
- * pointer). Falls back to `null` when the user somehow has no Personal
- * Space left (shouldn't happen — the sign-up event provisions one —
- * but kept defensive).
- *
- * @param tx - Active Prisma transaction client.
- * @param userId - User whose active-org pointer to rebase.
+ * Without this rebase the surrounding transaction would fail the
+ * `User.activeOrganizationId` FK after the org disappears — schema doesn't
+ * declare `SetNull` for that pointer. Falls back to `null` if the user has no
+ * Personal Space (shouldn't happen — sign-up provisions one — defensive).
  */
 export async function switchToPersonalSpace(tx: TransactionClient, userId: string): Promise<void> {
   const personalOrg = await tx.organization.findFirst({

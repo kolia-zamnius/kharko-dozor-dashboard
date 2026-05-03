@@ -10,34 +10,16 @@ import { prisma } from "@/server/db/client";
 import type { TrackedUserId, UserId } from "@/types/ids";
 
 /**
- * Load a tracked user with permission check, `displayName` resolution,
- * and 7-day activity rollup.
- *
- * @remarks
- * Isomorphic loader — consumed both by the JSON route handler and the
- * RSC hydration prefetch. Centralising the payload shape is what lets
- * TanStack Query hydrate from the RSC prefetch without an immediate
- * client refetch — any divergence in fields or formatting would
- * invalidate the cache entry.
- *
- * `displayName` is resolved here so clients never re-implement the
- * fallback chain. The raw source fields (`customName`,
- * `displayNameTraitKey`, `projectDisplayNameTraitKey`) are echoed back
- * so the edit modal can pre-fill its inputs without a second request.
- *
- * The return value is parsed through `trackedUserDetailSchema` so
- * whichever caller consumes it (API route → JSON, RSC
- * `HydrationBoundary` prefetch) hits the same validator. Prisma-
- * select drift or a missing timestamp conversion fails fast here
- * instead of reaching the client.
+ * Isomorphic loader — same payload shape for the API route and the RSC prefetch
+ * for TanStack hydration. Field drift here invalidates the cache hand-off, so the
+ * output is parsed through `trackedUserDetailSchema` to fail fast on Prisma-select
+ * drift. `displayName` is resolved here (not in callers) so clients don't reimplement
+ * the fallback chain; raw source fields are echoed back so the edit modal can pre-fill.
  *
  * @throws {HttpError} 400 — no active organization on the requester.
- * @throws {HttpError} 404 — tracked user lives in a different org than
- *   the requester's active one (opaque, never 403).
+ * @throws {HttpError} 404 — tracked user lives in a different org than the
+ *   requester's active one (opaque, never 403).
  * @throws {HttpError} 403 — membership check failed.
- * @see src/server/auth/permissions.ts — `requireResourceAccess`
- * @see src/app/api/tracked-users/[userId]/route.ts — API route consumer
- * @see src/api-client/tracked-users/response-schemas.ts — DTO schema.
  */
 export async function loadTrackedUserDetail(
   userId: TrackedUserId,
@@ -76,7 +58,7 @@ export async function loadTrackedUserDetail(
     projectDefaultTraitKey: projectDisplayNameTraitKey,
   });
 
-  // Derive lastEventAt + activeTime7d from sessions (same logic as list route)
+  // Activity rollup mirrors the list-route logic in `api/tracked-users/_helpers/enrich.ts`.
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - SEVEN_DAYS_MS);
   let lastEventAt: Date | null = null;
@@ -105,7 +87,6 @@ export async function loadTrackedUserDetail(
     status,
     activeTime7d,
     createdAt: trackedUser.createdAt.toISOString(),
-    // Display-name resolution inputs, echoed for the modal form state
     customName: trackedUser.customName,
     displayNameTraitKey: trackedUser.displayNameTraitKey,
     projectDisplayNameTraitKey,

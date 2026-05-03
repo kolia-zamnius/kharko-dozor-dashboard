@@ -19,13 +19,8 @@ type Props = {
 };
 
 /**
- * One row in the members list. Owns its own role-change mutation so
- * the parent doesn't have to thread `isPending` / `onRoleChange` props
- * down. The org-wide "while one role change is in flight, disable
- * every Select" UX is preserved via
- * `useIsMutating({ mutationKey: ... })` — every row sees the same
- * counter through the shared `QueryClient` regardless of which row
- * fired the request.
+ * Per-row mutation; org-wide "any role change in flight, disable all"
+ * preserved via `useIsMutating({ mutationKey })` on a shared key.
  */
 export function MemberRow({ org, member, isOwner, isSelf, isOnlyMember, onLeaveSuccess }: Props) {
   const t = useTranslations("settings.orgs.members");

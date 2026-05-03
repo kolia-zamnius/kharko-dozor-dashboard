@@ -15,20 +15,7 @@ import {
 } from "@/components/ui/overlays/dialog";
 import { DropdownMenuItem } from "@/components/ui/overlays/dropdown-menu";
 
-/**
- * Destructive confirmation dialog for deleting a session — owns its
- * own `open` state and renders the dropdown's trigger row internally,
- * so callers don't have to thread `open`/`onOpenChange` through the
- * row menu. Matches the self-controlled pattern used by every other
- * dialog in the codebase (`MemberRemoveDialog`, `DisconnectAccountDialog`,
- * `MembersModal`, etc.).
- *
- * @remarks
- * `<DialogTrigger asChild>` wraps a `DropdownMenuItem` with a
- * `preventDefault` on `onSelect` — the standard Radix pattern for
- * letting a menu item open a dialog without the dropdown auto-closing
- * underneath it.
- */
+/** Self-controlled dialog (project-wide pattern). `DropdownMenuItem` + `preventDefault` on `onSelect` keeps the dropdown open while Radix mounts the dialog. */
 export function DeleteSessionDialog({ sessionId }: { sessionId: string }) {
   const t = useTranslations("replays.list.deleteDialog");
   const tMenu = useTranslations("replays.list.rowMenu");

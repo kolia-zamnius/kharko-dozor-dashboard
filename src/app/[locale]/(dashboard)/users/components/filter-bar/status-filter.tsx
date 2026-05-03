@@ -13,11 +13,6 @@ type StatusFilterProps = {
   onChange: (statuses: UserActivityStatus[]) => void;
 };
 
-/**
- * Multi-select status filter. Popover contains a vertical list of options —
- * each with a colored indicator, label, and short description explaining
- * the activity threshold so the user knows exactly what they're filtering by.
- */
 export function StatusFilter({ selected, onChange }: StatusFilterProps) {
   const t = useTranslations("users.list.statusFilter");
   const tStatus = useTranslations("users.status");

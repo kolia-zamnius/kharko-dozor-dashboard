@@ -9,18 +9,6 @@ type AvatarProps = React.ComponentProps<typeof AvatarPrimitive.Root> & {
   size?: "default" | "sm" | "lg";
 };
 
-/**
- * Radix Avatar primitive — circular image slot with graceful fallback.
- *
- * @remarks
- * Compound parts: `AvatarImage` (the `<img>` slot), `AvatarFallback`
- * (renders when the image 404s or is loading), `AvatarBadge` (corner
- * indicator, auto-sized by parent `size`), `AvatarGroup` +
- * `AvatarGroupCount` (stacked cluster with overflow counter).
- *
- * Size propagates via `data-size` attribute onto descendants through
- * Tailwind's `group-data-*` selector — children stay agnostic.
- */
 function Avatar({ className, size = "default", ...props }: AvatarProps) {
   return (
     <AvatarPrimitive.Root

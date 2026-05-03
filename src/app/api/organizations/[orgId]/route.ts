@@ -9,14 +9,7 @@ import { log } from "@/server/logger";
 
 type Params = { orgId: string };
 
-/**
- * `PATCH /api/organizations/[orgId]` — edit org name and/or avatar.
- *
- * @remarks
- * ADMIN+ — metadata change affects every member's view, but OWNER is
- * reserved for destructive ops (delete, role changes, key lifecycle).
- * `regenerateAvatar: true` rolls the DiceBear seed to a new UUID.
- */
+/** ADMIN+ — OWNER stays reserved for destructive ops. `regenerateAvatar: true` rolls the DiceBear seed. */
 export const PATCH = withAuth<Params>(async (req, user, { orgId }) => {
   await requireMember(user.id, orgId, "ADMIN");
 
@@ -42,24 +35,10 @@ export const PATCH = withAuth<Params>(async (req, user, { orgId }) => {
 });
 
 /**
- * `DELETE /api/organizations/[orgId]` — hard-delete a TEAM organization.
- *
- * OWNER-only. Destructive.
- *
- * @remarks
- * Personal Space is protected — deleting it would orphan the account
- * with no default context to sign in to.
- *
- * Transaction steps:
- *   1. Users "acting as" this org are flipped back to Personal Space
- *      via {@link switchToPersonalSpace} (schema doesn't declare
- *      `onDelete: SetNull` on that pointer).
- *   2. Invites scoped to the org are wiped (about to reference a
- *      non-existent org).
- *   3. The org is deleted; Prisma cascades projects → sessions →
- *      slices → events → tracked users.
- *
- * @throws {HttpError} 403 — attempting to delete a Personal Space.
+ * OWNER-only. Personal Space protected — deleting it orphans the account with
+ * no default context. Tx: rebase active-org pointers (schema lacks `SetNull`),
+ * wipe invites, delete org (cascades projects → sessions → slices → events →
+ * tracked users).
  */
 export const DELETE = withAuth<Params>(async (req, user, { orgId }) => {
   await requireMember(user.id, orgId, "OWNER");

@@ -9,17 +9,9 @@ import { NextResponse } from "next/server";
 type Params = { sessionId: string };
 
 /**
- * `GET /api/sessions/[sessionId]` — full session detail for the replay page.
- *
- * VIEWER+ of the owning org.
- *
- * @remarks
- * Returns metadata + `slices[]` (each slice has its own rrweb
- * snapshot; events load per-slice on demand via the sibling
- * `/slices/[i]/events` endpoint). Legacy pre-slice sessions (empty
- * `slices[]`) inline their events so old recordings still play.
- *
- * @see {@link sessionDetailOptions} — client-side consumer.
+ * Modern sessions ship `slices[]` and load events per-slice via the sibling
+ * `/slices/[i]/events` route. Legacy pre-slice sessions inline their events
+ * so old recordings still play.
  */
 export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
   const session = await prisma.session.findUnique({
@@ -52,7 +44,6 @@ export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
 
   await requireResourceAccess(user.id, user.activeOrganizationId, session.project.organizationId, "VIEWER");
 
-  // Legacy sessions (no slices) inline their events; post-slice sessions stream per-slice.
   const isLegacy = session.slices.length === 0;
   let events: { type: number; timestamp: number; data: unknown }[] = [];
   if (isLegacy) {
@@ -102,11 +93,8 @@ export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
 });
 
 /**
- * `DELETE /api/sessions/[sessionId]` — hard-delete a session (cascades slices + events).
- *
- * ADMIN+ (not OWNER) on purpose — QA / staging cleanup loops stay
- * unblocked without an owner on call. No security upside to tighter
- * gating since sessions are per-project, not governance-tier.
+ * ADMIN+ on purpose — QA/staging cleanup loops stay unblocked without an
+ * OWNER on call. Sessions are per-project, not governance-tier.
  */
 export const DELETE = withAuth<Params>(async (req, user, { sessionId }) => {
   const session = await prisma.session.findUnique({

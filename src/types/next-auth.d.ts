@@ -4,28 +4,9 @@ import type { Locale } from "@/i18n/config";
 import type { UserId } from "./ids";
 
 /**
- * Augmented `Session["user"]` shape for the dashboard.
- *
- * @remarks
- * The stock NextAuth `Session["user"]` type is `{ name?: string | null;
- * email?: string | null; image?: string | null }` — nullable and
- * optional throughout. Our app guarantees every field after the
- * sign-in flow runs (adapter sets an avatar, JWT callback populates
- * id / activeOrganizationId), so we narrow the shape here instead of
- * forcing every consumer to write `session.user?.id ?? ""`.
- *
- * The file must live at the module-root level (and the `import
- * "next-auth"` line must stay — it's what marks this as augmentation
- * rather than a fresh declaration) so TypeScript applies the merge
- * regardless of which file imports NextAuth first.
- *
- * Adding a field here is step 1 of 3 — it also has to be written in
- * `src/server/auth/callbacks/jwt.ts` and projected back in
- * `src/server/auth/callbacks/session.ts`, otherwise consumers will
- * read `undefined` at runtime despite the type saying otherwise.
- *
- * @see src/server/auth/callbacks/session.ts — projects token → session.
- * @see src/server/auth/callbacks/jwt.ts — writes token claims.
+ * Adding a field to `session.user` is 3 places: declare here, write in
+ * {@link src/server/auth/callbacks/jwt.ts}, project in
+ * {@link src/server/auth/callbacks/session.ts}.
  */
 declare module "next-auth" {
   interface Session {
@@ -41,20 +22,8 @@ declare module "next-auth" {
 }
 
 /**
- * Augmented JWT shape — fields the dashboard writes onto the token in
- * the `jwt` callback.
- *
- * @remarks
- * All optional because the very first token write happens BEFORE the
- * callback's "do work" branch populates them. Once the callback narrows
- * `token.id`, downstream readers can use it as a regular `string` —
- * removes the four `token.id as string` casts in the jwt callback
- * itself and the `activeOrganizationId as string | null` cast in the
- * session callback.
- *
- * `email`, `name`, `picture` are NOT redeclared here — Auth.js owns
- * those fields and types them as `string | null | undefined`. The
- * session-callback narrowing for those stays explicit.
+ * Optional because the first jwt-callback fires before the populate branch.
+ * `email` / `name` / `picture` stay Auth.js-owned — not redeclared here.
  */
 declare module "next-auth/jwt" {
   interface JWT {

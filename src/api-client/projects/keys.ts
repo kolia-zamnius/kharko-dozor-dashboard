@@ -1,12 +1,6 @@
 /**
- * Query-key factory for the `projects` feature.
- *
- * @remarks
- * Hierarchical TanStack Query keys — see `src/api-client/user/keys.ts`
- * for the rationale. Invalidation with `projectKeys.all()` nukes both
- * the global list and every per-org slice; a mutation scoped to one
- * org can narrow to `projectKeys.byOrg(orgId)` and leave the other
- * tabs' caches alone.
+ * `byOrg(orgId)` narrows invalidation to one org's slice — a mutation scoped to
+ * a single org leaves sibling tabs' caches warm.
  */
 export const projectKeys = {
   all: () => ["projects"] as const,

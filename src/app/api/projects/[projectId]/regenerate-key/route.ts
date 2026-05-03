@@ -10,17 +10,8 @@ import { NextResponse } from "next/server";
 type Params = { projectId: string };
 
 /**
- * `POST /api/projects/[projectId]/regenerate-key` — roll the project API key.
- *
- * OWNER-only — key lifecycle (create / regenerate / copy / delete)
- * is the governance surface; admins can rename the project but not
- * replace the credential.
- *
- * @remarks
- * Old key is invalidated on success. Response carries the new
- * **masked** key only — plaintext must be fetched via
- * `GET /api/projects/[projectId]/key` so secrets never land in the
- * React Query cache.
+ * Atomic — old key invalidates on success, no grace window. Response is
+ * masked-only so plaintext stays out of the React Query cache.
  */
 export const POST = withAuth<Params>(async (req, user, { projectId }) => {
   await requireProjectMember(user.id, projectId, "OWNER");
@@ -50,7 +41,6 @@ export const POST = withAuth<Params>(async (req, user, { projectId }) => {
     projectSchema.parse({
       id: updated.id,
       name: updated.name,
-      // Trust boundary: Prisma round-trip of the key we just generated.
       maskedKey: maskApiKey(updated.key as ApiKeyPlaintext),
       organizationId: updated.organizationId,
       sessionCount: updated._count.sessions,

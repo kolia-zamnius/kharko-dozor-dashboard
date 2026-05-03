@@ -1,14 +1,9 @@
 /**
- * Integration tests for `PATCH /api/organizations/active`.
- *
- * @remarks
- * Security invariant: `User.activeOrganizationId` can ONLY point at an
- * org the caller is a member of. A route that let a user "act as" an
- * org they don't belong to would bypass every downstream
- * `requireMember` check that reads from the active pointer.
- *
- * The route wraps the membership check + update in a single transaction
- * so the pointer can't flip under a concurrent "remove member" race.
+ * `PATCH /api/organizations/active`. Security invariant: the pointer can ONLY
+ * land on an org the caller is a member of — otherwise downstream
+ * `requireMember` checks reading from the active pointer would be bypassed.
+ * Membership check + update run in one transaction to close the
+ * concurrent-remove-member race.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

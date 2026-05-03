@@ -1,24 +1,13 @@
 /**
- * Integration tests for `DELETE /api/user/accounts/[provider]` — unlinks a
- * linked OAuth account (Google / GitHub) from the caller's user row.
+ * `DELETE /api/user/accounts/[provider]`. Three invariants:
  *
- * @remarks
- * Security-relevant boundary. Three orthogonal invariants asserted:
- *
- *   1. **Cross-user isolation** — scoped to `(userId, provider)`, so
- *      one user cannot unlink another's accounts. 404 on absent row
- *      (NOT 403) preserves no-existence-oracle across `/api/user/*`.
- *
- *   2. **Last-login-method guard** — the route counts remaining login
- *      methods (other OAuth accounts + passkeys + `emailVerified`-
- *      gated OTP) and returns 409 if the unlink would leave the caller
- *      with zero ways to sign in.
- *
- *   3. **Concurrency safety** — the guard runs inside a `Serializable`
- *      transaction so two simultaneous "unlink my last two accounts"
- *      requests can't both sneak past a stale "remaining=1" read.
- *      The concurrency test below asserts the invariant holds under a
- *      deliberate `Promise.all` race.
+ *   1. Cross-user isolation — scoped to `(userId, provider)`. 404 (not 403)
+ *      on absent row preserves no-existence-oracle across `/api/user/*`.
+ *   2. Last-login-method guard — counts remaining methods (OAuth + passkeys
+ *      + `emailVerified`-gated OTP) and returns 409 if unlink would zero out.
+ *   3. Concurrency — guard runs inside a `Serializable` transaction so two
+ *      simultaneous "unlink my last two" requests can't both pass a stale
+ *      `remaining=1` read.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -71,9 +60,7 @@ describe("DELETE /api/user/accounts/[provider]", () => {
   it("⭐ isolates across users — Alice unlinking 'google' does not affect Bob's 'google'", async () => {
     const alice = await createUser();
     const bob = await createUser();
-    // Grant Alice email-OTP fallback so the last-login-method guard
-    // doesn't fire — this case is about cross-user isolation, not the
-    // method-count check.
+    // OTP fallback so the last-login-method guard doesn't fire — this case is about isolation, not method count.
     await prisma.user.update({ where: { id: alice.id }, data: { emailVerified: new Date() } });
     await createAccount({ user: alice, provider: "google" });
     await createAccount({ user: bob, provider: "google" });
@@ -164,18 +151,14 @@ describe("DELETE /api/user/accounts/[provider]", () => {
   });
 
   it("⭐ concurrency — Serializable isolation prevents a double-unlink race", async () => {
-    // Scenario: Alice has exactly TWO accounts and no other login
-    // method. The guard's contract is: at most ONE of them can be
-    // unlinked. A naive read-committed implementation would let both
-    // transactions see `remaining=1` and both succeed, dropping Alice
-    // to zero methods — exactly the regression the `Serializable`
-    // isolation level is there to catch.
+    // Alice has exactly two accounts, no other method. Naive read-committed
+    // would let both txns see `remaining=1` and both succeed, dropping her to
+    // zero — exactly the regression `Serializable` is there to catch.
     const alice = await createUser();
     await createAccount({ user: alice, provider: "google" });
     await createAccount({ user: alice, provider: "github" });
     mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id })));
 
-    // Fire both deletes concurrently.
     const results = await Promise.all([
       invokeRouteWithParams(accountRoute.DELETE, {
         method: "DELETE",
@@ -187,18 +170,14 @@ describe("DELETE /api/user/accounts/[provider]", () => {
       }).catch((err) => ({ status: 500, error: err as unknown })),
     ]);
 
-    // The KEY invariant — Alice always retains at least one account.
-    // Individual outcome shapes ("both 204", "one 204 + one 409", "one
-    // 204 + one 500 from serialization failure") are all acceptable
-    // AS LONG AS the final row count is ≥ 1. We don't assert
-    // exact-one-succeeds because Postgres may resolve the conflict by
-    // failing either side; what matters is the USER isn't locked out.
+    // The invariant: Alice retains ≥1 account. Outcome shapes (204/204, 204/409,
+    // 204/500-on-serialization-failure) all valid — Postgres may fail either
+    // side. What matters is the user isn't locked out.
     const remaining = await prisma.account.count({ where: { userId: alice.id } });
     expect(remaining).toBeGreaterThanOrEqual(1);
 
-    // Belt-and-braces: at least one of the two responses must be a
-    // non-2xx (otherwise we'd have dropped to 0 accounts, contradicting
-    // the count assertion above — but fail fast with a clearer message).
+    // Belt-and-braces — at most one success. Redundant with the count above
+    // but fails with a clearer message if Serializable regressed.
     const successes = results.filter((r) => r.status >= 200 && r.status < 300);
     expect(successes.length).toBeLessThanOrEqual(1);
   });

@@ -6,15 +6,9 @@ import type { NextAuthConfig } from "next-auth";
 import { randomUUID } from "node:crypto";
 
 /**
- * Auth.js event handlers — fired AFTER the corresponding mutation. Unlike
- * callbacks, events cannot block sign-in or alter the response; their
- * return value is ignored. Use them for "fire-and-forget" provisioning.
- *
- * `createUser` is the only one we currently handle: it provisions a
- * Personal Space organization for every new user, ensuring the active-org
- * resolver in the JWT callback always has a valid fallback. Idempotent —
- * if a Personal Space already exists (e.g. a previous failed sign-up
- * retried), we early-return rather than creating a duplicate.
+ * `createUser` provisions a Personal Space org so the JWT callback's active-org
+ * fallback always has somewhere to land. Idempotent — early-return if a Personal
+ * Space already exists (handles a retried failed sign-up).
  */
 export const authEvents: NextAuthConfig["events"] = {
   async createUser({ user }) {

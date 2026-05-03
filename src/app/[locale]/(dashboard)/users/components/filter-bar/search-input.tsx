@@ -12,15 +12,7 @@ type SearchInputProps = {
 
 const DEBOUNCE_MS = 300;
 
-/**
- * Debounced search input with clear button. The internal (instant) value
- * updates on every keystroke for responsive feel; the external `onChange`
- * fires only after the debounce window elapses.
- *
- * The parent passes the *debounced* value back as `value` so URL-driven
- * state round-trips correctly (e.g. after a browser back-navigation the
- * input reflects whatever the URL had).
- */
+/** Parent passes the debounced value back as `value` so URL state round-trips correctly on back-nav. */
 export function SearchInput({ value, onChange, placeholder }: SearchInputProps) {
   const t = useTranslations("users.list.search");
   const [localValue, setLocalValue] = useState(value);

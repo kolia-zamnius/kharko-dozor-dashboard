@@ -1,12 +1,8 @@
 /**
- * Integration tests for `POST /api/user/invites/[id]/decline`.
- *
- * @remarks
- * Companion to the `accept` suite in `invites.test.ts`. Decline is
- * intentionally a hard-delete — no `InviteStatus.DECLINED` — so the
- * admin-side list (which filters on `PENDING`) stays clean without a
- * second status to special-case. If the admin still wants the user,
- * they resend.
+ * `POST /api/user/invites/[id]/decline`. Decline is a hard-delete (no
+ * `InviteStatus.DECLINED`) so the admin list stays clean without a second
+ * status to special-case — if the admin still wants the user, they resend.
+ * Companion to the `accept` suite in `invites.test.ts`.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

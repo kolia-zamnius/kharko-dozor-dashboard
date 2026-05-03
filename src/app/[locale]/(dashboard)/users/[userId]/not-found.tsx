@@ -3,16 +3,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/primitives/button";
 
-/**
- * Route-specific 404 for `/users/[userId]`. Fires when `loadTrackedUserDetail`
- * returns null (deleted user) or when the authenticated admin lacks VIEWER
- * access to the owning organization — the Server Component in `page.tsx`
- * bails to `notFound()` and Next.js mounts this file.
- *
- * Takes over from the parent `(dashboard)/not-found.tsx` so we can offer
- * more actionable recovery — "back to the users list" rather than a
- * generic message.
- */
+/** Route-specific so we can offer "back to the users list" rather than the parent's generic message. */
 export default function UserDetailNotFound() {
   const t = useTranslations("users.detail.notFound");
   return (

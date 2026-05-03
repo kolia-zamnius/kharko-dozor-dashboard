@@ -15,36 +15,13 @@ import { getTranslations } from "next-intl/server";
 import { randomInt } from "node:crypto";
 
 /**
- * Auth.js providers configured for the dashboard.
- *
- * - **Google / GitHub** — OAuth, with `allowDangerousEmailAccountLinking`
- *   so users can sign in via either OAuth or OTP for the same email.
- *   Registered only when their respective env var pair is set, so
- *   self-hosters who skip a provider don't end up with a sign-in UI
- *   that crashes on click.
- * - **Nodemailer (email OTP)** — passwordless 6-digit code with two safeguards:
- *     1. `queryOtpRateLimit` (read) — bails before generating/sending if
- *        the user has hit the daily limit or is in cooldown.
- *     2. `prisma.otpRateLimit.upsert` (write) — increments the counter
- *        atomically AFTER the read passes. Prevents accidentally double-
- *        counting if the user retries while the email is in flight.
- *   The `server` config object is required by Auth.js's Nodemailer
- *   provider but we override `sendVerificationRequest` entirely and
- *   route every send through our shared `sendMail` helper, so the
- *   `server` value is never actually used at runtime — it's a marker
- *   to satisfy the provider schema. Registered only when SMTP env is set.
- * - **Passkey (WebAuthn)** — always registered. It's an add-on registered
- *   per-user via Settings after a primary-method sign-in, not a way to
- *   create an account from scratch, so there's no env gate.
- *
- * The boot-time refine in `env.ts` guarantees at least one of Google /
- * GitHub / OTP is configured, so this function never returns just
- * `[Passkey]` (which would be unusable).
- *
- * Why this is its own module: providers are the largest section of the
- * NextAuth config and the one most likely to change (adding/removing
- * providers, tweaking OTP messaging, etc.). Pulling them out keeps
- * `index.ts` short and lets reviewers see provider tweaks in isolation.
+ * Provider list assembled from env. `allowDangerousEmailAccountLinking: true`
+ * on Google + GitHub so the same email can sign in via either OAuth or OTP.
+ * Nodemailer's `server` is a placeholder — real transport lives in
+ * {@link src/server/mailer.ts}; `sendVerificationRequest` calls `sendMail`.
+ * Passkey always added (it's an add-on registered from Settings, not an
+ * account-creation path). Boot-time refine in `env.ts` guarantees at least one
+ * of Google / GitHub / OTP is configured.
  */
 export function createAuthProviders(): Provider[] {
   const enabled = getEnabledProviders();
@@ -59,23 +36,19 @@ export function createAuthProviders(): Provider[] {
   if (enabled.otp) {
     providers.push(
       Nodemailer({
-        // Required by Auth.js schema; actual transport is owned by
-        // `src/server/mailer.ts` and used via `sendMail` below. Non-null
-        // assertions are sound here — `enabled.otp` is true iff both
-        // GMAIL_* vars are set.
+        // Required by Auth.js schema; `sendVerificationRequest` overrides the
+        // actual send. Non-null env reads are sound — `enabled.otp` requires both.
         server: { host: "smtp.gmail.com", port: 465, auth: { user: env.GMAIL_USER!, pass: env.GMAIL_APP_PASSWORD! } },
         from: `Dozor <${env.GMAIL_USER!}>`,
         async generateVerificationToken() {
-          // `randomInt(min, max)` is half-open `[min, max)` — so `max` is
-          // `10 ** OTP_LENGTH`, not `10 ** OTP_LENGTH - 1`. Derive both
-          // bounds from the single shared constant so the generator
-          // follows any length change in `OTP_LENGTH` atomically.
+          // `randomInt(min, max)` is half-open `[min, max)` — derive both bounds
+          // from `OTP_LENGTH` so the generator follows any length change atomically.
           const min = 10 ** (OTP_LENGTH - 1);
           const max = 10 ** OTP_LENGTH;
           return randomInt(min, max).toString();
         },
         async sendVerificationRequest({ identifier: email, token }) {
-          // Rate-limit check (safety net — primary check is in server action).
+          // Safety net — primary check runs in the sign-in server action.
           const status = await queryOtpRateLimit(email);
           if (!status.allowed) {
             const reason = status.retryAfter ? "cooldown" : "daily_limit";
@@ -86,16 +59,13 @@ export function createAuthProviders(): Provider[] {
           const { count } = await bumpOtpRateLimit(email);
           log.info("auth:otp:sending", { email, newCount: count });
 
-          // Resolve recipient locale before rendering. First-time sign-ups
-          // have no User row yet — `resolveLocaleForUser` falls back to
-          // `DEFAULT_LOCALE` in that case (and for any stored locale no
-          // longer in `LOCALES`).
+          // First-time sign-ups have no User row yet — `resolveLocaleForUser`
+          // falls back to `DEFAULT_LOCALE` (also for stored locales no longer in `LOCALES`).
           const locale = await resolveLocaleForUser(email);
           const t = await getTranslations({ locale, namespace: "emailOtp" });
 
-          // Rethrow on failure — Auth.js surfaces this as a sign-in error
-          // so the user sees "couldn't send code, try again", rather than
-          // silently leaving them on a spinner.
+          // Rethrow on send failure so Auth.js surfaces a sign-in error
+          // ("couldn't send code, try again") instead of leaving the user on a spinner.
           await sendMail({
             to: email,
             subject: t("subject", { token }),

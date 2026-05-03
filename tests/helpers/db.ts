@@ -1,25 +1,8 @@
 /**
- * Per-worker test database helper.
- *
- * @remarks
- * Each Vitest worker calls `getTestPrisma()` once and caches the result in
- * module scope. On first call the helper:
- *
- *   1. Reads host/port/template-db from env (set by `global-setup.ts`).
- *   2. Connects to the admin `postgres` DB and runs
- *      `DROP DATABASE IF EXISTS worker_N; CREATE DATABASE worker_N TEMPLATE template_test`.
- *      Cloning a pre-migrated template is ~50ms per worker vs ~3s for a
- *      fresh `prisma db push`.
- *   3. Instantiates a `PrismaClient` bound to `worker_N` via
- *      `@prisma/adapter-pg` (the tests path; prod uses `@prisma/adapter-neon`).
- *
- * `truncateAll(prisma)` wipes user-owned tables between tests — cheaper
- * than re-cloning a DB, and preserves the schema + `_prisma_migrations`
- * marker rows. Integration test files wire it into their `beforeEach`
- * explicitly; unit tests never touch it.
- *
- * @see tests/setup/global-setup.ts — spins up the shared container +
- *   template DB.
+ * Per-worker test DB. First call to `getTestPrisma()` clones `template_test`
+ * (created in `global-setup.ts`) into `worker_${VITEST_POOL_ID}` — ~50ms vs
+ * ~3s for a fresh `prisma db push`. Tests use `@prisma/adapter-pg`; prod uses
+ * `@prisma/adapter-neon` (see CLAUDE.md "Stack").
  */
 
 import { Client } from "pg";
@@ -41,9 +24,8 @@ function requireEnv(name: string): string {
 }
 
 function workerId(): string {
-  // Vitest 3 injects VITEST_POOL_ID per worker (1-based, string). Fall back
-  // to the pid so `vitest run <single-file>` in a weird local setup still
-  // produces a unique DB name.
+  // Fallback to pid keeps unique DB names if a quirky local setup runs without
+  // VITEST_POOL_ID (e.g. someone wires `vitest run` from a script).
   return process.env.VITEST_POOL_ID ?? String(process.pid);
 }
 
@@ -71,11 +53,6 @@ function buildUrls(): Urls {
   };
 }
 
-/**
- * Returns the worker-scoped Prisma client, creating the worker DB on first
- * call. Safe to call repeatedly — subsequent calls return the cached
- * client without touching the admin DB.
- */
 export async function getTestPrisma(): Promise<PrismaClient> {
   if (cached) return cached;
 
@@ -84,9 +61,8 @@ export async function getTestPrisma(): Promise<PrismaClient> {
   const admin = new Client({ connectionString: adminUrl });
   await admin.connect();
   try {
-    // Kill any stale connections to `workerDb` left by a previous crashed
-    // run — otherwise DROP DATABASE fails with "database is being accessed
-    // by other users".
+    // Stale connections from a crashed previous run would make DROP DATABASE
+    // fail with "database is being accessed by other users".
     await admin.query(
       "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()",
       [workerDb],
@@ -103,16 +79,8 @@ export async function getTestPrisma(): Promise<PrismaClient> {
 }
 
 /**
- * TRUNCATE every user-owned table in the `public` schema.
- *
- * @remarks
- * `RESTART IDENTITY` resets any serial sequences (none in our schema
- * today — all ids are cuid-strings — but costless to keep). `CASCADE`
- * lets PG handle FK order so we don't maintain a dependency-sorted
- * table list by hand.
- *
- * Intentionally introspects `pg_tables` rather than hardcoding the list:
- * adding a Prisma model becomes a zero-diff change for this helper.
+ * Introspects `pg_tables` instead of hardcoding a list — adding a Prisma model
+ * is a zero-diff change here. `CASCADE` lets PG handle FK order.
  */
 export async function truncateAll(prisma: PrismaClient): Promise<void> {
   const rows = await prisma.$queryRaw<Array<{ tablename: string }>>`

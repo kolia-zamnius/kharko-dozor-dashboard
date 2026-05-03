@@ -14,13 +14,7 @@ type PlayerProps = {
   session: SessionDetail;
 };
 
-/**
- * Player component — viewport, console, controls, and slice navigation.
- *
- * Owns TanStack Query subscriptions for slice events and syncs computed
- * data into the Zustand store. All children read from the store directly
- * — zero prop drilling.
- */
+/** Owns slice-events subscription, syncs into Zustand. Children read from the store — zero prop drilling. */
 export function Player({ session }: PlayerProps) {
   const { setSlices, setEvents, setSliceLoading } = usePlayerStore();
 

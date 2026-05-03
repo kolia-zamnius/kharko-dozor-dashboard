@@ -17,10 +17,6 @@ const REASON_KEYS: Record<string, "reasonInit" | "reasonIdle" | "reasonNavigatio
   navigation: "reasonNavigation",
 };
 
-/**
- * Horizontal slice navigation. Reads everything from the player store
- * — zero props.
- */
 export function SlicePicker() {
   const t = useTranslations("replays.detail.player.slicePicker");
   const { formatDuration } = useFormatters();

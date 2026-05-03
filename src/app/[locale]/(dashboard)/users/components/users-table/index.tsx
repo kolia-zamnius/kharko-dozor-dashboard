@@ -13,14 +13,6 @@ type UsersTableProps = {
   onSortChange: (sort: UserListSortBy, dir: UserListSortDir) => void;
 };
 
-/**
- * Users data table with sortable column headers.
- *
- * Clicking a column header sets it as the active sort (desc). Clicking the
- * already-active header toggles between desc and asc.
- *
- * Non-sortable columns (Project, Status) have no click handler.
- */
 export function UsersTable({ users, sort, sortDir, onSortChange }: UsersTableProps) {
   const t = useTranslations("users.list.table");
   const handleSort = (column: UserListSortBy) => {

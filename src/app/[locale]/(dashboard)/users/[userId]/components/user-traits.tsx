@@ -11,17 +11,10 @@ type UserTraitsProps = {
   traits: Record<string, unknown> | null;
 };
 
-/**
- * Keys we surface inline (if present) before the user opens the full view.
- * Ordered by importance — the first matches take the first slots.
- */
+/** Keys ordered by surfacing priority — first matches take first slots. */
 const PRIORITY_KEYS = ["email", "name", "displayName", "plan", "role", "company", "country"];
 const MAX_INLINE_ROWS = 4;
 
-/**
- * Pick up to MAX_INLINE_ROWS traits to show without expanding.
- * Priority keys first; fills the rest with whatever's available (stable order).
- */
 function pickInlineEntries(traits: Record<string, unknown>): Array<[string, unknown]> {
   const entries = Object.entries(traits);
   const priority: Array<[string, unknown]> = [];
@@ -39,10 +32,7 @@ function pickInlineEntries(traits: Record<string, unknown>): Array<[string, unkn
   return [...priority, ...rest].slice(0, MAX_INLINE_ROWS);
 }
 
-/**
- * Render a trait value as a short string. Objects are serialized compactly so
- * they fit in a table row; the full view renders pretty-printed JSON.
- */
+/** Compact serialise — table row constraint. Full pretty-print lives in the expanded view. */
 function formatInlineValue(value: unknown): string {
   if (value === null) return "null";
   if (typeof value === "string") return value;
@@ -54,22 +44,7 @@ function formatInlineValue(value: unknown): string {
   }
 }
 
-/**
- * Visualises the `traits` JSON payload attached to a tracked user.
- *
- * @remarks
- * Surfaces up to {@link MAX_INLINE_ROWS} high-signal keys inline
- * (priority order from {@link PRIORITY_KEYS}, then stable fill order
- * for anything else) so the admin sees identity at a glance. A
- * collapsible section reveals the full pretty-printed JSON for keys
- * that didn't make the inline cut, and a "Copy JSON" button copies
- * the raw payload for pasting into tickets or issue reports.
- *
- * Returns `null` when the user has no traits — the card disappears
- * entirely rather than rendering a "no traits" placeholder, because a
- * tracked user may legitimately never have traits in the MVP and the
- * page reads cleaner without a permanent empty card.
- */
+/** Returns `null` when traits are absent — a permanent empty card on the MVP path reads worse than no card. */
 export function UserTraits({ traits }: UserTraitsProps) {
   const t = useTranslations("users.detail.traits");
   const [open, setOpen] = useState(false);

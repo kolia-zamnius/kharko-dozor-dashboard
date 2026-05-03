@@ -16,15 +16,9 @@ type Role = Organization["role"];
 type InviteRole = OrganizationInvite["role"];
 
 /**
- * Switch the active organization on the user record + JWT.
- *
- * @remarks
- * Beyond the JWT refresh (`update({})`), every org-scoped TanStack
- * cache must be invalidated so the user doesn't keep seeing the
- * previous org's tracked users / sessions / projects on the page they
- * were already on. RSC pages that prefetched on the server
- * (e.g. `/settings/organizations`) bypass TanStack entirely, so
- * `router.refresh()` is the only way to nudge them.
+ * Invalidates every org-scoped TanStack cache so the user doesn't keep seeing the
+ * previous org's data after the switch. RSC pages that prefetched on the server
+ * bypass TanStack — `router.refresh()` is the only way to nudge them.
  */
 export function useSwitchOrgMutation() {
   const queryClient = useQueryClient();
@@ -82,7 +76,7 @@ export function useUpdateOrgMutation() {
     },
     meta: {
       errorKey: "settings.mutations.orgs.update.error",
-      // Dual-purpose mutation — distinct key for each operation.
+      // Dual-purpose mutation — `successKey` picks copy for avatar regen vs rename.
       successKey: (variables) => {
         const { regenerateAvatar } = variables as { regenerateAvatar?: boolean };
         return regenerateAvatar
@@ -113,6 +107,10 @@ export function useDeleteOrgMutation() {
   });
 }
 
+/**
+ * POST is idempotent — bumps `expiresAt` on an existing PENDING invite for the
+ * same email, or creates a new one. Resending = clicking Invite again.
+ */
 export function useInviteMemberMutation() {
   const queryClient = useQueryClient();
 
@@ -122,16 +120,12 @@ export function useInviteMemberMutation() {
         method: "POST",
         body: JSON.stringify({ email, role }),
       }),
-    // Invalidate the admin-side invites table so a freshly-sent invite
-    // (or a refreshed one — POST is idempotent and bumps expiresAt) shows
-    // up immediately alongside any pre-existing pending rows.
     onSuccess: (_, { orgId }) => {
       void queryClient.invalidateQueries({ queryKey: organizationQueries.invites(orgId).queryKey });
     },
     meta: {
       errorKey: "settings.mutations.orgs.invite.error",
       successKey: "settings.mutations.orgs.invite.success",
-      // Email is part of variables, so the toast can name the recipient.
       successVars: (variables) => {
         const { email } = variables as { email: string };
         return { email };
@@ -140,26 +134,14 @@ export function useInviteMemberMutation() {
   });
 }
 
-/**
- * Context shared by the invite PATCH/DELETE optimistic helpers. Same shape
- * as the user-invites rollback context — snapshot the full list, restore
- * it on failure.
- */
 type InvitesOptimisticContext = {
   previous: OrganizationInvite[] | undefined;
 };
 
 /**
- * Admin edits a pending invite in place — either promoting / demoting a
- * role, or bumping `expiresAt` back to a fresh `INVITE_EXPIRY_DAYS`
- * window. Optimistic: the table row's role dropdown / "expires in N days"
- * text updates the moment the click lands; on server failure we roll
- * back the cache atomically.
- *
- * Extend writes a cache-side placeholder `expiresAt` one minute in the
- * future to flip the "Expired today" style immediately. The server
- * response is authoritative — `onSettled` re-fetches to reconcile the
- * real timestamp.
+ * Optimistic role / `expiresAt` update; rollback on server failure, refetch on
+ * settle for the authoritative timestamp. Extend writes a 1-minute-future
+ * `expiresAt` placeholder to flip "expiring soon" styling immediately.
  */
 export function useUpdateInviteMutation() {
   const queryClient = useQueryClient();
@@ -187,8 +169,6 @@ export function useUpdateInviteMutation() {
           if (body.action === "change-role") {
             return { ...invite, role: body.role };
           }
-          // Optimistic placeholder — pushes expiresAt forward far enough
-          // to unstick any "expiring soon" styling. Reconciled on refetch.
           const placeholder = new Date(Date.now() + 60_000).toISOString();
           return { ...invite, expiresAt: placeholder };
         });
@@ -206,17 +186,15 @@ export function useUpdateInviteMutation() {
     },
     meta: {
       errorKey: "settings.mutations.orgs.updateInvite.error",
-      // Dynamic key — different sentence for role-change vs extend.
+      // Different copy for role-change vs extend.
       successKey: (variables) => {
         const v = variables as { email: string } & UpdateInviteInput;
         return v.action === "change-role"
           ? "settings.mutations.orgs.updateInvite.roleChanged"
           : "settings.mutations.orgs.updateInvite.extended";
       },
-      // Role is passed through so the ICU `{role, select, ...}` format in
-      // the message can render a locale-aware label without another lookup.
-      // Explicit return type flattens the union to the index-signature
-      // shape that `TranslationValues` requires.
+      // Role passed as ICU var — message uses `{role, select, ...}` for the localised label.
+      // Explicit return type flattens the union to `TranslationValues`'s index-signature shape.
       successVars: (variables): TranslationValues => {
         const v = variables as { email: string } & UpdateInviteInput;
         if (v.action === "change-role") {
@@ -229,13 +207,8 @@ export function useUpdateInviteMutation() {
 }
 
 /**
- * Revoke a pending invite. Optimistic removal from the admin-side table.
- * Same rollback shape as accept/decline on the user-side: snapshot,
- * filter, restore on error.
- *
- * `email` is variables-only metadata for the toast — it doesn't affect
- * the API call, but lets `meta.successVars` render "Revoked invite
- * for foo@bar.com" without the call site needing an inline onSuccess.
+ * Optimistic removal + rollback. `email` is toast-only metadata — flows to
+ * `meta.successVars` so call sites don't need an inline `onSuccess`.
  */
 export function useDeleteInviteMutation() {
   const queryClient = useQueryClient();
@@ -272,35 +245,21 @@ export function useDeleteInviteMutation() {
   });
 }
 
-// `InviteRole` is re-exported for call-sites that want to type a role
-// handler without reaching into the OrganizationInvite type directly.
 export type { InviteRole };
 
-/**
- * Rollback context for the members-list optimistic mutations — full
- * snapshot of the cached list, restored on error. Same shape as the
- * invites optimistic context above; kept as a separate type rather
- * than merged because the two caches hold different entity shapes.
- */
 type MembersOptimisticContext = {
   previous: OrganizationMember[] | undefined;
 };
 
 /**
- * Change a member's role. Optimistic: the role pill and dropdown flip
- * the moment the OWNER picks a new value — no 200-500 ms wait for the
- * server round-trip before the UI agrees. Rollback via snapshot on
- * failure, invalidate on settle to pick up the authoritative shape.
+ * Optimistic role flip — pill + dropdown change before the server round-trip.
+ * Stable `mutationKey` so siblings can observe in-flight via
+ * `useIsMutating({ mutationKey })` and disable concurrent edits org-wide.
  */
 export function useUpdateMemberRoleMutation(orgId: string) {
   const queryClient = useQueryClient();
 
   return useMutation<unknown, Error, { orgId: string; memberId: string; role: Role }, MembersOptimisticContext>({
-    // Stable mutation key so siblings can observe in-flight status via
-    // `useIsMutating({ mutationKey: organizationKeys.memberRoleMutation(orgId) })`.
-    // Lets each row own its own mutation instance while preserving the
-    // org-wide lock that prop-drilling `isPending` from a parent-owned
-    // mutation used to provide.
     mutationKey: organizationKeys.memberRoleMutation(orgId),
     mutationFn: ({ orgId, memberId, role }) =>
       apiFetch(routes.organizations.member(orgId, memberId), {
@@ -329,10 +288,8 @@ export function useUpdateMemberRoleMutation(orgId: string) {
     },
     meta: {
       errorKey: "settings.mutations.orgs.updateRole.error",
-      // Role is pushed through as a variable so the ICU `{role, select, ...}`
-      // format in the message can render the localised label without
-      // another lookup at the toast site.
       successKey: "settings.mutations.orgs.updateRole.success",
+      // Role passed as ICU var — message uses `{role, select, ...}` for the localised label.
       successVars: (variables) => {
         const { role } = variables as { role: Role };
         return { role };
@@ -342,11 +299,8 @@ export function useUpdateMemberRoleMutation(orgId: string) {
 }
 
 /**
- * Remove a member (or self-leave). Optimistic: the row disappears
- * from the members list immediately. Rollback on failure; on success
- * we additionally invalidate the orgs list + nudge the session (for
- * the self-leave flow, where the user's membership set and possibly
- * `activeOrganizationId` need a refresh).
+ * Optimistic remove. Self-leave path also nudges the session — membership set
+ * and possibly `activeOrganizationId` need a refresh.
  */
 export function useRemoveMemberMutation() {
   const queryClient = useQueryClient();
@@ -358,11 +312,8 @@ export function useRemoveMemberMutation() {
     { orgId: string; memberId: string; isSelf?: boolean; orgName?: string },
     MembersOptimisticContext
   >({
-    // `isSelf` and `orgName` are metadata for the toast only — they don't
-    // affect the API call itself. Carrying them through variables lets the
-    // dynamic successKey distinguish "you left" from "you removed
-    // someone" AND name the org you left, all without the call site
-    // needing an inline `onSuccess` toast.
+    // `isSelf` + `orgName` are toast-only metadata — flow to dynamic `successKey`
+    // / `successVars` to distinguish "you left" from "you removed someone".
     mutationFn: ({ orgId, memberId }) =>
       apiFetch(routes.organizations.member(orgId, memberId), {
         method: "DELETE",
@@ -390,9 +341,8 @@ export function useRemoveMemberMutation() {
     },
     meta: {
       errorKey: "settings.mutations.orgs.removeMember.error",
-      // Three distinct keys — cleaner for Phase-4 translators than an ICU
-      // select over a synthetic context variable, since each branch is a
-      // full sentence rather than a single word.
+      // Three distinct keys (vs ICU select on a synthetic var) — each branch is a
+      // full sentence, easier for translators than per-word interpolation.
       successKey: (variables) => {
         const { isSelf, orgName } = variables as { isSelf?: boolean; orgName?: string };
         if (isSelf) {

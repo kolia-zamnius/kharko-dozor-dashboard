@@ -3,13 +3,7 @@ import type { getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/config";
 import { env } from "@/server/env";
 
-/**
- * Scoped translator for the `emailInvite` namespace. Pre-resolved at the
- * call site (`invites/route.ts`) so this file stays synchronous and
- * template-pure — consistent with the `emailOtp` builder and the
- * translator-injection pattern used across the codebase for helpers
- * that live outside the React tree.
- */
+/** Resolved at the call site so this file stays sync + template-pure (translator-injection pattern). */
 type InviteTranslator = Awaited<ReturnType<typeof getTranslations<"emailInvite">>>;
 
 interface InviteEmailArgs {
@@ -23,26 +17,14 @@ interface InviteEmailArgs {
 }
 
 /**
- * Render the invite email body as a self-contained HTML string.
+ * Tokenless — links to `/settings/organizations`, not a per-invite URL.
+ * Pending invites are looked up by `(email, status)` server-side; a token
+ * link would create a second acceptance surface to test.
  *
- * @remarks
- * Deliberately tokenless — the email links to `/settings/organizations`,
- * not to a per-invite URL. Pending invites are looked up server-side
- * by `(email, status)` in `GET /api/user/invites`, so the token only
- * needs to live in the database. Exposing it in a link would create a
- * second acceptance surface (`/invite/[token]`) to maintain and test.
- *
- * Dark-mode styling is inlined because most email clients strip `<style>`
- * — the `@media (prefers-color-scheme)` block is a progressive
- * enhancement that's ignored in clients that don't support it.
- *
- * `t.markup` renders the body with inline `<strong>` tags around the
- * three interpolated spans (inviter, org, role). That's the next-intl
- * escape hatch for HTML-in-messages: the ICU `<strong>…</strong>` tags
- * in the JSON are routed through the `strong` callback rather than
- * emitted verbatim (which would fail MessageFormat parsing on `<`).
- *
- * @returns Complete HTML document for `Nodemailer.sendMail({ html })`.
+ * `t.markup` routes ICU `<strong>` tags through the `strong` callback —
+ * MessageFormat would otherwise choke on the `<`. Inline dark-mode CSS —
+ * email clients usually strip `<style>`, the media query is progressive
+ * enhancement.
  */
 export function inviteEmailHtml({ locale, orgName, inviterName, role, expiryDays, t }: InviteEmailArgs): string {
   const appUrl = env.AUTH_URL ?? "http://localhost:3000";

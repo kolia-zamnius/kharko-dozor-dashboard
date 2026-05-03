@@ -18,12 +18,7 @@ import { SeekBar } from "./seek-bar";
 
 const SPEED_OPTIONS = [0.5, 1, 2] as const;
 
-/**
- * Replay control bar — reads preference fields via `useShallow` so a
- * `currentTime` tick (60 fps) doesn't re-render the whole bar, and
- * pulls the disabled gate from {@link selectIsPlayerDisabled} so the
- * "idle or mid-slice-load" contract stays in one place (see store.ts).
- */
+/** `useShallow` over preference fields so the 60fps `currentTime` tick doesn't re-render the bar. */
 export function ControlBar() {
   const t = useTranslations("replays.detail.player.control");
   const { state, speed, skipInactive, autoContinue, consoleOpen } = usePlayerStore(

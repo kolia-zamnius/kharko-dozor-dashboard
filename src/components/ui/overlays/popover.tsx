@@ -5,15 +5,6 @@ import { Popover as PopoverPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/cn";
 
-/**
- * Radix Popover primitive — anchored floating panel without the dialog semantics.
- *
- * @remarks
- * Compound parts: `PopoverTrigger`, `PopoverContent`. No focus trap
- * (unlike Dialog) — use for filter dropdowns, tooltips-with-interaction,
- * field hints. Single-file primitive because the part count is low and
- * every part is a one-liner.
- */
 function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }

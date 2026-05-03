@@ -5,20 +5,11 @@ import type { ReplayerHandle } from "../types";
 import { REPLAYER_CSS } from "./replayer-css";
 
 /**
- * Shadow DOM–isolated viewport for the rrweb Replayer.
- *
- * Two layers of isolation:
- *   1. Shadow DOM — replayer CSS lives inside the shadow root, dashboard
- *      Tailwind CSS cannot affect replayed content.
- *   2. rrweb iframe — recorded page DOM is sandboxed inside an iframe
- *      that rrweb creates internally.
- *
- * Auto-scaling: two ResizeObservers (on the iframe and on the container)
- * compute `Math.min(containerW/replayW, containerH/replayH)` and apply
- * CSS transform: scale() for "contain" mode with centering. Both observers
- * are properly disconnected in effect cleanup.
- *
- * `pointer-events-none` on the host prevents interaction with recorded content.
+ * Two layers of isolation: Shadow DOM (replayer CSS can't be touched by
+ * dashboard Tailwind) + rrweb's internal iframe (recorded DOM sandboxed).
+ * Auto-scale via two `ResizeObserver`s (iframe + container) computing
+ * `min(cw/rw, ch/rh)`. `pointer-events-none` on host blocks interaction
+ * with recorded content.
  */
 export function Viewport() {
   const t = useTranslations("replays.detail.player");

@@ -12,24 +12,9 @@ import { LeaveOrgDialog } from "./leave-org-dialog";
 import { MembersModal } from "./members-modal";
 
 /**
- * Card rendering a single organization membership on
- * `/settings/organizations`.
- *
- * @remarks
- * Derives its own per-membership capability booleans from the row's
- * `role` + `type` — this is the client half of the double-validation
- * contract (UI hides what the API will 403 anyway). Keeps role
- * derivation colocated with the per-row UI instead of threading four
- * booleans down from the parent shell, which would prop-drill and
- * couple the shell to every consumer's capability needs.
- *
- * Composes the four per-membership actions (`EditOrgModal`,
- * `InviteModal`, `DeleteOrgDialog`, `LeaveOrgDialog`) plus an
- * `ApiKeysSection` that renders inline for team orgs only (keys live
- * on projects, which live on organizations).
- *
- * @see src/server/auth/permissions.ts — server-side RBAC source of
- *   truth; this component mirrors the matrix defined there.
+ * Mirrors `permissions.ts` — client half of the double-validation contract
+ * (UI hides what the API would 403). Capability booleans live here, not in
+ * the shell, so we don't prop-drill four flags per row.
  */
 export function OrganizationCard({ org }: { org: Organization }) {
   const t = useTranslations("settings.orgs.card");
@@ -38,19 +23,6 @@ export function OrganizationCard({ org }: { org: Organization }) {
   const isOwner = org.role === "OWNER";
   const isAdmin = org.role === "ADMIN";
 
-  /**
-   * Per-membership capability matrix (mirrored from `permissions.ts`):
-   *   - `canEdit`   — rename / avatar regen. OWNER + ADMIN, both are
-   *      allowed non-destructive edits.
-   *   - `canInvite` — send + manage pending invites. OWNER only;
-   *      invite lifecycle (who joins, with what role, for how long)
-   *      is the highest-sensitivity governance action, above ADMIN-
-   *      level settings maintenance.
-   *   - `canLeave`  — self-remove. Anyone except the owner (owners
-   *      must delete the org or transfer ownership first) on a non-
-   *      personal org.
-   *   - `canDelete` — destroy the org. OWNER-only across the product.
-   */
   const canEdit = isOwner || isAdmin;
   const canInvite = isOwner && !isPersonal;
   const canLeave = !isOwner && !isPersonal;

@@ -1,24 +1,15 @@
 /**
- * Pure display-name resolver for tracked users.
+ * Pure resolver — no Prisma, no Node APIs. Server route handlers, RSC prefetch
+ * hydrators, and any future client component all import from one place.
  *
- * @remarks
- * Feature-scoped under `tracked-users/` because resolution is a
- * tracked-users concern, not a cross-cutting server utility. The
- * function is pure — no Prisma, no Node APIs — so it lives in the
- * client-safe `lib/data/` layer. Every consumer (server route
- * handlers composing API responses, Server Components hydrating
- * prefetch, and any future Client Component that needs to re-render
- * without a roundtrip) imports from the same path.
+ * Resolution order, first non-empty wins:
+ *   1. `customName` — explicit per-user override
+ *   2. `traits[displayNameTraitKey]` — per-user trait lookup
+ *   3. `traits[projectDefaultTraitKey]` — project-wide trait lookup
+ *   4. `externalId` — final fallback, always present
  *
- * Resolution order — first non-empty wins:
- *   1. `customName`                         — explicit, user-specific override
- *   2. `traits[displayNameTraitKey]`        — per-user trait lookup
- *   3. `traits[projectDefaultTraitKey]`     — project-wide trait lookup
- *   4. `externalId`                         — final fallback, always present
- *
- * Non-string trait values are coerced with `String(value)` — a numeric
- * `plan: 42` trait with a `"plan"` key should render as `"42"` rather
- * than silently falling through to the next step.
+ * Non-string trait values coerce via `String(value)` — a numeric `plan: 42`
+ * with a `"plan"` key renders as `"42"` rather than falling through.
  */
 
 export type DisplayNameInputs = {

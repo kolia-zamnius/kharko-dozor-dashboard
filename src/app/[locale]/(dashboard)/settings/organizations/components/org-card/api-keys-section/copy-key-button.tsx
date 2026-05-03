@@ -6,15 +6,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 /**
- * Fetches the plaintext API key on-demand and copies it to clipboard.
- * The raw value never enters the React Query cache or the React tree —
- * it exists briefly in JS memory only between fetch and clipboard write.
- *
- * @remarks
- * Status is a single discriminated value rather than two booleans so
- * the impossible `loading && copied` state is unrepresentable AND the
- * transition `loading → copied` is direct (no one-frame all-false flash
- * a `[loading, justCopied]` pair would produce in the `finally` block).
+ * Plaintext key never enters the React Query cache or component state — exists
+ * briefly between fetch and clipboard write. Single discriminated `status`
+ * (not two booleans) makes `loading && copied` unrepresentable.
  */
 type CopyStatus = "idle" | "loading" | "copied";
 

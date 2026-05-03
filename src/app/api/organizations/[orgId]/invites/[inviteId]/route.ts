@@ -10,19 +10,9 @@ import { log } from "@/server/logger";
 type Params = { orgId: string; inviteId: string };
 
 /**
- * `PATCH /api/organizations/[orgId]/invites/[inviteId]` — admin-side invite edit.
- *
- * OWNER-only.
- *
- * @remarks
- * Discriminated body:
- *   - `{ action: "change-role", role }` — update role in place.
- *   - `{ action: "extend" }` — reset TTL and re-attribute
- *     `invitedById` to the acting user (matches the `POST` resend
- *     semantic: whoever pressed the button is the inviter of record).
- *
- * {@link loadPendingOrgInvite} guards against cross-org mutation and
- * non-PENDING rows.
+ * Discriminated body — `{ action: "change-role", role }` or `{ action: "extend" }`.
+ * Extend re-attributes `invitedById` to the acting user (matches POST resend
+ * semantics — whoever pressed the button is inviter of record).
  */
 export const PATCH = withAuth<Params>(async (req, user, { orgId, inviteId }) => {
   await requireMember(user.id, orgId, "OWNER");
@@ -51,15 +41,9 @@ export const PATCH = withAuth<Params>(async (req, user, { orgId, inviteId }) => 
 });
 
 /**
- * `DELETE /api/organizations/[orgId]/invites/[inviteId]` — revoke a pending invite.
- *
- * OWNER-only.
- *
- * @remarks
- * Hard-delete, not a status flip. The `POST` "resend-or-create" path
- * looks up existing PENDING rows by `(email, organizationId)` —
- * leaving a REVOKED row would force that path to filter revoked
- * statuses too, complicating the idempotent-create semantics.
+ * Hard-delete (not a status flip) — POST resend-or-create looks up by
+ * `(email, organizationId)`; leaving REVOKED rows would force that path to
+ * filter them and complicate the idempotency.
  */
 export const DELETE = withAuth<Params>(async (_req, user, { orgId, inviteId }) => {
   await requireMember(user.id, orgId, "OWNER");

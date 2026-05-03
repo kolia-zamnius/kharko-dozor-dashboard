@@ -3,18 +3,7 @@ import Link from "next/link";
 import { Section } from "../components/section";
 import { ConsoleSection } from "./components/console-section";
 
-/**
- * Playground · Interactions — secondary route exercised via SPA
- * navigation from the main playground page.
- *
- * @remarks
- * Reaching this page from `/playground` triggers a `"navigation"`-reason
- * slice marker in the SDK; the replay then renders two distinct slices
- * in the slice list. The page itself is just a collection of capture-
- * exercising elements: clicks, console (extracted because it carries
- * state), scroll, hover. The latter three are pure markup, kept inline
- * to avoid one-component-per-section ceremony.
- */
+/** Reaching here from `/playground` triggers a `"navigation"`-reason slice marker — replay shows two slices. */
 export default function PlaygroundInteractionsPage() {
   return (
     <div className="space-y-10">

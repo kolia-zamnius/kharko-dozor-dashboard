@@ -6,15 +6,7 @@ import { NextResponse } from "next/server";
 
 type Params = { orgId: string };
 
-/**
- * `GET /api/organizations/[orgId]/members` — list every member of an org.
- *
- * VIEWER+ — all members see the roster; role-change / remove are
- * gated tighter on the `[memberId]` routes.
- *
- * @remarks
- * Ordered by join date (ascending).
- */
+/** VIEWER+ — every member sees the roster; role-change/remove are gated on `[memberId]`. */
 export const GET = withAuth<Params>(async (req, user, { orgId }) => {
   await requireMember(user.id, orgId, "VIEWER");
 

@@ -11,17 +11,12 @@ type SearchInputProps = {
 
 const DEBOUNCE_MS = 300;
 
-/**
- * Debounced search input with clear button. The internal (instant) value
- * updates on every keystroke for responsive feel; the external `onChange`
- * fires only after the debounce window elapses.
- */
 export function SearchInput({ value, onChange }: SearchInputProps) {
   const t = useTranslations("replays.list.search");
   const [localValue, setLocalValue] = useState(value);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Sync from external state (URL change, reset) -> local.
+  // Sync external (URL/reset) → local.
   useEffect(() => {
     setLocalValue(value);
   }, [value]);

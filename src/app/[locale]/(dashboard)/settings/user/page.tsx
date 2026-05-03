@@ -12,14 +12,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("userTitle") };
 }
 
-/**
- * Server Component entrypoint for `/settings/user`.
- *
- * @remarks
- * Prefetches the user profile so the page-level Suspense boundary in
- * `UserSettings` resolves from cache on first render. Same RSC-prefetch
- * pattern as `/replays` and `/users`.
- */
 export default async function UserSettingsPage() {
   const session = await auth();
   if (!session?.user?.id) return null;

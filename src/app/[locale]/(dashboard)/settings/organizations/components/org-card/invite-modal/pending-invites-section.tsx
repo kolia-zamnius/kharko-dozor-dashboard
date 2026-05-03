@@ -7,17 +7,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { InviteRow } from "./invite-row";
 
-/**
- * "Pending invites" block inside the admin-side invite modal.
- *
- * Internal composition root for the list view — owns its own query and
- * hoists loading / error / empty / success into a single discriminated
- * branch (same pattern the page-level `OrganizationsSettings` uses). The
- * sibling `NewInviteForm` above this block does NOT depend on the query
- * state, so blocking the whole modal on a list fetch would harm the
- * primary "add someone" flow for no benefit — hence two concern-scoped
- * loading surfaces inside one modal instead of one page-level spinner.
- */
+/** Owns its own query — `NewInviteForm` above doesn't depend on it, so blocking the whole modal on the list fetch would harm the primary "add someone" flow. */
 export function PendingInvitesSection({ org }: { org: Organization }) {
   const t = useTranslations("settings.orgs.invite.pending");
   const invites = useInvitesQuery(org.id);

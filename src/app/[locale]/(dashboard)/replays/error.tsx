@@ -8,11 +8,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/feedback/al
 import { Button } from "@/components/ui/primitives/button";
 import { getErrorCopy } from "@/lib/error-copy";
 
-/**
- * Segment-level error boundary for `/replays/*` — takes over from the
- * root dashboard boundary when a Replays-scoped query fails. Copy is
- * differentiated by {@link getErrorCopy}.
- */
 export default function ReplaysError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const t = useTranslations("replays");
   const tCommon = useTranslations("common.error");

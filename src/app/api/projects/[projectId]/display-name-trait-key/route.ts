@@ -7,16 +7,8 @@ import { log } from "@/server/logger";
 type Params = { projectId: string };
 
 /**
- * `PATCH /api/projects/[projectId]/display-name-trait-key` — project-wide default trait key.
- *
- * ADMIN+ of the owning org — project-wide config affects every user's
- * display name.
- *
- * @remarks
- * Body: `{ traitKey: string | null }`. `string` → set default.
- * `null` → clear (resolver falls through to `externalId`). Applies
- * to every tracked user in the project without a local override
- * (`customName` or per-user `displayNameTraitKey`).
+ * `null` → resolver falls through to `externalId`. Affects every tracked user
+ * in the project without a local `customName` or per-user `displayNameTraitKey`.
  */
 export const PATCH = withAuth<Params>(async (req, user, { projectId }) => {
   await requireProjectMember(user.id, projectId, "ADMIN");

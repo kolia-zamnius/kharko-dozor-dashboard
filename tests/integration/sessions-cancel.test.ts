@@ -1,26 +1,15 @@
 /**
- * Integration tests for `POST /api/sessions/cancel` — the SDK `stop()` teardown path.
+ * `POST /api/sessions/cancel` — SDK `stop()` teardown path. Public-key route
+ * with a mutating side-effect (hard-delete + cascades). Security invariants:
  *
- * @remarks
- * Public-key endpoint, mirrors `/api/ingest` on the SDK surface but with
- * a MUTATING side-effect (hard-delete of a session row + cascades). The
- * security-sensitive invariants asserted here:
- *
- *   1. Unknown / missing public key → 401 + CORS, **no existence oracle**
- *      (same status for "missing header" and "key that doesn't match any
- *      project" so attackers can't probe the key space).
- *   2. `(projectId, externalId)` scoping — a public key for project A
- *      MUST NOT be able to cancel a session from project B, even if the
- *      caller knows the target session's external ID. Regression here
- *      would let a multi-tenant attacker hard-delete neighbours' data.
- *   3. Race-safe no-op — cancel arriving before the first ingest batch
- *      has created the row returns 204 quietly (not 404). The SDK
- *      legitimately races; treating the race as an error would spam
+ *   1. No existence oracle — unknown/missing key both return 401 + CORS.
+ *   2. `(projectId, externalId)` scoping — project A's key cannot cancel
+ *      project B's session even if the caller knows the external ID.
+ *   3. Race-safe no-op — cancel arriving before the first ingest creates the
+ *      row returns 204 (not 404). The SDK legitimately races; 404 would spam
  *      Sentry for normal traffic.
  *
- * OPTIONS preflight covered so the CORS contract stays honest alongside
- * the 204 / 401 responses on the same surface. Public-key route — does
- * not use `mockAuth`.
+ * OPTIONS preflight covered so the CORS contract stays honest.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -59,8 +48,7 @@ describe("POST /api/sessions/cancel", () => {
     const team = await createOrganization({ owner: alice });
     const project = await createProject({ organization: team });
 
-    // `sessionId` in the cancel body is the SDK-assigned external UUID,
-    // not the DB `id`. Use a real UUID so zod passes — the factory's
+    // `sessionId` is the SDK external UUID, not the DB id — and the factory's
     // default `sess-<uuid>` prefix would fail `z.uuid()`.
     const externalId = crypto.randomUUID();
     const session = await prisma.session.create({
@@ -117,11 +105,10 @@ describe("POST /api/sessions/cancel", () => {
     });
     const response = await cancelRoute.POST(req);
 
-    // 204 (no-op — scoping treats miss-on-my-project same as absent
-    // session; otherwise cross-tenant keys would get an existence oracle).
+    // 204 not 404 — miss-on-my-project ≡ absent, otherwise cross-tenant keys
+    // would have an existence oracle. The other project's row stays untouched.
     expect(response.status).toBe(204);
 
-    // Critically: the session is UNTOUCHED.
     const stillThere = await prisma.session.findUnique({ where: { id: session.id } });
     expect(stillThere).not.toBeNull();
   });

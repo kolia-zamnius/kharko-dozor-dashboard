@@ -1,12 +1,6 @@
-/**
- * Stable palette shared between the activity histogram, page distribution and
- * any legend that needs to reference pathnames by color.
- *
- * Invariant: the same pathname MUST map to the same color across all charts
- * within a single render. We achieve this with a deterministic string hash
- * rather than first-seen ordering (which depends on data order and isn't
- * stable across endpoints).
- */
+// Hash-based (not first-seen) so the same pathname maps to the same colour
+// across charts within a single render — first-seen ordering depends on data
+// order and isn't stable across endpoints.
 
 export const PAGE_COLOR_CLASSES = [
   "bg-violet-500",
@@ -21,7 +15,7 @@ export const PAGE_COLOR_CLASSES = [
   "bg-indigo-500",
 ] as const;
 
-/** FNV-1a string hash. Small, deterministic, no deps. */
+/** FNV-1a — small, deterministic, no deps. */
 function hashString(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) {
@@ -36,10 +30,6 @@ function indexForPathname(pathname: string): number {
 }
 
 export function colorClassForPathname(pathname: string): string {
-  // `PAGE_COLOR_CLASSES[0]` is a literal element of a non-empty `as const`
-  // tuple, so TS narrows it to `string` (not `string | undefined`) and the
-  // `??` fallback is safe under `noUncheckedIndexedAccess`. The ternary
-  // modulo guarantees `indexForPathname` returns `[0, length)`; the
-  // fallback only exists to satisfy the type system.
+  // `?? PAGE_COLOR_CLASSES[0]` only exists for `noUncheckedIndexedAccess` — the modulo guarantees the lookup is in range.
   return PAGE_COLOR_CLASSES[indexForPathname(pathname)] ?? PAGE_COLOR_CLASSES[0];
 }

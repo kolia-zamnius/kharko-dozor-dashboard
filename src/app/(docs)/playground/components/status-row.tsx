@@ -6,14 +6,7 @@ type StatusRowProps = {
   mono?: boolean;
 };
 
-/**
- * One row inside the playground's status `<dl>`.
- *
- * @remarks
- * Returns the `<dt>` and `<dd>` as siblings (Fragment, not div) so the
- * parent's `grid-cols-[max-content_1fr]` track resolves columns
- * correctly — wrapping the pair would break the two-column grid.
- */
+/** Fragment (not div) so the parent's `grid-cols-[max-content_1fr]` resolves columns correctly. */
 export function StatusRow({ label, value, mono = false }: StatusRowProps) {
   return (
     <>

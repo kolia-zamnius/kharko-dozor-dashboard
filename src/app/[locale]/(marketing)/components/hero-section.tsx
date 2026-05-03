@@ -6,25 +6,12 @@ import { Button } from "@/components/ui/primitives/button";
 
 import { EXTERNAL_LINKS } from "../lib/external-links";
 
-/**
- * Landing hero — headline + sub-headline + two product-focused CTAs.
- *
- * @remarks
- * CTAs are deliberately product-centric (not auth-centric) so they
- * don't duplicate the header, which already carries the auth-aware
- * button ("Sign in" / "Get started" / "Go to dashboard"). Primary
- * scrolls to the on-page `#install` anchor — the quickest way for a
- * first-time visitor to evaluate the SDK before committing to sign up.
- * Secondary links to the GitHub repo so engineers can read the code
- * first. Same pair renders regardless of auth state.
- */
+/** Product-centric CTAs (not auth) — header already carries the auth button. Same pair regardless of session state. */
 export async function HeroSection() {
   const t = await getTranslations("marketing.hero");
 
   return (
     <section className="relative overflow-hidden">
-      {/* Soft radial backdrop behind the hero — purely decorative, uses
-          semantic tokens so it works in both themes without a custom palette. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_80%_50%_at_50%_-10%,var(--color-primary)/0.12,transparent)]"

@@ -3,13 +3,7 @@ import "server-only";
 import { deriveUserStatus, type UserActivityStatus } from "@/api-client/tracked-users/status";
 import { resolveDisplayName } from "@/api-client/tracked-users/resolve-display-name";
 
-/**
- * Raw Prisma row shape consumed by {@link enrichTrackedUser}.
- *
- * @remarks
- * Kept as a plain type (not a `Prisma.X.GetPayload`) so helpers stay
- * Prisma-free at the type level and testable against plain fixtures.
- */
+/** Plain type (not `Prisma.X.GetPayload`) — keeps the helper Prisma-free at the type level + testable against plain fixtures. */
 export type RawTrackedUserRow = {
   readonly id: string;
   readonly externalId: string;
@@ -38,13 +32,7 @@ export type EnrichContext = {
   readonly now: Date;
 };
 
-/**
- * Final enriched shape returned to the client.
- *
- * @remarks
- * Mirrors one row of `GET /api/tracked-users` — the route just wraps
- * these in `{ data, nextCursor }`.
- */
+/** Mirrors one row of `GET /api/tracked-users` — the route wraps these in `{ data, nextCursor }`. */
 export type EnrichedTrackedUser = {
   readonly id: string;
   readonly externalId: string;
@@ -60,25 +48,10 @@ export type EnrichedTrackedUser = {
 };
 
 /**
- * Enrich a raw `TrackedUser` row with derived UI fields.
- *
- * @remarks
- * Computes: resolved display name (4-level fallback), activity status,
- * `lastEventAt` (max `session.endedAt`), rolling 7-day active-time sum.
- * Pure — all dependencies come from `ctx`, so every row in a response
- * frames its status against the same wall clock.
- *
- * Why loop sessions in JS instead of aggregating in SQL: the sessions
- * relation is already loaded for other list-page fields, so a separate
- * aggregate query would double the round-trips for no gain.
- *
- * @param row - Raw Prisma row from `GET /api/tracked-users` query.
- * @param ctx - Shared derivation context (project map, wall clock).
- * @returns UI-facing enriched row.
- *
- * @throws {Error} When `row.projectId` has no match in `ctx.projectMap`.
- *   Defensive — the caller already scopes to org projects; this branch
- *   signals a data-shape bug that should surface loudly.
+ * Pure — `ctx` carries the wall clock so every row in a response frames its
+ * status against the same instant. JS loop over sessions (not SQL aggregate)
+ * because the relation is already loaded for other list fields — separate
+ * aggregate would double round-trips for no gain.
  */
 export function enrichTrackedUser(row: RawTrackedUserRow, ctx: EnrichContext): EnrichedTrackedUser {
   const project = ctx.projectMap.get(row.projectId);

@@ -4,28 +4,9 @@ import { getTranslations } from "next-intl/server";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card";
 
-/**
- * Four-up feature grid beneath the hero. Config-driven so each card
- * is a single line of table data — reordering or adding features is
- * a copy-paste of the object, no JSX surgery.
- *
- * @remarks
- * Icons come from `@phosphor-icons/react/dist/ssr` (the SSR-safe entry
- * — keeps features off the client bundle entirely). Translation keys
- * are typed via the `marketing.features` namespace, so a missing card
- * copy surfaces as a compile error rather than a runtime blank cell.
- */
 type FeatureKey = "sessionReplay" | "trackedUsers" | "slices" | "privacy";
 
-/**
- * Feature config inline on purpose — the FeaturesSection is the sole
- * consumer today. Rule of three: lift to
- * `src/app/[locale]/(marketing)/lib/features.ts` when a second
- * consumer shows up (candidates: a dynamic OG image that lists
- * features, a future about/pricing page, sitemap anchors per
- * feature). Premature extraction now would just add indirection
- * without a real payoff.
- */
+/** Inline because this is the sole consumer — lift to `lib/features.ts` if a second one shows up. */
 const FEATURES: ReadonlyArray<{ key: FeatureKey; Icon: PhosphorIcon }> = [
   { key: "sessionReplay", Icon: PlayCircleIcon },
   { key: "trackedUsers", Icon: UsersThreeIcon },

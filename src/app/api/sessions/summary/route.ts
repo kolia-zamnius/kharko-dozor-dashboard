@@ -5,20 +5,7 @@ import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { NextResponse } from "next/server";
 
-/**
- * `GET /api/sessions/summary` — KPI aggregate for the sessions list stats strip.
- *
- * @remarks
- * Four KPIs scoped to the caller's active org: total sessions, total
- * duration, average duration (rounded), active today (created in the
- * last 24h).
- *
- * Single `$queryRaw` with conditional aggregation (`COUNT FILTER`) —
- * one round-trip, one table scan — instead of four separate Prisma
- * queries. VIEWER+.
- *
- * @see {@link sessionsSummaryOptions} — client-side consumer.
- */
+/** Single `$queryRaw` with `COUNT FILTER` — one round-trip vs four Prisma queries. */
 export const GET = withAuth(async (_req, user) => {
   const activeOrgId = user.activeOrganizationId;
   if (!activeOrgId) {

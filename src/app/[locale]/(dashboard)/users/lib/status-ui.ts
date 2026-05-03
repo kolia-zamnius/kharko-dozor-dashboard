@@ -1,23 +1,9 @@
 import type { UserActivityStatus } from "@/api-client/tracked-users/status";
 
 /**
- * Tailwind colour tokens for the user-activity status domain enum.
- *
- * @remarks
- * Labels and descriptions for each status live in
- * `src/i18n/messages/<locale>/users.json` under `users.status.*` —
- * consumers call `useTranslations("users.status")` and look them up
- * via `t(\`${status}.label\`)` / `.description`. Only colour tokens
- * stay here because they're Tailwind class strings, not localisable
- * text.
- *
- * Adding a new status variant:
- *   1. Add it to `USER_ACTIVITY_STATUSES` in `api-client/tracked-users/status.ts`.
- *   2. Add `label` + `description` to `users.status.<NEW>` in every
- *      `messages/<locale>/users.json`.
- *   3. Extend `STATUS_COLOR` below — `as const satisfies` turns a
- *      missing bucket into a compile error that walks the compiler
- *      through the UI wiring.
+ * Page-level UI tokens — labels live in `messages/{locale}/users.json`,
+ * Tailwind classes here. `as const satisfies Record<...>` turns a missing
+ * variant into a compile error.
  */
 export const STATUS_COLOR = {
   ONLINE: {

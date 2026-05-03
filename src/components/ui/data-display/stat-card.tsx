@@ -13,14 +13,6 @@ type StatCardProps = {
   className?: string;
 };
 
-/**
- * Compact metric card — activity-summary numbers in a grid.
- *
- * @remarks
- * Visual hierarchy: `value` is the big number, `label` is muted +
- * small, `sub` carries optional context (e.g. a truncated top-page
- * pathname). All text columns truncate rather than wrap.
- */
 export function StatCard({ label, value, sub, icon, className }: StatCardProps) {
   return (
     <Card size="sm" className={cn("hover:bg-muted/30 transition-colors", className)}>

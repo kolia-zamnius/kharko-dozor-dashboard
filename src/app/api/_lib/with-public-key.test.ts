@@ -1,14 +1,8 @@
 /**
- * Unit tests for the `withPublicKey` HOF — twin of `withAuth` for the
- * SDK-facing ingest + cancel endpoints.
- *
- * @remarks
- * Security invariants this suite guards:
- *   - Missing header → 401 (don't leak whether a key exists).
- *   - Unknown key → 401 (same message as missing, no existence oracle).
- *   - CORS headers present on EVERY response (success + error), so a
- *     browser-origin SDK gets a parseable error instead of an opaque
- *     CORS failure.
+ * Security invariants:
+ *   - Missing header + unknown key both return 401 — no existence oracle.
+ *   - CORS on every response (success + error), so a browser SDK gets a
+ *     parseable error instead of an opaque CORS failure.
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";

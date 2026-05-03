@@ -3,60 +3,29 @@
 import { prepareSignUp } from "@/app/[locale]/(auth)/actions/auth";
 import { OAuthButtons } from "@/app/[locale]/(auth)/components/oauth-buttons";
 import { OTPVerification } from "@/app/[locale]/(auth)/components/otp-verification";
-import { Button } from "@/components/ui/primitives/button";
+import { signUpSchema, type SignUpInput } from "@/app/[locale]/(auth)/validators";
 import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
+import { Button } from "@/components/ui/primitives/button";
 import { Separator } from "@/components/ui/primitives/separator";
 import { Link, useRouter } from "@/i18n/navigation";
-import type { EnabledProviders } from "@/lib/auth/enabled-providers.types";
-import { useTranslations } from "next-intl";
-import { toast } from "sonner";
-import { signUpSchema, type SignUpInput } from "@/app/[locale]/(auth)/validators";
+import type { EnabledProviders } from "@/lib/auth/enabled-providers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
-/**
- * Typestate for the sign-up flow.
- *
- * @remarks
- * Modelled as a discriminated union so the `"otp"` variant cannot be
- * constructed without the email payload that the OTP screen needs — an
- * invariant that the previous `{ step, email }` parallel-useState
- * shape leaked. Matches the pattern used by `SignInForm` so both
- * wizards read the same way.
- */
 type SignUpState = { step: "form" } | { step: "otp"; email: string };
 
 /**
- * Sign-up wizard.
- *
- * @remarks
- * Two-step flow:
- *   1. `form` — collect name + email, call {@link prepareSignUp} to
- *      validate + cache the display name in a short-lived cookie, then
- *      trigger a Nodemailer OTP send.
- *   2. `otp` — delegate to the shared {@link OTPVerification}
- *      component, which hands off to `/api/auth/callback/nodemailer`
- *      on code entry. The name cookie is read by the PrismaAdapter's
- *      `createUser` override during that callback so the first-party
- *      name lands in the DB without a second round-trip.
- *
- * Error sentinels from `prepareSignUp` (`ACCOUNT_EXISTS`,
- * `RATE_LIMITED`) are translated to product copy + routing here,
- * keeping the server action free of user-facing strings.
- *
- * @see src/app/(auth)/actions/auth.ts — `prepareSignUp` server action
- * @see src/server/auth/adapter.ts — `createUser` override that consumes the cookie
+ * `prepareSignUp` caches the display name in a short-lived cookie that the
+ * PrismaAdapter's `createUser` override reads during the OTP callback — first-
+ * party name lands without a second round-trip. Error sentinels translated to
+ * product copy here so the server action stays free of user-facing strings.
  */
-export function SignUpForm({
-  callbackUrl = "/users",
-  enabled,
-}: {
-  callbackUrl?: string;
-  enabled: EnabledProviders;
-}) {
+export function SignUpForm({ callbackUrl = "/users", enabled }: { callbackUrl?: string; enabled: EnabledProviders }) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [state, setState] = useState<SignUpState>({ step: "form" });

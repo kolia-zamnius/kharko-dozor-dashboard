@@ -8,20 +8,6 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/primitives/button";
 import { getErrorCopy } from "@/lib/error-copy";
 
-/**
- * Route-level error boundary for `/users/[userId]`. Takes over from the
- * parent `(dashboard)/error.tsx` when a render error happens anywhere
- * in the user detail tree — isolates the failure so the navbar and
- * other routes stay interactive.
- *
- * @remarks
- * Copy is differentiated by {@link getErrorCopy} — 404 reads as "User
- * not found", 403 as "permission denied", etc. The "back to users"
- * escape hatch is preserved for any error kind so the admin is never
- * trapped. Most errors here come from the shell's Suspense queries
- * failing their initial load; background polling flakes stay in the
- * toast pipeline per the global `throwOnError` policy.
- */
 export default function UserDetailError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const t = useTranslations("users");
   const tErrors = useTranslations("errors");

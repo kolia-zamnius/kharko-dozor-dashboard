@@ -1,13 +1,9 @@
 /**
- * Integration tests for `/api/user` — profile GET / PATCH / DELETE.
- *
- * @remarks
- * The `DELETE` path is the most security-sensitive surface in the whole
- * app: it walks every org the user owns, transfers ownership where
- * necessary, cascades personal-space data, and then deletes the user
- * row. The `deleteAccountSchema` confirmation literal is the UX lock
- * against a misclick; this suite proves both the lock fires AND the
- * transaction invariants hold when it's legitimately submitted.
+ * `/api/user` — GET / PATCH / DELETE. The DELETE path walks every owned org,
+ * transfers ownership, cascades personal-space data, then deletes the user
+ * row. The `deleteAccountSchema` literal is the UX lock against misclicks —
+ * tests prove both the lock fires AND transaction invariants hold when
+ * legitimately submitted.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

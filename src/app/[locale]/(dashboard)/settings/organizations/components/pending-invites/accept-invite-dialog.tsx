@@ -14,14 +14,6 @@ import { CheckIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-/**
- * Two-step confirm dialog for accepting an invite.
- *
- * The trigger button intentionally uses the `default` variant (brand
- * primary) to read as the "happy path" action, while the Decline sibling
- * uses `outline` — together they form a clear primary/secondary pair in
- * the table row even before the user opens either modal.
- */
 export function AcceptInviteDialog({ invite }: { invite: UserInvite }) {
   const t = useTranslations("settings.orgs.invitations.accept");
   const { formatRole } = useFormatters();

@@ -1,19 +1,10 @@
 /**
- * Integration tests for `/api/user/passkeys/[credentialId]` — passkey rename + delete.
+ * `/api/user/passkeys/[credentialId]` — rename + delete. The
+ * `(credentialID, userId)` scoping is the only guard against cross-user
+ * privilege escalation if a credentialID leaks (XSS, log spill, screenshot).
  *
- * @remarks
- * Security-sensitive surface. The `(credentialID, userId)` scoping is
- * the single guard against a cross-user privilege escalation: if a
- * credentialID were leaked (XSS, log spill, screenshot), the scoping
- * ensures another user still can't DELETE or rename someone else's
- * passkey.
- *
- * Both operations return `404 Passkey not found` (NOT 403) when the
- * target credentialID doesn't belong to the caller — deliberate
- * choice, matches the no-existence-oracle pattern used across the
- * API: an attacker probing credentialIDs gets the same response for
- * "doesn't exist anywhere" and "exists but belongs to someone else",
- * so the response can't be used to enumerate valid IDs.
+ * Both ops return 404 (not 403) for someone else's credentialID — no existence
+ * oracle, an attacker can't enumerate valid IDs from response shape.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

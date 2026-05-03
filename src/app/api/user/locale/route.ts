@@ -4,29 +4,10 @@ import { prisma } from "@/server/db/client";
 import { log } from "@/server/logger";
 
 /**
- * `PATCH /api/user/locale` — persist the signed-in user's locale preference.
- *
- * @remarks
- * Validates against the canonical `LOCALES` tuple via `updateLocaleSchema`
- * — a client that sends a locale the server doesn't recognise gets a 400
- * instead of a silent write.
- *
- * Session refresh is intentionally handled client-side:
- *
- *   1. This endpoint updates `User.locale` and returns 204.
- *   2. The client calls `session.update({})` which forces a JWT refresh;
- *      the `jwt` callback re-reads `user.locale` from the DB and updates
- *      `token.locale`; the `session` callback narrows it into
- *      `session.user.locale`.
- *   3. The client then calls typed `router.replace(pathname, { locale })`
- *      to swap the URL prefix and re-render the whole tree in the new
- *      locale.
- *
- * All three steps happen inside the `useUpdateLocaleMutation`
- * `onSuccess` callback so the UI never sees an inconsistent state.
- *
- * @see src/api-client/user/mutations.ts::useUpdateLocaleMutation — consumer.
- * @see src/server/auth/callbacks/jwt.ts — re-reads `locale` on refresh.
+ * Server only writes — session refresh + URL swap are client-side in
+ * `useUpdateLocaleMutation.onSuccess`: 204 → `session.update({})` (forces JWT
+ * refresh, `jwt` callback re-reads `User.locale`) → `router.replace(pathname,
+ * { locale })`. Bundling the three steps avoids an inconsistent intermediate UI.
  */
 export const PATCH = withAuth(async (req, user) => {
   const body = updateLocaleSchema.parse(await req.json());

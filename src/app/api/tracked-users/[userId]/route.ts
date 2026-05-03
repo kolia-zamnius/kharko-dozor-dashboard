@@ -7,19 +7,12 @@ import { NextResponse } from "next/server";
 type Params = { userId: string };
 
 /**
- * `GET /api/tracked-users/[userId]` — full tracked-user detail payload.
- *
- * @remarks
- * Delegates to {@link loadTrackedUserDetail} — the same loader the
- * user-detail page Server Component uses for hydration prefetch, so
- * client and server responses have byte-identical shape (critical
- * for `HydrationBoundary` to skip the on-mount refetch). Permission
- * check lives inside the loader.
- *
- * @see {@link trackedUserDetailOptions} — client-side consumer.
+ * Same loader as the user-detail page's prefetch — byte-identical shape so
+ * `HydrationBoundary` skips the on-mount refetch. Permission check lives
+ * inside the loader.
  */
 export const GET = withAuth<Params>(async (_req, user, { userId }) => {
-  // Trust-boundary cast — `userId` arrives as a raw string URL param.
+  // Trust-boundary cast — `userId` arrives as a raw URL param.
   const trackedUser = await loadTrackedUserDetail(userId as TrackedUserId, user.id, user.activeOrganizationId);
 
   if (!trackedUser) {

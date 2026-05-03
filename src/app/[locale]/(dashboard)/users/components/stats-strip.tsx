@@ -9,12 +9,6 @@ type StatsStripProps = {
   data: TrackedUsersSummary;
 };
 
-/**
- * Four KPI cards at the top of the users list page.
- *
- * Pure view — data comes from the parent shell. Layout: 2 cols on mobile,
- * 4 on sm+. Matches the 6-col grid on the detail page but with fewer cards.
- */
 export function StatsStrip({ data }: StatsStripProps) {
   const t = useTranslations("users.list.stats");
   const { formatCount } = useFormatters();

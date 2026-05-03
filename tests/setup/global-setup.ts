@@ -1,21 +1,10 @@
 /**
- * Vitest global setup — runs once per test run, before any test file loads.
+ * Boots one Postgres 17 container for the whole test run, creates `template_test`
+ * inside it, pushes the Prisma schema, and exports `TEST_POSTGRES_*` so per-worker
+ * clones in {@link tests/helpers/db.ts} can spin up fresh DBs.
  *
- * @remarks
- * Responsibilities:
- *   1. Boot a Postgres 17 container via Testcontainers (GitHub Actions
- *      `ubuntu-latest` ships with Docker preinstalled, so this works in
- *      CI without extra YAML).
- *   2. Create the `template_test` database inside it.
- *   3. Push the Prisma schema to that template via `prisma db push`.
- *   4. Export host/port/creds + template-DB name to `process.env` so
- *      `tests/helpers/db.ts` can clone a fresh DB per worker.
- *
- * The returned `teardown` stops the container. Runs even if test
- * execution fails — Testcontainers also has Ryuk as a safety net in
- * case the Node process hard-crashes.
- *
- * @see tests/helpers/db.ts — per-worker DB clone + Prisma client.
+ * `prisma db push` (not `migrate deploy`) is intentional — the template DB is
+ * throwaway, so migration history would be dead weight (CLAUDE.md confirms).
  */
 
 import { spawnSync } from "node:child_process";
@@ -39,8 +28,7 @@ export async function setup(): Promise<void> {
   const adminUrl = `postgresql://test:test@${host}:${port}/postgres`;
   const templateUrl = `postgresql://test:test@${host}:${port}/${TEMPLATE_DB}`;
 
-  // Create the template DB. We talk to `postgres` (the admin DB) because
-  // you can't `CREATE DATABASE` while connected to the target.
+  // Connect to admin DB — `CREATE DATABASE` can't run while connected to the target.
   const { Client } = await import("pg");
   const admin = new Client({ connectionString: adminUrl });
   await admin.connect();
@@ -50,13 +38,8 @@ export async function setup(): Promise<void> {
     await admin.end();
   }
 
-  // Push the Prisma schema into the template. `prisma.config.ts` reads
-  // DATABASE_URL_UNPOOLED for the datasource, so that's what we set
-  // for the child process. Prisma 7 dropped the legacy `--skip-generate`
-  // flag from the `db push` CLI surface — running the default command
-  // re-generates the client against the template DB, which is cheap
-  // (~1-2s) since the generator already has its artefacts cached from
-  // `npm install`'s postinstall hook.
+  // Prisma 7 dropped `--skip-generate` from `db push`, so the client gets
+  // re-generated against the template (~1-2s, generator artefacts are cached).
   console.log("[testcontainers] pushing schema to template…");
   const push = spawnSync("npx", ["prisma", "db", "push", "--accept-data-loss"], {
     env: { ...process.env, DATABASE_URL_UNPOOLED: templateUrl },
@@ -67,8 +50,8 @@ export async function setup(): Promise<void> {
     throw new Error("[testcontainers] `prisma db push` failed — see output above");
   }
 
-  // Expose to workers. Vitest's fork-pool inherits `process.env` from the
-  // main process, so these reach every test file.
+  // Vitest's fork-pool inherits `process.env` from the main process, so workers
+  // pick these up without extra plumbing.
   process.env.TEST_POSTGRES_HOST = host;
   process.env.TEST_POSTGRES_PORT = String(port);
   process.env.TEST_POSTGRES_USER = "test";

@@ -9,16 +9,9 @@ import { NextResponse } from "next/server";
 type Params = { userId: string };
 
 /**
- * `GET /api/tracked-users/[userId]/timeline` — sessions timeline in a rolling window.
- *
- * VIEWER+.
- *
- * @remarks
- * `?range=6h|24h|7d` matches the histogram + stats range. Server
- * computes `from = now - windowMs` itself — sending raw ISO strings
- * from the client would shift the TanStack Query key on every render
- * and break cache dedup. The response echoes `from` / `to` so the
- * renderer can axis-scale against the exact window the server used.
+ * Server computes `from = now - windowMs` itself — client-supplied ISO strings
+ * would shift the TanStack key on every render and break cache dedup. Echoes
+ * `from`/`to` so the renderer scales the axis against the exact window.
  */
 export const GET = withAuth<Params>(async (req, user, { userId }) => {
   const trackedUser = await prisma.trackedUser.findUnique({
@@ -42,7 +35,7 @@ export const GET = withAuth<Params>(async (req, user, { userId }) => {
   const sessions = await prisma.session.findMany({
     where: {
       trackedUserId: trackedUser.id,
-      // Overlap with [from, to]: started before window end AND (ended after window start OR still open).
+      // [from, to] overlap — started before end AND (ended after start OR still open).
       startedAt: { lte: to },
       OR: [{ endedAt: { gte: from } }, { endedAt: null }],
     },
@@ -68,7 +61,7 @@ export const GET = withAuth<Params>(async (req, user, { userId }) => {
     orderBy: { startedAt: "asc" },
   });
 
-  // `pages[]` is kept for backward compat with older consumers — the current UI has no page filter.
+  // `pages[]` kept for back-compat — the current UI has no page filter.
   const pagesSet = new Set<string>();
   for (const session of sessions) {
     for (const slice of session.slices) {

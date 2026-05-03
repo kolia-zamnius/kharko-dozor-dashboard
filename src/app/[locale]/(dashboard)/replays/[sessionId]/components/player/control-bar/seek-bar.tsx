@@ -6,25 +6,10 @@ import { selectIsPlayerDisabled, usePlayerStore } from "../store";
 import { formatTime } from "../utils";
 
 /**
- * Custom seek bar with idle-period markers and a real-time tooltip.
- *
- * @remarks
- * State comes from the player store via a `useShallow` selector that
- * picks only the fields the seek bar actually reads — critical because
- * this component re-renders at ~60 fps on every `currentTime` tick and
- * MUST NOT also re-render on unrelated state changes (e.g. the console
- * panel toggling). The previous implementation subscribed to the whole
- * store and paid that cost on every mutation.
- *
- * Visuals:
- *   - Amber segments (`bg-amber-500/30`) mark idle periods (gaps >
- *     `IDLE_THRESHOLD_MS`) so admins can see drop-offs at a glance
- *     and decide whether to leave "Skip idle" enabled.
- *   - Thumb tooltip shows wall-clock time in the browser locale by
- *     way of `sessionStartTimestamp + currentTime`, so admins can
- *     cross-reference replay moments with log timestamps.
- *
- * @see ../store — `selectIsPlayerDisabled` + playback fields.
+ * Re-renders ~60fps on `currentTime` ticks so the `useShallow` selector is
+ * critical — narrow subscription means console-toggle/etc don't trigger here.
+ * Tooltip shows wall-clock (`sessionStartTimestamp + currentTime`) so admins
+ * can cross-reference replay moments with log timestamps.
  */
 export function SeekBar() {
   const { currentTime, totalTime, idlePeriods, sessionStartTimestamp } = usePlayerStore(

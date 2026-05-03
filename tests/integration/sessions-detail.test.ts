@@ -1,12 +1,8 @@
 /**
- * Integration tests for `/api/sessions/[sessionId]` — GET (detail) + DELETE.
- *
- * @remarks
- * The replay player's primary read endpoint. Permission gate is VIEWER+
- * (any org member can watch); delete is ADMIN+ (so QA/staging cleanup
- * stays unblocked without an OWNER on call). The route's "legacy
- * inline-events" branch covers pre-slice recordings — important to
- * keep tested while old sessions can still exist in the wild.
+ * `/api/sessions/[sessionId]` — GET + DELETE. Replay player's primary read.
+ * VIEWER+ for read; DELETE is ADMIN+ (QA/staging cleanup without an OWNER on
+ * call). The legacy inline-events branch covers pre-slice recordings — kept
+ * tested while old sessions can still exist in the wild.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -74,8 +70,7 @@ describe("/api/sessions/[sessionId]", () => {
       expect(json.projectId).toBe(project.id);
       expect(json.slices).toHaveLength(1);
       expect(json.slices[0]?.reason).toBe("init");
-      // Post-slice sessions don't inline events — the slice-events route
-      // serves them on demand.
+      // Post-slice sessions don't inline events — the slice-events route serves them on demand.
       expect(json.events).toEqual([]);
     });
 
@@ -113,9 +108,7 @@ describe("/api/sessions/[sessionId]", () => {
       const team = await createOrganization({ owner: alice });
       const project = await createProject({ organization: team });
       const session = await createSession({ project });
-      // Bob is active inside his own org. The cross-org guard returns
-      // an opaque 404 rather than 403, so a guessed session ID owned by
-      // a different org gives no signal that the ID is real.
+      // Opaque 404 (not 403) so a guessed ID gives no existence signal.
       const bobOrg = await createOrganization({ owner: bob });
       mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: bob.id, activeOrganizationId: bobOrg.id })));
 

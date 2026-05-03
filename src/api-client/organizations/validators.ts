@@ -9,23 +9,18 @@ export const updateOrgSchema = z.object({
   regenerateAvatar: z.boolean().optional(),
 });
 
+/** OWNER invites are not issuable — narrowed to `ADMIN | VIEWER`. */
 export const inviteSchema = z.object({
   email: z.email(),
   role: z.enum(["ADMIN", "VIEWER"], { message: "Role must be Admin or Viewer" }),
 });
 
 /**
- * PATCH body for a pending invite. A **discriminated union** rather than a
- * general partial object — the two operations are semantically different
- * (change-role writes `role`, extend writes `expiresAt`), and making them
- * distinct lets:
- *
- *   - The server route branch on `action` without guessing intent from
- *     the presence/absence of fields.
- *   - Each branch carry its own `meta.successKey` ("Role updated"
- *     vs "Invite extended") without post-hoc inspection of variables.
- *   - Future actions (e.g. "resend email") plug in as another discriminant
- *     without breaking existing consumers.
+ * Discriminated union (not a partial object) so the server branches on `action`
+ * without guessing intent from field presence. Each branch carries its own
+ * `meta.successKey` ("Role updated" vs "Invite extended") at the mutation site,
+ * and a future "resend email" plugs in as another discriminant without breaking
+ * existing consumers.
  */
 export const updateInviteSchema = z.discriminatedUnion("action", [
   z.object({

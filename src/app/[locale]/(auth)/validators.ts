@@ -1,15 +1,6 @@
 import { z } from "zod";
 
-/**
- * Zod schemas for the auth wizards — shared by Server Actions (input
- * validation) and the client forms (RHF `zodResolver`).
- *
- * @remarks
- * Kept as a single file because the three schemas are tiny and
- * intimately related (sign-up embeds sign-in's email rules). The
- * inferred input types are re-exported so consumers can import both
- * the schema and the payload shape from one module.
- */
+// Shared by Server Actions (input validation) + client forms (RHF zodResolver).
 
 export const signUpSchema = z.object({
   name: z.string().min(2).max(50).trim(),

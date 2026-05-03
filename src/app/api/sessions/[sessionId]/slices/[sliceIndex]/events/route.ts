@@ -8,15 +8,9 @@ import { NextResponse } from "next/server";
 type Params = { sessionId: string; sliceIndex: string };
 
 /**
- * `GET /api/sessions/[sessionId]/slices/[sliceIndex]/events` — rrweb events for one slice.
- *
- * VIEWER+.
- *
- * @remarks
- * Loaded on demand by the replay viewer as the user scrubs into a
- * slice — avoids shipping the full event log upfront for long
- * multi-slice sessions. Events are ordered ascending by timestamp so
- * the Replayer consumes them as a stream without preliminary sort.
+ * Loaded on demand as the user scrubs — avoids shipping the full event log
+ * upfront for long multi-slice sessions. Ascending order so the Replayer
+ * consumes as a stream without preliminary sort.
  */
 export const GET = withAuth<Params>(async (req, user, { sessionId, sliceIndex }) => {
   const idx = parseInt(sliceIndex, 10);

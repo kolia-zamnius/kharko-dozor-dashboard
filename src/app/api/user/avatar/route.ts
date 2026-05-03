@@ -6,13 +6,7 @@ import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 
-/**
- * `POST /api/user/avatar` — regenerate the signed-in user's DiceBear avatar.
- *
- * @remarks
- * Rolls to a fresh UUID seed. Returns the new URL so the client can
- * update its avatar slot without a full profile refetch.
- */
+/** Returns the new URL so the client updates its avatar slot without a full profile refetch. */
 export const POST = withAuth(async (req, user) => {
   const newImage = userAvatarUrl(randomUUID());
 

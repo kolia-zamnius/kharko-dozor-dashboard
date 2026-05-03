@@ -1,22 +1,12 @@
 /**
- * Integration tests for the cross-organization access guard.
+ * Cross-org access guard. Bug it fixed: a user in two orgs (A active, B
+ * background) opening `/users/{id}` for a B-owned resource saw B's data while
+ * chrome still showed A. `requireResourceAccess` enforces "resource must live
+ * in the active org" with an opaque 404 (not 403) — guessed IDs never confirm
+ * existence to a foreign-org member.
  *
- * @remarks
- * The motivating bug: a user who belongs to two orgs (A active, B
- * background) could open a `/users/{id}` or `/replays/{id}` URL whose
- * resource was actually in B and see B's data while the dashboard chrome
- * still showed A. Backend now enforces "resource must be in the active
- * org" via `requireResourceAccess`, returning an opaque 404 (never 403)
- * so a guessed ID never confirms its existence to a foreign-org member.
- *
- * Each route below is exercised twice in spirit: the cross-org case
- * (covered here, expects 404) and the same-org case (covered in the
- * route's own test file, expects 200/204). Keeping the cross-org axis
- * in one file makes it obvious which routes opted in to the guard and
- * which were missed if the helper is rolled out further.
- *
- * @see src/server/auth/permissions.ts — `requireResourceAccess`
- * @see tests/integration/permissions-matrix.test.ts — RBAC drift detector
+ * Cross-org axis lives in one file so it's obvious which routes opted into
+ * the guard and which were missed if the helper rolls out further.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -60,12 +50,7 @@ describe("cross-org access guard", () => {
     await prisma.$disconnect();
   });
 
-  /**
-   * Seed an actor who is a member of two orgs (A and B). The active org
-   * is A. The resource (session + tracked user) lives in B. The guard
-   * must refuse the request even though membership in B technically
-   * exists — what matters is the *active* org at request time.
-   */
+  /** Actor is member of A (active) + B; resource lives in B. The guard must refuse despite the B membership — only the active org matters. */
   async function seedActorWithForeignResource() {
     const founder = await createUser();
     const actor = await createUser();
@@ -108,9 +93,8 @@ describe("cross-org access guard", () => {
       params: { sessionId: session.id },
     });
     expect(status).toBe(404);
-    // Defence-in-depth: ensure the row is still present after the failed
-    // delete — a regression that downgraded 404 to a successful delete
-    // would otherwise pass the status check above.
+    // Defence-in-depth: a regression that turned 404 into a successful delete
+    // would still pass the status check above.
     expect(await prisma.session.findUnique({ where: { id: session.id } })).not.toBeNull();
   });
 
@@ -177,7 +161,7 @@ describe("cross-org access guard", () => {
     });
     expect(status).toBe(404);
     const refreshed = await prisma.trackedUser.findUnique({ where: { id: trackedUser.id } });
-    // Defence-in-depth: the write must not have landed.
+    // Defence-in-depth — write must not have landed.
     expect(refreshed?.customName).toBeNull();
   });
 
@@ -188,8 +172,7 @@ describe("cross-org access guard", () => {
     await createMembership({ user: actor, organization: team, role: "VIEWER" });
     const project = await createProject({ organization: team });
     const session = await createSession({ project });
-    // `activeOrganizationId: null` is the default — surfaced explicitly
-    // so the assertion's reason is impossible to misread.
+    // Surfaced explicitly so the assertion's reason is unmistakable.
     mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: actor.id, activeOrganizationId: null })));
 
     const { status } = await invokeRouteWithParams(sessionRoute.GET, {

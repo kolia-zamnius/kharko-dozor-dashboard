@@ -13,11 +13,6 @@ type SessionRowProps = {
   canManage: boolean;
 };
 
-/**
- * Single row in the sessions table. Pure view — receives a session
- * and renders session ID link, user, project badge, pages, duration,
- * and date. Optional actions column for admins/owners.
- */
 export function SessionRow({ session, canManage }: SessionRowProps) {
   const t = useTranslations("replays.list.table");
   const { formatDate, formatDuration, formatRelative } = useFormatters();

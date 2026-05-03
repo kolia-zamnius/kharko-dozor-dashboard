@@ -5,18 +5,6 @@ import { Tooltip as TooltipPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/cn";
 
-/**
- * Radix Tooltip primitive — hover/focus-triggered contextual hint.
- *
- * @remarks
- * Compound parts: `TooltipProvider` (mount once per subtree —
- * defaults to `delayDuration: 0` for instant hints), `Tooltip`,
- * `TooltipTrigger`, `TooltipContent` (renders an arrow by default).
- *
- * `TooltipContent` contains a special style hook for nested `Kbd`
- * chips via `has-data-[slot=kbd]` — keep in mind when adding new
- * inline primitives that might want to render inside tooltips.
- */
 function TooltipProvider({ delayDuration = 0, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
   return <TooltipPrimitive.Provider data-slot="tooltip-provider" delayDuration={delayDuration} {...props} />;
 }

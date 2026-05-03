@@ -14,12 +14,6 @@ type SessionsTableProps = {
   canManage: boolean;
 };
 
-/**
- * Sessions data table with sortable column headers.
- *
- * Clicking a column header sets it as the active sort (desc). Clicking the
- * already-active header toggles between desc and asc.
- */
 export function SessionsTable({ sessions, sort, sortDir, onSortChange, canManage }: SessionsTableProps) {
   const t = useTranslations("replays.list.table");
   const handleSort = (column: SessionListSortBy) => {

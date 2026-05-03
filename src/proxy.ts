@@ -6,15 +6,7 @@ import type { Locale } from "@/i18n/config";
 import { routing } from "@/i18n/routing";
 import { auth } from "@/server/auth";
 
-/**
- * Composes the next-intl locale router with auth + shared-link
- * locale auto-redirect.
- *
- * @see src/i18n/routing.ts — locale registry.
- * @see src/server/auth/index.ts — `auth()` factory.
- */
-
-/** Paths that skip both auth and intl. Documented per entry below. */
+/** Paths that skip both auth and intl — see per-entry rationale. */
 const bypassPaths = [
   // English-only docs zone, lives outside the `[locale]/` pipeline.
   "/documentation",
@@ -35,7 +27,6 @@ function matchesAny(pathname: string, paths: string[]): boolean {
   return paths.some((path) => pathname === path || pathname.startsWith(path + "/"));
 }
 
-/** Drop a leading `/{locale}` segment so guards compare against canonical paths. */
 function stripLocalePrefix(pathname: string): string {
   for (const locale of routing.locales) {
     if (pathname === `/${locale}`) return "/";
@@ -44,7 +35,6 @@ function stripLocalePrefix(pathname: string): string {
   return pathname;
 }
 
-/** Read the locale from the URL prefix; default-locale URLs carry no prefix. */
 function getUrlLocale(pathname: string): Locale {
   for (const locale of routing.locales) {
     if (locale === routing.defaultLocale) continue;
@@ -60,11 +50,7 @@ function withLocalePrefix(canonical: string, locale: Locale): string {
   return `/${locale}${canonical}`;
 }
 
-/**
- * Build a redirect URL preserving the original `?query`. The `#fragment`
- * is never on the wire but every browser re-attaches it from the
- * original Location, so shared links keep their hash through the redirect.
- */
+/** Preserves `?query`; `#fragment` re-attaches client-side from the original Location, so shared links keep their hash. */
 function buildRedirectUrl(canonical: string, locale: Locale, request: NextRequest): URL {
   return new URL(withLocalePrefix(canonical, locale) + request.nextUrl.search, request.url);
 }

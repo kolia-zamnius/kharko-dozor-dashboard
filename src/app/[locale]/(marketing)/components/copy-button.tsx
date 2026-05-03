@@ -7,30 +7,15 @@ import { Button } from "@/components/ui/primitives/button";
 import { cn } from "@/lib/cn";
 
 /**
- * Copy-to-clipboard icon button used by marketing installation snippets
- * and the EUR donation details. Renders a static ghost button with an
- * inline "copied" affordance — deliberately no toast, the feedback is
- * immediate and spatially close to the triggering element.
- *
- * @remarks
- * Kept local to the marketing zone (not a global primitive) because
- * the copy flow here is intentionally simpler than the dashboard one
- * in `copy-key-button.tsx`, which fetches plaintext on-demand and
- * surfaces sonner toasts. When a second marketing consumer needs a
- * different UX, the options diverge; until then, one button covers
- * both installation snippets and the bank-details card.
- *
- * Sized `icon` (32×32) rather than `icon-sm` (28×28) to clear
- * Lighthouse's mobile tap-target threshold — the marketing surface is
- * the only place these copy affordances render, so the larger hit area
- * costs nothing elsewhere in the app.
+ * Marketing-local — distinct from the dashboard's `copy-key-button.tsx`,
+ * which fetches plaintext + toasts. Sized `icon` (32×32, not `icon-sm`) for
+ * Lighthouse's mobile tap-target threshold.
  */
 export function CopyButton({
   value,
   label,
   className,
 }: {
-  /** Text copied to the clipboard when the button is pressed. */
   value: string;
   /** Accessible name — typically the localised "Copy {field}" string. */
   label: string;
@@ -45,9 +30,7 @@ export function CopyButton({
       setJustCopied(true);
       setTimeout(() => setJustCopied(false), 2000);
     } catch {
-      // Swallow: the browser may reject clipboard writes in some
-      // contexts (non-secure origin, permission denied). The user
-      // can still select the visible text and copy manually.
+      // Browser may reject clipboard writes (non-secure origin, permission denied) — user can still select + copy manually.
     }
   }
 

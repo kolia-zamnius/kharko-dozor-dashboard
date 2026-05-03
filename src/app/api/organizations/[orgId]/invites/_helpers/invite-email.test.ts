@@ -1,16 +1,7 @@
 /**
- * Snapshot tests for the invite email HTML builder.
- *
- * @remarks
- * Exercises the ICU `select` role interpolation via `t.markup` — the
- * rendered body inserts `<strong>Admin</strong>` (or the localised
- * role label) so a translation regression that drops the `<strong>`
- * tags, or picks the wrong case form in a language like Ukrainian,
- * fails the snapshot immediately.
- *
- * Covers all three roles in the en snapshot + spreads locales across
- * the remaining fixed role so the total file size stays reasonable
- * while every branch is still exercised.
+ * Drift sentry — translation regressions that drop `<strong>` tags or pick the
+ * wrong UK case form fail the snapshot immediately. EN covers all three roles;
+ * other locales fix to ADMIN to keep snapshot size reasonable.
  */
 
 import { describe, expect, it } from "vitest";
@@ -44,7 +35,6 @@ describe("inviteEmailHtml", () => {
     "role=%s resolves to the localised role label via ICU select",
     async (role) => {
       const html = await render("en", role);
-      // EN copy maps OWNER → Owner, ADMIN → Admin, VIEWER → Viewer.
       const expected = role[0] + role.slice(1).toLowerCase();
       expect(html).toContain(`<strong>${expected}</strong>`);
     },
@@ -61,7 +51,6 @@ describe("inviteEmailHtml", () => {
   });
 
   it("pluralises the expiry footer (ICU plural)", async () => {
-    // 3 days in English → "3 days"; 1 day would render as "1 day".
     const html = await render("en");
     expect(html).toContain("3 days");
   });

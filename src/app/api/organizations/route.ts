@@ -6,17 +6,7 @@ import { prisma } from "@/server/db/client";
 import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 
-/**
- * `GET /api/organizations` — list every org the signed-in user is a member of.
- *
- * @remarks
- * Ordered by `createdAt ASC` so the Personal Space (always the oldest)
- * surfaces first in the switcher. Each row carries the caller's role
- * and the org's member count — the admin UI uses both to decide
- * which actions to render.
- *
- * @see {@link organizationsListOptions} — client-side consumer.
- */
+/** Ordered by `createdAt ASC` so Personal Space (oldest) surfaces first in the switcher. */
 export const GET = withAuth(async (req, user) => {
   const memberships = await prisma.membership.findMany({
     where: { userId: user.id },
@@ -51,15 +41,7 @@ export const GET = withAuth(async (req, user) => {
   return NextResponse.json(organizationListSchema.parse(data));
 });
 
-/**
- * `POST /api/organizations` — create a TEAM organization owned by the caller.
- *
- * @remarks
- * Transactional so the `Organization` and creator's `Membership` are
- * always persisted together — a crash between the two would otherwise
- * leave an ownerless org. Personal spaces are provisioned by the
- * Auth.js `createUser` event, not this route.
- */
+/** Tx so creator's `Membership` lands with the `Organization` — a crash between would leave an ownerless org. Personal Spaces come from the Auth.js `createUser` event. */
 export const POST = withAuth(async (req, user) => {
   const body = createOrgSchema.parse(await req.json());
 

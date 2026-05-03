@@ -10,18 +10,6 @@ import { DangerZoneSection } from "./danger-zone-section";
 import { LocaleSection } from "./locale-section";
 import { ProfileSection } from "./profile-section";
 
-/**
- * Settings > User page.
- *
- * @remarks
- * Suspense composition root: the page-level fallback is a single
- * centered Spinner (preserves our "single spinner per page"
- * invariant — no per-section skeletons). Errors bubble to the
- * nearest `error.tsx`; the global `throwOnError` default in
- * `lib/query-client.ts` routes only initial-load failures to the
- * boundary, so polling flakes don't crash the page once data is on
- * screen.
- */
 export function UserSettings() {
   const t = useTranslations("settings.user");
   return (

@@ -8,41 +8,15 @@ import { useSession } from "next-auth/react";
 
 type InviteVariables = { inviteId: string; organizationName: string };
 
-/**
- * Context object returned from `onMutate` and consumed by `onError` for
- * optimistic rollback. Holds the full list of invites as it looked
- * before we optimistically removed the accepted/declined row, so we
- * can restore it atomically if the mutation fails.
- */
 type OptimisticContext = {
   previous: UserInvite[] | undefined;
 };
 
 /**
- * Shared helper that wires the optimistic-update dance for both the
- * accept and decline flows. They differ only in their HTTP call and
- * their post-success side effects; the cache juggling is identical:
- *
- *   1. `onMutate` cancels any in-flight refetch of the invites query
- *      (so it can't race-win against our optimistic write), snapshots
- *      the current list, then removes the target row from the cache
- *      synchronously. The table / dot / badge all re-render immediately
- *      with the row gone — no wait for the network round-trip.
- *   2. `onError` restores the snapshot, so a server failure rolls back
- *      as if nothing happened. The global `MutationCache` still fires
- *      the error toast from `meta.errorKey` (or the specific
- *      `ApiError.message` — see the mutation-cache wiring in
- *      `lib/query-client.ts`).
- *   3. `onSettled` invalidates the query once, unconditionally. On
- *      success this reconciles with whatever shape the server settled
- *      on (handles the edge case where server and optimistic state
- *      diverge — e.g. the row was also declined in another tab). On
- *      error it's a no-op against the already-restored snapshot.
- *
- * Keeping this helper local to the file (vs exporting a utility) is
- * deliberate: the two call sites are the only consumers, the shape is
- * narrow, and pulling it out would obscure what each mutation actually
- * does when read end-to-end.
+ * `onMutate` snapshots the list and removes the row synchronously — the table,
+ * dot, and badge update before the network round-trip. `onError` restores the
+ * snapshot. `onSettled` invalidates once: on success, reconciles edge cases
+ * (row also declined in another tab); on error, no-op against the restored snapshot.
  */
 function createOptimisticRemoval(
   queryClient: ReturnType<typeof useQueryClient>,
@@ -66,19 +40,10 @@ function rollbackOptimisticRemoval(
 }
 
 /**
- * Accept a pending invite.
- *
- * Optimistic: the row is removed from the `user.invites` cache the
- * instant the user clicks "Join" — the dialog closes, the
- * `PendingInvitesSection` table updates, and the navbar dot count
- * recalculates, all before the network request finishes. On success
- * we additionally refresh `organizations` + nudge the session so the
- * new membership shows up in the switcher.
- *
- * `organizationName` is carried in variables purely so that the
- * dynamic `meta.successKey` + `successVars` (resolved in the global `MutationCache`)
- * can render `"Joined ${name}"` without the call site wiring its own
- * toast.
+ * On success additionally refreshes `organizations` + nudges the session so the
+ * new membership shows up in the switcher. `organizationName` rides variables
+ * purely so the dynamic `meta.successKey`/`successVars` can render
+ * "Joined {organizationName}" without an inline `onSuccess`.
  */
 export function useAcceptInviteMutation() {
   const queryClient = useQueryClient();
@@ -89,9 +54,6 @@ export function useAcceptInviteMutation() {
     onMutate: ({ inviteId }) => createOptimisticRemoval(queryClient, inviteId),
     onError: (_err, _variables, context) => rollbackOptimisticRemoval(queryClient, context),
     onSuccess: () => {
-      // The invites query reconciles in `onSettled`. Here we only
-      // invalidate side-effect queries that weren't part of the
-      // optimistic write.
       void queryClient.invalidateQueries({ queryKey: organizationQueries.all().queryKey });
       void update({});
     },
@@ -109,13 +71,7 @@ export function useAcceptInviteMutation() {
   });
 }
 
-/**
- * Decline a pending invite.
- *
- * Same optimistic pattern as accept, but a narrower set of side
- * effects on success — only the invites query needs reconciling, the
- * organizations list is untouched, no session update.
- */
+/** Same optimistic pattern as accept, but no organizations refresh and no session nudge — just the invites cache. */
 export function useDeclineInviteMutation() {
   const queryClient = useQueryClient();
 

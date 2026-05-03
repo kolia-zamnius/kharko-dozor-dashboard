@@ -12,23 +12,13 @@ type BucketRow = {
 };
 
 /**
- * Time-bucketed, page-split activity histogram for one tracked user.
+ * `date_bin()` anchors at `'2020-01-01'` (not `from`) — bucket boundaries stay
+ * stable across consecutive requests 200ms apart, preventing shimmering bars
+ * and TanStack cache misses.
  *
- * @remarks
- * `date_bin()` snaps each event to a fixed grid anchored at
- * `'2020-01-01'` (not `from`) — that keeps bucket boundaries stable
- * across consecutive requests 200ms apart, preventing "shimmering"
- * bars and TanStack cache misses on the client.
- *
- * `pgInterval` is interpolated as raw SQL, which is safe because it
- * comes from the hardcoded `ACTIVITY_CONFIG` record (`"5 minutes" |
- * "15 minutes" | "1 hour"`). The range parser rejects anything
- * outside the union before it reaches this helper.
- *
- * @param trackedUserId - Internal tracked-user primary key.
- * @param from - Window start (inclusive).
- * @param to - Window end (exclusive).
- * @param pgInterval - Bucket width as a Postgres interval literal.
+ * `pgInterval` is `Prisma.raw`-interpolated — safe because it comes from
+ * `ACTIVITY_CONFIG` (a closed string union); the range parser rejects
+ * anything outside it.
  */
 export async function computeActivityHistogram(
   trackedUserId: string,
@@ -62,13 +52,7 @@ export async function computeActivityHistogram(
   return assembleBuckets(rows);
 }
 
-/**
- * Fold the flat `(bucket × pathname)` result set into one row per bucket.
- *
- * @remarks
- * The DB `ORDER BY bucket ASC` guarantees input order; `Map` insertion
- * order (spec-guaranteed since ES2015) preserves it on the way out.
- */
+/** SQL `ORDER BY bucket ASC` + Map insertion order (ES2015) preserves input order on output. */
 function assembleBuckets(rows: readonly BucketRow[]): ActivityBucket[] {
   const bucketMap = new Map<number, Map<string, number>>();
   for (const row of rows) {

@@ -1,19 +1,11 @@
 /**
- * Integration tests for `GET /api/sessions` — cursor-paginated session list.
+ * `GET /api/sessions`. Asserts org scoping against `?projectIds=`, range
+ * preset filtering, sort stability, and cursor invariants (dedup + order +
+ * terminal-null) as a property — same pattern as `tracked-users-list`.
  *
- * @remarks
- * Companion to `sessions-detail.test.ts`. The detail test asserts
- * per-session shape + cross-org 404 invariants; this one covers the
- * LIST behaviour: org scoping against `?projectIds=`, date-range
- * preset filtering, sort direction stability, and cursor pagination
- * invariants (dedup + order + terminal-null) as a property, same
- * pattern as `tracked-users-list.test.ts`.
- *
- * Filters are independent axes — testing every combination would
- * explode combinatorially for marginal signal. The invariants asserted
- * here are the ones where a regression would silently show WRONG data
- * (wrong org, stale rows, duplicates) rather than OBVIOUSLY broken
- * data (5xx, empty list).
+ * Targets regressions that show WRONG data silently (cross-org leak, stale
+ * rows, dupes) — not obviously-broken data (5xx, empty list). Combinations of
+ * independent filter axes would explode for marginal signal.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";

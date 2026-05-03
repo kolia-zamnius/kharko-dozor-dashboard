@@ -1,10 +1,6 @@
 import { VideoIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
-/**
- * Empty state shown when no sessions match the current filters,
- * or when the org has no recorded sessions at all.
- */
 export function EmptyState({ hasFilters }: { hasFilters: boolean }) {
   const t = useTranslations("replays.list.empty");
   return (

@@ -15,20 +15,8 @@ type Params = {
 };
 
 /**
- * Refresh the recipient's existing PENDING invite OR create a fresh one.
- *
- * @remarks
- * Idempotent "resend-or-create" semantics — pressing Invite on an
- * already-invited email bumps `expiresAt`, allows the role to change,
- * and re-attributes `invitedById` to whoever just pressed the button.
- * Mirrors Notion / Linear / Slack product behaviour and doubles as the
- * "email got lost in spam" recovery path.
- *
- * Existing membership is the one hard block — you can't re-invite a
- * current member; the caller's UI should route them to the members
- * modal for a role change.
- *
- * @throws {HttpError} 409 — recipient is already a member of the org.
+ * Existing membership is the one hard 409 — caller's UI should route to the
+ * members modal for a role change instead.
  */
 export async function refreshOrCreatePendingInvite({ orgId, email, role, inviterId }: Params): Promise<Invite> {
   const [existingMembership, existingPending] = await Promise.all([

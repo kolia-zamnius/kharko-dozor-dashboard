@@ -9,10 +9,8 @@ const CONSOLE_PLUGIN_NAME = "rrweb/console@1";
 
 
 /**
- * Ensure slice events start with a Meta event (type 4) before the
- * FullSnapshot (type 2). rrweb Replayer requires Meta → FullSnapshot →
- * Mutations ordering. If the slice events start with a FullSnapshot
- * but no Meta, we synthesize one from the slice's URL and viewport.
+ * rrweb requires Meta(4) → FullSnapshot(2) → Mutations ordering. We synthesize
+ * Meta from the slice's URL/viewport when events start with FullSnapshot.
  */
 export function ensureMetaEvent(events: SessionEvent[], slice: SliceInfo): SessionEvent[] {
   const first = events[0];
@@ -54,11 +52,6 @@ export function formatTimePrecise(ms: number): string {
 }
 
 
-/**
- * Extract console log entries from rrweb plugin events.
- * Uses the ConsoleLogEntry type from types.ts (single source of truth).
- * Returns entries sorted by timestamp with offsets relative to session start.
- */
 export function extractConsoleLogs(events: SessionEvent[]): ConsoleLogEntry[] {
   const firstEvent = events[0];
   if (!firstEvent) return [];

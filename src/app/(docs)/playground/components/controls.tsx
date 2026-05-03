@@ -8,22 +8,8 @@ import { Field } from "./field";
 import { Section } from "./section";
 
 /**
- * Step 3 — lifecycle buttons (state-conditional) + the identify form.
- *
- * @remarks
- * Lifecycle buttons render conditionally on `dozor.state` — the
- * resulting set is non-overlapping (Start | Pause | Resume | Stop)
- * because the underlying enum is a discriminated union.
- *
- * Identity inputs live here, beside the Identify button that consumes
- * them, so the user reads "type a User ID, click Identify" linearly
- * without scrolling back up. `userId` is required (you can't identify
- * an anonymous session); `name` and `email` become free-form `traits`
- * if non-empty.
- *
- * `traits` is dropped from the `identify()` call when both `name` and
- * `email` are blank — passing `{}` would emit an empty traits object
- * which is technically valid but pointlessly noisy.
+ * Empty `traits` is dropped from `identify()` — `{}` is valid but pointlessly
+ * noisy in the recorded session.
  */
 export function Controls() {
   const dozor = useDozor();

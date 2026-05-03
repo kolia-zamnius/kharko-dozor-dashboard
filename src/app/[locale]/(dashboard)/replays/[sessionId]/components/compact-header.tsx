@@ -23,23 +23,12 @@ import { useFormatters } from "@/lib/use-formatters";
 
 type CompactHeaderProps = {
   session: SessionDetail;
-  /** Diff between the player snapshot and latest polled data. */
+  /** Diff between snapshot and latest polled data. */
   updates: SessionUpdate[];
-  /** Called when the admin clicks the refresh button while updates exist. */
   onApply: () => void;
-  /** True while the transition triggered by `onApply` is in flight. */
   isApplying: boolean;
 };
 
-/**
- * Compact session metadata bar above the viewport.
- *
- * All metadata shown as Badge elements with icons. Session ID is
- * displayed in full with a copy button. The trailing `<RefreshButton>`
- * lights up in orange when the background poll detects new slices /
- * events / an end-of-session flip — clicking it promotes the latest
- * data into the player (see `useSessionUpdateIndicator`).
- */
 export function CompactHeader({ session, updates, onApply, isApplying }: CompactHeaderProps) {
   const t = useTranslations("replays.detail");
   const { formatDate, formatDuration } = useFormatters();
@@ -108,27 +97,9 @@ type RefreshButtonProps = {
 };
 
 /**
- * GitHub-style "updates available" button.
- *
- * Only visible when there's actually something to act on — a silent
- * idle state would add a permanent control to the header chrome for
- * no value and train the admin to tune it out. Hiding it entirely
- * means the orange "something changed" signal gets the full weight
- * of admin attention when it finally appears.
- *
- * Two visible states:
- *   1. **Has updates** — orange fill + ring + pulsing dot. Tooltip
- *      summarizes the diff ("2 new slices, 17 new events • Click to
- *      reload"). `aria-live="polite"` on the wrapper announces the
- *      button's appearance to assistive tech without being aggressive.
- *   2. **Applying** — spinner, disabled, so a double-click can't fire
- *      two remounts in quick succession. Stays mounted through the
- *      transition so the admin sees their click being honored before
- *      the button disappears once the snapshot catches up.
- *
- * The button is the ONLY place on the replay page where the admin
- * takes responsibility for resetting playback — the tooltip wording
- * is deliberate about "reload" so the consequence is advertised.
+ * Hidden when idle — a permanent control trains the admin to tune it out.
+ * `aria-live="polite"` announces the appearance to assistive tech.
+ * "Reload" wording is deliberate — the click resets playback to t=0.
  */
 function RefreshButton({ updates, onApply, isApplying }: RefreshButtonProps) {
   const t = useTranslations("replays.detail.refreshButton");
@@ -136,9 +107,7 @@ function RefreshButton({ updates, onApply, isApplying }: RefreshButtonProps) {
   const tooltip = formatUpdateTooltip(updates, tTooltip);
   const hasUpdates = updates.length > 0;
 
-  // Hide entirely when there's nothing to do. `isApplying` keeps the
-  // button mounted through a click-in-flight even after `updates`
-  // empties out, so the transition has a visible endpoint.
+  // `isApplying` keeps the button mounted post-click even after `updates` empties — the transition needs a visible endpoint.
   if (!hasUpdates && !isApplying) return null;
 
   const ariaLabel = isApplying ? t("ariaReloading") : (tooltip ?? t("ariaReload"));

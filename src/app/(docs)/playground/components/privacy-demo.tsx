@@ -5,22 +5,9 @@ import { Field } from "./field";
 import { Section } from "./section";
 
 /**
- * Step 4 — three side-by-side samples showing each privacy mechanism
- * the SDK supports.
- *
- * @remarks
- * The page-level `Dozor.init({ privacyMaskInputs: false })` is what
- * makes this demo readable: with the default-on input mask, every
- * `<input>` would already be masked and `data-dozor-mask` would look
- * like a no-op. Turning it off lets each of the three samples
- * demonstrate one mechanism in isolation:
- *
- *   1. Plain input → recorded verbatim
- *   2. `data-dozor-mask` → text replaced with `*` in the recording
- *   3. `data-dozor-block` → element replaced with a same-size placeholder
- *
- * Pure presentational; no hooks, no SDK calls — the SDK reads the
- * `data-*` attributes off the DOM at capture time.
+ * Page-level `init({ privacyMaskInputs: false })` is what makes the demo
+ * readable — with default-on masking, the plain input would already be
+ * masked. SDK reads `data-*` off the DOM at capture time.
  */
 export function PrivacyDemo() {
   return (

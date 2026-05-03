@@ -8,16 +8,7 @@ import { NextResponse } from "next/server";
 
 type Params = { userId: string };
 
-/**
- * `GET /api/tracked-users/[userId]/sessions` — cursor-paginated sessions for one user.
- *
- * VIEWER+ of the owning org.
- *
- * @remarks
- * Ordered by most-recent first. Rows are slim (no event payload, no
- * trait JSON) — callers hydrate details per row via the session
- * detail endpoint on demand.
- */
+/** Slim rows — no event payload or trait JSON. Callers hydrate per-row via the session detail endpoint. */
 export const GET = withAuth<Params>(async (req, user, { userId }) => {
   const trackedUser = await prisma.trackedUser.findUnique({
     where: { id: userId },
@@ -52,13 +43,8 @@ export const GET = withAuth<Params>(async (req, user, { userId }) => {
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
 
-  // Shape matches `SessionListItem`; `userDisplayName` is nominally the
-  // viewed user's name but kept `null` here because this sub-route is
-  // always rendered inside the user-detail page where that identity is
-  // already surfaced above the table. Leaving it null avoids a second
-  // `resolveDisplayName` call per row. Pre-schema this field was
-  // accidentally missing entirely — the zod parse now fails fast if it
-  // regresses.
+  // `userDisplayName: null` — this sub-route always renders inside the user-detail
+  // page where the identity is already surfaced; skipping `resolveDisplayName` per row.
   const enriched = sessions.map((s) => ({
     id: s.id,
     externalId: s.externalId,

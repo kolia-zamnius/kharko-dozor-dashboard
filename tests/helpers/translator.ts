@@ -1,26 +1,10 @@
 /**
- * Scoped translator fakes for tests that exercise non-React code paths
- * (email builders, error-copy helpers, zod error map builder) which
- * accept a `ReturnType<typeof useTranslations<Namespace>>` argument.
+ * Translator fakes for non-React paths (email builders, error-copy helpers,
+ * zod error map builder) that take a `ReturnType<typeof useTranslations<Ns>>`.
  *
- * @remarks
- * Two flavours:
- *
- *   - `fakeTranslator(namespace)` — echoes the key verbatim as
- *     `"namespace.key"`. Used by unit tests that assert "some copy was
- *     produced" without caring about wording (e.g. asserting path
- *     prefixing in `localizeZodError`).
- *
- *   - `realTranslator(locale, namespace)` — loads the real JSON file at
- *     `src/i18n/messages/<locale>/<namespace>.json` and hands off to
- *     next-intl's `createTranslator`. Used by email-HTML snapshot tests
- *     and the few assertions that want actual localised copy.
- *
- * Both return a minimal `TestTranslator` type; call sites that hand the
- * translator to a typed consumer (e.g. `otpEmailHtml(token, locale, t)`)
- * use a single documented `as unknown as …` cast — the next-intl
- * runtime shape is a superset of what we expose, and duplicating its
- * generic plumbing here wouldn't add signal.
+ * `fakeTranslator` echoes `"namespace.key"` for tests that only care a key was
+ * resolved. `realTranslator` loads the actual JSON and hands off to next-intl —
+ * used by email-HTML snapshot tests.
  */
 
 import { readFile } from "node:fs/promises";
@@ -50,26 +34,18 @@ export function fakeTranslator(namespace: string): TestTranslator {
 }
 
 /**
- * Map a code-side namespace to its on-disk JSON filename.
- *
- * @remarks
- * Matches the `src/i18n/request.ts` aggregation — most namespaces map
- * 1:1 (`common` → `common.json`), but the two email namespaces use
- * camelCase in code (`emailOtp`, `emailInvite`) and kebab-case on disk
- * (`email-otp.json`, `email-invite.json`). Rather than maintain a
- * duplicate lookup here, we auto-convert camelCase → kebab-case with a
- * single regex — consistent with the kebab-case-on-disk convention, so
- * adding `emailFoo` and `email-foo.json` just works.
+ * Code-side namespaces are camelCase (`emailOtp`), on-disk JSONs are kebab-case
+ * (`email-otp.json`). Auto-converting beats maintaining a duplicate lookup —
+ * adding `emailFoo` + `email-foo.json` Just Works.
  */
 function namespaceToFilename(ns: string): string {
   return ns.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
 }
 
 /**
- * @param namespace - Either a single namespace (`"emailOtp"`) or a dot-nested
- *   path (`"settings.orgs.roles"`). The first segment selects the JSON file;
- *   the full path is passed to next-intl so nested scoping matches the
- *   production `getTranslations({ namespace })` behaviour.
+ * `namespace` accepts dot-nested paths (`"settings.orgs.roles"`) — first segment
+ * picks the JSON file, full path is forwarded to next-intl so nested scoping
+ * matches `getTranslations({ namespace })` in production.
  */
 export async function realTranslator(locale: Locale, namespace: string): Promise<TestTranslator> {
   const [topLevel, ...rest] = namespace.split(".");
@@ -80,17 +56,15 @@ export async function realTranslator(locale: Locale, namespace: string): Promise
   const raw = await readFile(path, "utf8");
   const fileContents = JSON.parse(raw) as Record<string, unknown>;
 
-  // next-intl expects a `messages` tree that mirrors the nested namespace —
-  // so we pass the JSON under its top-level key and hand the full dotted
-  // namespace back to `createTranslator`, which walks down.
+  // next-intl walks a `messages` tree mirroring the dotted namespace, so we
+  // pass the JSON under its top-level key and let `createTranslator` descend.
   const { createTranslator } = await import("next-intl");
   const t = createTranslator({
     locale,
     namespace,
     messages: { [topLevel]: fileContents },
   });
-  // `rest` isn't used directly — it's implicit in `namespace` — but the
-  // destructuring documents intent for readers.
+  // `rest` is implicit in `namespace`; destructured to document intent.
   void rest;
   return t as unknown as TestTranslator;
 }

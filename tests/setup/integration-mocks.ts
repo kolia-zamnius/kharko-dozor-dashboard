@@ -1,29 +1,10 @@
 /**
- * Integration-project setup file — installs the three `vi.mock` calls
- * that every integration test used to copy-paste at the top of itself.
+ * Auto-mocks scoped to the integration project (vitest.config.ts `integrationSetupFiles`).
+ * Unit and contract projects skip this file, so a misplaced "unit" test that hits
+ * `@/server/auth` or Prisma fails loudly instead of silently using a stub.
  *
- * @remarks
- * Runs AFTER `load-env.ts` + `vitest.setup.ts` (per `vitest.config.ts`
- * `setupFiles` order) and ONLY for the integration project. Unit and
- * contract projects never load this file, so their SUTs touch the real
- * `@/server/auth`, the real `@/server/db/client`, and the real
- * `next-intl/server` — if a file that claims to be a unit test quietly
- * hits one of them, it fails loudly instead of silently using a stub.
- *
- * Wiring shape:
- *
- *   - `@/server/auth` → returns the stateful `mockAuth` handle from
- *     `tests/helpers/mocks.ts`. Tests import `mockAuth` and call
- *     `.mockResolvedValue(session)` per-case.
- *   - `@/server/db/client` → real Prisma client pointed at the
- *     per-worker test DB (see `tests/helpers/db.ts`).
- *   - `next-intl/server::getTranslations` → echo translator that
- *     returns keys verbatim so assertions match key shapes without
- *     maintaining locale JSON parity in test fixtures.
- *
- * A global `beforeEach(() => mockAuth.mockReset())` means tests never
- * need to reset the auth mock manually — the slate is clean every
- * `it(...)`.
+ * `next-intl/server::getTranslations` returns an echo translator — assertions match
+ * key shapes without needing locale JSON parity in fixtures.
  */
 
 import type { getTranslations } from "next-intl/server";

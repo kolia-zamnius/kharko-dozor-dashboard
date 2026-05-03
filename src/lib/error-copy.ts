@@ -4,35 +4,15 @@ import { isApiError } from "@/api-client/error";
 import { assertNever } from "@/lib/assert-never";
 
 /**
- * Product-voice copy for a caught error — chosen by `ApiErrorKind`
- * where available, with a generic fallback for non-API errors.
+ * Centralised `ApiErrorKind` → product copy used by every `error.tsx` boundary —
+ * a new kind walks the compiler through every consumer via `assertNever`. `context`
+ * is the already-localised noun ("User", "Replays") owned by the feature, so the
+ * errors namespace doesn't re-translate it. `t` is injected because this module
+ * has no `"use client"` and must not tie to the hook lifecycle.
  *
- * @remarks
- * Route-level `error.tsx` boundaries all want the same branching
- * logic: differentiate 404 from 403 from 5xx, surface a useful
- * sentence, keep a retry affordance. Duplicating a 7-arm `switch`
- * across four `error.tsx` files is exactly the sort of drift bait
- * senior-audited out. Centralizing here means a new `ApiErrorKind`
- * variant walks the compiler through every consumer via
- * {@link assertNever}.
- *
- * `context` is the **already-localised** noun the boundary is
- * rendering ("User", "Users list", "Replays") — interpolated into a
- * few branches so "not found" reads as "User not found" instead of
- * the generic fallback. Caller resolves the copy via its own
- * `useTranslations("<feature>")` call and hands the string in; we
- * don't re-translate here because the noun is owned by the feature,
- * not by the errors namespace.
- *
- * `t` is a scoped translator — `useTranslations("errors")` — passed
- * in rather than looked up inside because this module has no
- * `"use client"` and must not tie to the hook lifecycle.
- *
- * `auth` intentionally has its own branch even though
- * `lib/query-client.ts` globally intercepts auth-kind errors and
- * redirects to `/sign-in` — the copy exists as a defensive fallback
- * for the slim window between the error firing and the redirect
- * committing.
+ * The `auth` branch is defensive — the global `QueryCache.onError` in
+ * {@link src/lib/query-client.ts} hard-redirects to `/sign-in`, but the copy fills
+ * the slim window before that lands.
  */
 export type ErrorCopy = {
   title: string;

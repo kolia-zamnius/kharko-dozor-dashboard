@@ -4,35 +4,18 @@ import { ACTIVITY_RANGES } from "./domain";
 import { USER_ACTIVITY_STATUSES } from "./status";
 
 /**
- * Response DTO schemas for the `tracked-users` feature — biggest
- * schema module in the repo, covering six endpoints: list, summary,
- * detail, activity (histogram + pages + KPIs), status, timeline.
+ * Output DTOs — six endpoints (list, summary, detail, activity, status, timeline).
+ * For detail, the parse lives inside `src/server/tracked-users.ts::loadTrackedUserDetail`,
+ * shared between the API route handler AND the page's `HydrationBoundary` prefetch.
  *
- * @remarks
- * Twin of `validators.ts` (inputs). Every JSON response from
- * `src/app/api/tracked-users/**` parses through one of these before
- * `NextResponse.json`. For the detail endpoint the guard additionally
- * lives inside `src/server/tracked-users.ts::loadTrackedUserDetail`,
- * which is shared between the API route handler AND the page's
- * `HydrationBoundary` prefetch — parsing in the loader means both
- * paths hit the same validator.
- *
- * `traits` is typed as `z.record(z.string(), z.unknown()).nullable()`
- * because the SDK lets customers send any JSON shape via
- * `Dozor.identify(traits)`. We deliberately don't narrow further —
- * the resolver chain (`resolveDisplayName`) reads specific keys
- * defensively, and locking the schema down would reject legitimate
- * customer data.
- *
- * @see src/api-client/tracked-users/validators.ts — request-side schemas.
- * @see src/server/tracked-users.ts — shared loader that parses detail.
+ * `traits` stays `z.record(z.string(), z.unknown()).nullable()` — customers send
+ * any JSON shape via `Dozor.identify()`, locking it down would reject legitimate
+ * data. The resolver chain reads specific keys defensively.
  */
-
 
 const userActivityStatusSchema = z.enum(USER_ACTIVITY_STATUSES);
 const activityRangeSchema = z.enum(ACTIVITY_RANGES);
 const traitsSchema = z.record(z.string(), z.unknown()).nullable();
-
 
 export const trackedUserListItemSchema = z.object({
   id: z.string(),
@@ -59,7 +42,6 @@ export const paginatedTrackedUsersSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 
-
 export const trackedUsersSummarySchema = z.object({
   total: z.number().int().nonnegative(),
   onlineNow: z.number().int().nonnegative(),
@@ -67,12 +49,10 @@ export const trackedUsersSummarySchema = z.object({
   newThisWeek: z.number().int().nonnegative(),
 });
 
-
 export const userStatusSchema = z.object({
   online: z.boolean(),
   lastEventAt: z.string().nullable(),
 });
-
 
 export const activityBucketSchema = z.object({
   t: z.string(),
@@ -112,7 +92,6 @@ export const userActivitySchema = z.object({
   pageDistribution: z.array(pageDistributionSchema),
   summary: activitySummarySchema,
 });
-
 
 export const timelineSliceSchema = z.object({
   url: z.string(),

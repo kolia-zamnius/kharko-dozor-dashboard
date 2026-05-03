@@ -1,19 +1,12 @@
 /**
- * ⭐ Flagship integration suite — RBAC permission matrix.
+ * RBAC drift detector — every protected route × every `Role` × {allow, deny}.
+ * Driven by `describe.each` so adding an action is a one-row edit. Drift
+ * between the documented matrix in `src/server/auth/permissions.ts` and
+ * actual route behaviour fails the specific role × action that regressed.
  *
- * @remarks
- * Every protected route is exercised against every `Role` with both a
- * "should allow" and "should deny" assertion. The matrix is driven by a
- * `describe.each` table so adding a new action is a one-row edit, and
- * the capability matrix in `src/server/auth/permissions.ts` stays
- * uncontested single-source-of-truth: a drift between the documented
- * matrix and actual route behaviour fails a specific row here with the
- * exact role × action that regressed.
- *
- * Per-file mocks below **override** the shared stubs from
- * `tests/setup/integration-mocks.ts`:
- *   - `next-intl/server` needs `t.markup` support (invite route uses it).
- *   - `@/server/mailer` stubbed so send-invite scenarios don't try SMTP.
+ * Per-file `vi.mock`s below override the shared stubs — `next-intl/server`
+ * needs `t.markup` (invite emails use it); `@/server/mailer` stubbed to skip
+ * SMTP.
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -71,14 +64,9 @@ type ActionName =
   | "tracked-user-display-name-update";
 
 /**
- * Capability matrix — authoritative expected behaviour per role × action.
- * Mirrors the `src/server/auth/permissions.ts` JSDoc verbatim; a diff
- * between the two surfaces in this test file first.
- *
- * Out of scope for the matrix: user-scoped actions whose authorization
- * doesn't depend on the actor's org role (`active-org-switch`,
- * `passkey-delete`, `account-unlink`). Those have dedicated per-route
- * tests under `tests/integration/`.
+ * Mirrors `src/server/auth/permissions.ts` verbatim — drift surfaces here.
+ * User-scoped actions (`active-org-switch`, `passkey-delete`,
+ * `account-unlink`) aren't role-gated, so they live in dedicated tests.
  */
 const MATRIX: Record<ActionName, Record<Role, boolean>> = {
   "rename-org": { OWNER: true, ADMIN: true, VIEWER: false },
@@ -89,8 +77,7 @@ const MATRIX: Record<ActionName, Record<Role, boolean>> = {
   "delete-project": { OWNER: true, ADMIN: false, VIEWER: false },
   "get-project-key": { OWNER: true, ADMIN: false, VIEWER: false },
   "regenerate-project-key": { OWNER: true, ADMIN: false, VIEWER: false },
-  // Removing OR demoting OTHER members — OWNER only. Self-leave is a
-  // separate flow and is not under test here.
+  // Removing/demoting OTHER members — OWNER only. Self-leave is a separate flow.
   "remove-member": { OWNER: true, ADMIN: false, VIEWER: false },
   "change-member-role": { OWNER: true, ADMIN: false, VIEWER: false },
   // ADMIN-tier — operational metadata edits.
@@ -116,25 +103,16 @@ describe("RBAC permission matrix", () => {
     await prisma.$disconnect();
   });
 
-  /**
-   * Per-action scenario — seeds an org + project + one actor with the
-   * given role, then invokes the route. Returns `response.status` so the
-   * assertion reads as `status === 403 ? denied : allowed`.
-   */
   async function runScenario(action: ActionName, actorRole: Role): Promise<number> {
-    // Always have a separate OWNER so deleting/demoting one actor doesn't
-    // leave an ownerless org (would short-circuit on schema invariants).
+    // Separate OWNER so deleting/demoting the actor doesn't leave the org ownerless.
     const founder = await createUser();
     const actor = await createUser();
     const team = await createOrganization({ owner: founder, type: "TEAM" });
     await createMembership({ user: actor, organization: team, role: actorRole });
     const project = await createProject({ organization: team });
 
-    // Resource-access routes (`session-delete`, `tracked-user-display-name-update`)
-    // require the actor's active org to match the resource's owning org.
-    // Pinning `activeOrganizationId` here keeps the role × action grid
-    // about RBAC alone — cross-org leak coverage lives in
-    // `cross-org-access.test.ts`.
+    // Pin `activeOrganizationId` so resource-access routes pass the cross-org
+    // check — this grid is about RBAC alone; leak coverage is in cross-org-access.
     mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: actor.id, activeOrganizationId: team.id })));
 
     switch (action) {
@@ -198,8 +176,8 @@ describe("RBAC permission matrix", () => {
         return status;
       }
       case "remove-member": {
-        // Distinct VIEWER target — actor removes someone other than self,
-        // so the OWNER-only branch in `DELETE members/[memberId]` fires.
+        // Distinct VIEWER target — removing someone other than self triggers
+        // the OWNER-only branch (self-leave is a separate flow).
         const targetUser = await createUser();
         const target = await createMembership({ user: targetUser, organization: team, role: "VIEWER" });
         const { status } = await invokeRouteWithParams(memberDetailRoute.DELETE, {
@@ -238,8 +216,7 @@ describe("RBAC permission matrix", () => {
     }
   }
 
-  // Generate a row per (action, role) combination — 12 actions × 3 roles
-  // = 36 assertions. Each test runs in full isolation (truncate between).
+  // 12 actions × 3 roles = 36 rows, isolated by truncate-between.
   describe.each(ALL_ACTIONS)("%s", (action) => {
     it.each(ALL_ROLES)(`role=%s`, async (role) => {
       const allowed = MATRIX[action][role];

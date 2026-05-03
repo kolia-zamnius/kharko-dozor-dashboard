@@ -11,15 +11,7 @@ type LocalTraitKeySectionProps = {
   user: TrackedUserDetail;
 };
 
-/**
- * Priority-2 editor: per-user trait lookup. When set, the display-name
- * resolver reads `traits[traitKey]` from this specific user's traits.
- * Shown below the custom-name section (overridden by priority-1).
- *
- * Renders a click-to-fill hint listing the trait keys the current user
- * actually has — saves admins from having to type `email` or `name` by
- * hand. Hint disappears when the traits object is empty.
- */
+/** Priority 2 — per-user `traits[traitKey]` lookup. Click-to-fill hint shows actual trait keys so admins don't type by hand. */
 export function LocalTraitKeySection({ user }: LocalTraitKeySectionProps) {
   const t = useTranslations("users.detail.displayName.local");
   const mutation = useUpdateTrackedUserDisplayNameMutation();

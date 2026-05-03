@@ -7,25 +7,6 @@ import { Button } from "@/components/ui/primitives/button";
 import { EXTERNAL_LINKS } from "../lib/external-links";
 import { CopyButton } from "./copy-button";
 
-/**
- * "Thank the author" section — two donation rails (Monobank UAH,
- * European SEPA EUR) plus a pointer to the footer for anything else.
- *
- * @remarks
- * Server Component — every visible element is static markup with
- * server-resolved translations. The only interactive surface is the
- * EUR-row clipboard button, which lives in its own `CopyButton` client
- * island; keeping the section server-rendered eliminates the
- * surrounding copy and card chrome from the client bundle and
- * shortens the marketing-page TBT.
- *
- * Account identifiers (IBAN / BIC / receiver / Monobank link) live in
- * {@link EXTERNAL_LINKS.donations} — they are not translated because
- * they're immutable wire strings. Only the surrounding copy in
- * `marketing.thankAuthor.*` is localised. Phosphor icons come from the
- * `/dist/ssr` entry so they emit at HTML-response time without a
- * client-side hydration cost.
- */
 export async function ThankAuthorSection() {
   const t = await getTranslations("marketing.thankAuthor");
   const { monobank, eur } = EXTERNAL_LINKS.donations;
@@ -72,15 +53,7 @@ export async function ThankAuthorSection() {
               <CardDescription>{t("eurDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Plain rows rather than `<dl>/<dt>/<dd>` — axe/Lighthouse
-                  reject `<dl>` whose row containers hold anything besides
-                  `<dt>/<dd>` (the `<CopyButton>` sibling triggers
-                  `definition-list` / `dlitem` failures), and the visual
-                  label-value pairing is conveyed clearly by layout
-                  alone. The label is associated with the value through
-                  proximity + the per-row `aria-label` on the copy button
-                  ("Copy IBAN" etc.), so screen-reader users still hear
-                  the field name when they reach the action. */}
+              {/* `<ul>` not `<dl>` — axe rejects `<dl>` row containers that hold non-`<dt>/<dd>` siblings (the `<CopyButton>`); the per-row `aria-label` on the copy button conveys the field name to screen readers. */}
               <ul className="space-y-2">
                 {eurRows.map(({ labelKey, value }) => (
                   <li

@@ -21,14 +21,6 @@ const alertVariants = cva(
 
 type AlertProps = React.ComponentProps<"div"> & VariantProps<typeof alertVariants>;
 
-/**
- * Inline status banner — `default` (info) or `destructive` variants.
- *
- * @remarks
- * Compound parts: `AlertTitle`, `AlertDescription`, `AlertAction`
- * (pinned top-right, e.g. "Retry" button). `role="alert"` set by
- * default — screen readers announce the content on mount.
- */
 function Alert({ className, variant, ...props }: AlertProps) {
   return <div data-slot="alert" role="alert" className={cn(alertVariants({ variant }), className)} {...props} />;
 }

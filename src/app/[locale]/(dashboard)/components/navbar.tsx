@@ -8,20 +8,7 @@ import { AvatarDropdown } from "./avatar-dropdown";
 import { MobileDrawer } from "./mobile-drawer";
 import { navItems } from "./nav-items";
 
-/**
- * Top-of-viewport sticky navbar for the dashboard.
- *
- * @remarks
- * Three-column grid on desktop (`md+`) — logo, centre nav, right
- * cluster — collapses to two columns on mobile where the nav folds
- * into a `MobileDrawer`. Active-link detection uses
- * `pathname.startsWith(item.href)` rather than strict equality so the
- * `/users/[userId]` detail page still highlights the "Users" tab.
- *
- * Nav entries are config-driven via {@link navItems}; adding a route
- * is a one-line edit in `nav-items.ts` and both the desktop nav and
- * the mobile drawer pick it up.
- */
+/** `pathname.startsWith` (not strict equality) so `/users/[userId]` still highlights the Users tab. */
 export function Navbar() {
   const t = useTranslations("shell.nav");
   const pathname = usePathname();

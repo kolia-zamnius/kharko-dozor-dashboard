@@ -3,17 +3,9 @@ import { createFromSource } from "fumadocs-core/search/server";
 import { source } from "@/lib/source";
 
 /**
- * `GET /api/search?q=...` — Fumadocs docs search endpoint.
- *
- * @remarks
- * Fumadocs's `<RootProvider>` calls this URL by default for the docs
- * zone search box (Cmd-K). Indexes the same `source` tree that powers
- * `/documentation/*` rendering, so adding a new MDX file makes it
- * searchable on next deploy without a separate index step.
- *
- * Intentionally no auth: docs are a public surface, and the search
- * payload only echoes content that's already published at
- * `/documentation/*`. Whitelisted in `tests/contract/route-auth-wrapper.test.ts`
- * with a matching exception entry.
+ * Fumadocs's `<RootProvider>` Cmd-K search hits this URL. Indexes the same
+ * `source` tree that renders `/documentation/*` — new MDX is searchable next
+ * deploy. Auth-less by design (echoes already-published content); whitelisted
+ * in `route-auth-wrapper.test.ts`.
  */
 export const { GET } = createFromSource(source);

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/forms/label";
 import { Button } from "@/components/ui/primitives/button";
 import { Separator } from "@/components/ui/primitives/separator";
 import { Link, useRouter } from "@/i18n/navigation";
-import type { EnabledProviders } from "@/lib/auth/enabled-providers.types";
+import type { EnabledProviders } from "@/lib/auth/enabled-providers";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -16,29 +16,10 @@ import { toast } from "sonner";
 type EmailStepProps = {
   callbackUrl: string;
   enabled: EnabledProviders;
-  /**
-   * Called when the email has been successfully verified and the server
-   * reported back whether the user has a passkey registered. The
-   * orchestrator uses this to transition into the "method" step with
-   * the payload baked into its state machine.
-   */
   onEmailResolved: (email: string, hasPasskey: boolean) => void;
 };
 
-/**
- * First screen of the sign-in flow: OAuth shortcuts on top, an email
- * input below with a "Continue" button.
- *
- * Owns its own form state and submission logic. On a successful server
- * `prepareSignIn` call it reports the resolved email + passkey flag
- * back to the orchestrator via `onEmailResolved`. The orchestrator is
- * responsible for advancing the typestate; this component just knows
- * "I have an email, what's next".
- *
- * Error paths (account not found, rate-limited) are handled locally
- * with toasts + routing, since the orchestrator doesn't need to track
- * those — they either reset the form or navigate away from sign-in.
- */
+/** ACCOUNT_NOT_FOUND/RATE_LIMITED handled locally — those reset or navigate away from sign-in, the orchestrator doesn't need to track them. */
 export function EmailStep({ callbackUrl, enabled, onEmailResolved }: EmailStepProps) {
   const t = useTranslations("auth");
   const router = useRouter();

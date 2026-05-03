@@ -8,27 +8,7 @@ import { useState } from "react";
 import { NewInviteForm } from "./new-invite-form";
 import { PendingInvitesSection } from "./pending-invites-section";
 
-/**
- * Admin-side invite modal — triggers from the org card, opens two
- * stacked concerns:
- *
- *   1. `NewInviteForm` — send a fresh invite (or idempotently re-send
- *      an existing one by re-submitting the same email).
- *   2. `PendingInvitesSection` — table of outstanding PENDING invites
- *      with inline role edit, expiration extend, and revoke actions.
- *
- * Only rendered by `OrganizationCard` when `canInvite` is true
- * (OWNER on a non-PERSONAL org), so admins and viewers never see the
- * trigger in the first place. The underlying API routes are also
- * OWNER-gated — double enforcement means a hand-crafted fetch from a
- * non-owner tab still gets a 403.
- *
- * The query inside `PendingInvitesSection` is gated by `{open && ...}`
- * below: we only mount the inner content while the dialog is open, so
- * the invites fetch is deferred until someone actually clicks Invite.
- * Keeps every card on the settings page from firing a network request
- * on mount.
- */
+/** `{open && ...}` defers `PendingInvitesSection`'s query until the dialog opens — keeps every card on the page from firing a network request on mount. */
 export function InviteModal({ org }: { org: Organization }) {
   const t = useTranslations("settings.orgs.invite");
   const [open, setOpen] = useState(false);

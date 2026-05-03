@@ -3,11 +3,7 @@ import { GithubLogoIcon, GoogleLogoIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { DisconnectAccountDialog } from "./disconnect-account-dialog";
 
-/**
- * Provider label + icon map. Keys match the stable Auth.js provider ids
- * sent from the server; labels are brand names and stay English across
- * every locale ("Google" and "GitHub" don't localise).
- */
+/** Brand names — "Google"/"GitHub" don't localise. */
 type OAuthProvider = "google" | "github";
 
 const PROVIDER_META = {

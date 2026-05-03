@@ -13,16 +13,7 @@ import { TrashIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
-/**
- * Confirmation dialog for passkey deletion. Wraps the trash button so the
- * action requires an explicit second click — passkeys are easy to recreate
- * but easy to delete by accident, and the previous one-click flow let
- * users wipe credentials without realising it.
- *
- * Each row owns its own dialog instance — no global state in the parent
- * list, which means the in-flight `disabled` from `useDeletePasskeyMutation`
- * naturally scopes to the row being deleted.
- */
+/** Per-row dialog — `mutation.isPending` naturally scopes to the row being deleted. */
 export function PasskeyDeleteDialog({ passkey }: { passkey: UserPasskey }) {
   const t = useTranslations("settings.user.passkeys");
   const [open, setOpen] = useState(false);

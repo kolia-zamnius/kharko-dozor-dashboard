@@ -5,23 +5,7 @@ import { useCallback, useTransition } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/primitives/toggle-group";
 import { ACTIVITY_RANGES, parseActivityRange } from "@/api-client/tracked-users/domain";
 
-/**
- * Page-level range selector for the user detail page.
- *
- * Lives at the top of the page next to `LastUpdated` — range affects every
- * section below (stats, histogram, page distribution, sessions timeline),
- * so it belongs at the page level rather than inside any single card.
- *
- * Reads and writes `?range=6h|24h|7d` directly via `useSearchParams` +
- * `router.replace(..., { scroll: false })`. No props, no prop drilling —
- * the shell already re-derives `range` from `useSearchParams` and passes it
- * to consumers, so wiring this component through the URL keeps a single
- * source of truth.
- *
- * `useTransition` wraps the router update so React can keep the page
- * responsive while the downstream queries refetch. The actual "refreshing"
- * visual is handled by the `LastUpdated` indicator right next to us.
- */
+/** URL-driven (no props) — shell re-derives `range` from `useSearchParams`. `useTransition` keeps the page responsive while downstream queries refetch. */
 export function RangeSelector() {
   const t = useTranslations("users");
   const tActivity = useTranslations("users.activity");
@@ -34,9 +18,7 @@ export function RangeSelector() {
 
   const handleRangeChange = useCallback(
     (value: string) => {
-      // Radix ToggleGroup emits an empty string when the user deselects
-      // the current item; we force a selection via `value`, so this guard
-      // is just belt-and-braces.
+      // Radix emits "" on deselect — controlled `value` prevents it, but belt-and-braces.
       if (!value) return;
       const next = parseActivityRange(value);
       if (next === currentRange) return;

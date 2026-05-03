@@ -16,16 +16,9 @@ type ActivityHistogramProps = {
   range: ActivityRange;
 };
 
-/**
- * Render the per-bucket range label for the tooltip — "HH:mm–HH:mm"
- * for sub-day windows and "DD.MM HH:mm–HH:mm" for the 7-day window
- * (the date prefix keeps adjacent buckets unambiguous across midnight).
- */
+/** 7d adds a date prefix so adjacent buckets stay unambiguous across midnight. */
 function formatBucketRange(bucket: ActivityBucket, bucketMs: number, range: ActivityRange, locale: Locale): string {
-  // `bucket.t` is an ISO string off the wire; coerce to ms BEFORE adding
-  // the bucket width so the `+ bucketMs` is numeric arithmetic, not
-  // string concatenation. The defensive guard in `formatDateTime`
-  // surfaces the bug with a helpful error if this ever regresses.
+  // `bucket.t` is ISO — coerce to ms BEFORE `+ bucketMs` so it's numeric, not string concat.
   const startMs = new Date(bucket.t).getTime();
   const endMs = startMs + bucketMs;
   const timeOpts: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit" };
@@ -40,23 +33,10 @@ function formatBucketRange(bucket: ActivityBucket, bucketMs: number, range: Acti
 }
 
 /**
- * Event histogram for the selected activity range.
- *
- * @remarks
- * Renders a uniform grid of bars — {@link buildBucketGrid} materializes
- * empty slots so sparse activity still reads as a shape rather than a
- * broken chart. Bar heights are normalized against the peak bucket so
- * short sessions stay visible next to busy ones. The per-bar tooltip
- * surfaces the bucket's time range, total event count, and the top 5
- * pathnames (the server precomputes `byPage` in the `/activity`
- * endpoint — `ACTIVITY_TOP_PAGES_PER_BUCKET`).
- *
- * Empty state (no events in range) shows a dashed placeholder instead
- * of a plain flat baseline — avoids the "broken chart" read when the
- * selected window happens to be idle.
- *
- * Pure view — `UserDetailShell` hoists `useUserActivityQuery`; this
- * component reads zero queries.
+ * `buildBucketGrid` materialises empty slots so sparse activity reads as a
+ * shape, not a broken chart. Heights normalised against peak so short
+ * sessions stay visible next to busy ones. Top-5 pathnames come precomputed
+ * from the `/activity` endpoint.
  */
 export function ActivityHistogram({ data, range }: ActivityHistogramProps) {
   const t = useTranslations("users.detail.activityChart");

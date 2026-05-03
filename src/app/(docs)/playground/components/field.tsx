@@ -9,16 +9,6 @@ type FieldProps = {
   className?: string;
 };
 
-/**
- * Label + control pair used by every form on the playground.
- *
- * @remarks
- * `htmlFor` is required so the `<label>` is bound to the control's id
- * — keyboard / screen-reader users can click the label to focus the
- * input. `className` is forwarded so callers can opt rows into grid
- * spans (e.g. `sm:col-span-2`) without wrapping the field in another
- * div.
- */
 export function Field({ label, htmlFor, children, className }: FieldProps) {
   return (
     <div className={cn("space-y-1.5", className)}>

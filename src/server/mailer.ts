@@ -4,36 +4,17 @@ import { env } from "@/server/env";
 import nodemailer, { type Transporter } from "nodemailer";
 
 /**
- * Single shared Nodemailer transport for the whole app.
+ * Single shared Nodemailer transporter — every route handler, Auth.js provider, and
+ * background job reuses the SMTP connection pool. `service: "gmail"` preset auto-
+ * configures host/port/TLS plus Gmail quirks (EHLO, PLAIN encoding); swapping
+ * provider means replacing the preset and nothing else here.
  *
- * Lazy-instantiated on first call and memoized on the module scope so
- * every route handler, every Auth.js provider, and every future
- * background job reuses the same SMTP connection pool. Creating a
- * transporter per request would thrash Gmail's per-connection limits
- * and tank delivery latency.
- *
- * Development note: Gmail's SMTP endpoint requires an **App Password**
- * (16-character code from a Google account with 2FA enabled), NOT the
- * regular account password. See the project README for the exact
- * "Generate app password" steps.
- *
- * Why `service: "gmail"` instead of explicit host/port: Nodemailer's
- * preset maps to `smtp.gmail.com:465` with TLS automatically, and it
- * silently picks up Gmail-specific quirks (correct EHLO name, proper
- * PLAIN auth encoding) that we'd otherwise have to wire by hand. If we
- * ever move off Gmail, swap the preset for a full `host/port/secure`
- * object and nothing else in this module changes.
+ * Gmail requires a 16-char App Password (2FA on the account), not the regular
+ * password. SMTP env is optional — self-hosters can deploy OAuth-only.
  */
 let cachedTransporter: Transporter | null = null;
 
-/**
- * SMTP env is optional — a self-hoster can deploy with OAuth-only
- * sign-in and no invite emails. Callers reaching `sendMail` without
- * SMTP configured indicate a code path that didn't gate on
- * `getEnabledProviders().otp` (or its invite-equivalent flag); throw a
- * clear error rather than letting Nodemailer fail with an opaque "auth
- * required" message.
- */
+/** Throws if SMTP env is unset — callers should have gated on `getEnabledProviders().otp` first. */
 function getTransporter(): Transporter {
   if (cachedTransporter) return cachedTransporter;
 
@@ -61,15 +42,10 @@ export type SendMailInput = {
 };
 
 /**
- * Send a transactional email. Throws on hard failures (SMTP auth,
- * network error, relay rejection) so the caller can decide whether
- * the failure is fatal — invite emails catch and log (fire-and-forget
- * because the invite row is already persisted), while OTP emails
- * rethrow so Auth.js surfaces the error to the user.
- *
- * The `from` address is fixed at module level — every app email comes
- * from the same branded sender, so there's no reason to thread it
- * through call sites.
+ * Throws on hard failures — callers decide fatality. Invite emails catch and log
+ * (fire-and-forget; the invite row is already persisted). OTP emails rethrow so
+ * Auth.js surfaces the error to the user. `from` is fixed at module level — every
+ * app email comes from the same branded sender.
  */
 export async function sendMail({ to, subject, html }: SendMailInput): Promise<void> {
   const transporter = getTransporter();
