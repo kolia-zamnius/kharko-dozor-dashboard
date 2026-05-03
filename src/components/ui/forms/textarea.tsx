@@ -2,14 +2,6 @@ import * as React from "react";
 
 import { cn } from "@/lib/cn";
 
-/**
- * Styled `<textarea>` — matches `Input` visual language, auto-grows with content.
- *
- * @remarks
- * `field-sizing-content` makes the height track the content length
- * (native CSS, no `react-textarea-autosize` dependency). Pair with
- * `Label` + `htmlFor` for accessibility.
- */
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   return (
     <textarea

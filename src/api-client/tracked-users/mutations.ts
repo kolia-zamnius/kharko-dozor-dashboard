@@ -12,19 +12,11 @@ type UpdateDisplayNameVars = {
 };
 
 /**
- * Update the display-name override fields on a tracked user.
- *
- * Only fields explicitly present on the input reach the API — omitted
- * fields aren't serialized into the JSON body, so the server's partial
- * update logic leaves them untouched in the DB.
- *
- * On success, invalidates the specific user's detail query so the header's
- * resolved `displayName` and the modal's pre-filled inputs pick up the new
- * state without a full page reload.
- *
- * Success message is computed from the variables: "saved" vs "cleared",
- * and which field was touched. The global `MutationCache.onSuccess` handler
- * in `query-client.ts` calls this function and shows the result via toast.
+ * Three-state field semantics: omitted = leave alone, `null` = reset, string =
+ * set. Only explicit fields reach the API — omitted ones aren't serialized, so
+ * the server's partial update logic leaves them in the DB untouched. Five
+ * distinct success keys (which field × set vs clear) — clearer than one ICU
+ * select when each path is a fixed sentence.
  */
 export function useUpdateTrackedUserDisplayNameMutation() {
   const queryClient = useQueryClient();
@@ -47,9 +39,6 @@ export function useUpdateTrackedUserDisplayNameMutation() {
     },
     meta: {
       errorKey: "users.mutations.updateDisplayName.error",
-      // Dynamic key: which field was touched + set vs clear. Phase-3 port
-      // kept the branching shape — 5 distinct keys is clearer than one
-      // ICU-select message when each path is a fixed sentence.
       successKey: (variables) => {
         const { customName, traitKey } = variables as UpdateDisplayNameVars;
         if (customName !== undefined) {

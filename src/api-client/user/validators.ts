@@ -6,12 +6,7 @@ export const updateProfileSchema = z.object({
   name: z.string().min(2).max(50).trim(),
 });
 
-/**
- * Schema for `PATCH /api/user/locale`. The enum is derived from the
- * canonical `LOCALES` tuple in `src/i18n/config.ts` — adding or removing
- * a locale there propagates here automatically, so a stale client can
- * never set a locale value the server didn't register.
- */
+/** Enum is derived from `LOCALES` — adding/removing a locale propagates here automatically. */
 export const updateLocaleSchema = z.object({
   locale: z.enum(LOCALES),
 });

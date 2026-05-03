@@ -1,10 +1,7 @@
 /**
- * Public surface of the `tracked-users` feature — API-client hooks,
- * domain primitives (ranges, pagination, polling, sort options in
- * `domain.ts`; status derivation + display-name resolver as standalone
- * substantive files). UI tokens for statuses live elsewhere,
- * colocated with the `/users` page at
- * `app/(dashboard)/users/lib/status-ui.ts`.
+ * UI tokens for statuses (labels, color classes) live colocated with the page
+ * at `src/app/[locale]/(dashboard)/users/lib/status-ui.ts` — keeps the domain
+ * file free of Tailwind class strings.
  */
 export * from "./keys";
 export * from "./queries";

@@ -2,11 +2,6 @@ import * as React from "react";
 
 import { cn } from "@/lib/cn";
 
-/**
- * Grid-coupled header compound for Card. `CardHeader` establishes a
- * `grid auto-rows-min grid-cols-[1fr_auto]` template; child slots
- * (`CardTitle`, `CardDescription`, `CardAction`) position themselves inside it.
- */
 
 function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (

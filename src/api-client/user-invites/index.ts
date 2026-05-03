@@ -1,7 +1,6 @@
 /**
- * Public surface of the `user-invites` feature — invite recipients'
- * view of their own pending invites (distinct from the admin-side
- * `organizations/invites` surface).
+ * Recipient-side view of pending invites — distinct from the admin-side
+ * `organizations/invites` surface (which manages the org's outgoing invites).
  */
 export * from "./keys";
 export * from "./queries";

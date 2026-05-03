@@ -15,10 +15,7 @@ export const deleteProjectSchema = z.object({
   }),
 });
 
-/**
- * Project-wide default trait key used by the display-name resolver. Accepts
- * either a non-empty string (set) or explicit `null` (reset to unset).
- */
+/** Either non-empty string (set) or explicit `null` (reset to unset). */
 export const updateProjectDisplayNameTraitKeySchema = z.object({
   traitKey: z.union([z.string().trim().min(1, "Trait key cannot be empty").max(60, "Max 60 characters"), z.null()]),
 });

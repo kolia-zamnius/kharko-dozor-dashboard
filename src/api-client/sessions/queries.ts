@@ -19,16 +19,14 @@ function buildSessionsUrl(params: SessionListParams): string {
   return qs ? `${base}?${qs}` : base;
 }
 
-
 export const sessionQueries = {
   list: (params: SessionListParams = {}) =>
     queryOptions({
       queryKey: sessionKeys.list(params),
       queryFn: ({ signal }) => apiFetch<PaginatedSessions>(buildSessionsUrl(params), { signal }),
       ...pollingOptions(SESSIONS_LIST_POLL_MS),
-      // Filter / sort / cursor changes create new cache keys. Keep the
-      // previous snapshot visible so the table never flashes empty while
-      // the next page is in flight.
+      // Filter / sort / cursor changes create new keys — keep previous data visible
+      // so the table never flashes empty during the next-page fetch.
       placeholderData: keepPreviousData,
     }),
   summary: () =>
@@ -41,29 +39,20 @@ export const sessionQueries = {
     queryOptions({
       queryKey: sessionKeys.detail(sessionId),
       queryFn: ({ signal }) => apiFetch<SessionDetail>(routes.sessions.detail(sessionId), { signal }),
-      // `staleTime: 0` so the interval tick actually reaches the server
-      // instead of short-circuiting against the cache — the player
-      // freezes on its own local snapshot (see
-      // `useSessionUpdateIndicator`), so the poll's only job is to keep
-      // the "latest" reference fresh for the refresh-button diff.
-      //
-      // `background: true` because admins frequently pop DevTools into
-      // a separate window (tab blur) and still expect the orange
-      // "updates available" dot to light up when new data lands.
+      // `staleTime: 0` so the interval tick reaches the server — the player freezes
+      // on its own snapshot, the poll only refreshes the "latest" reference for the
+      // refresh-button diff. `background: true` because admins commonly pop DevTools
+      // into a separate window (tab blur) and still expect the orange dot to light up.
       ...pollingOptions(SESSION_DETAIL_POLL_MS, { staleTime: 0, background: true }),
     }),
   sliceEvents: (sessionId: string, sliceIndex: number) =>
     queryOptions({
       queryKey: sessionKeys.sliceEvents(sessionId, sliceIndex),
       queryFn: ({ signal }) => apiFetch<SessionEvent[]>(routes.sessions.sliceEvents(sessionId, sliceIndex), { signal }),
+      // Slice events are immutable once captured — no polling, no expiry.
       staleTime: Infinity,
     }),
 };
-
-// Two flavours per query — classic (`useQuery`) for components that tolerate
-// `data: undefined` (widgets, polling indicators, the replay `use-session-
-// update-indicator` snapshot pattern); Suspense for page shells that prefer
-// one page-level `<Suspense>` fallback over per-hook loading branches.
 
 export function useSessionsQuery(params: SessionListParams = {}) {
   return useQuery(sessionQueries.list(params));
@@ -79,11 +68,7 @@ export function useSessionsSummarySuspenseQuery() {
   return useSuspenseQuery(sessionQueries.summary());
 }
 
-/**
- * Classic — `use-session-update-indicator` keeps its own local snapshot
- * and polls this query to diff against. The snapshot pattern depends on
- * observing `isLoading`, so this hook stays non-Suspense.
- */
+/** Classic — `use-session-update-indicator` keeps a local snapshot and observes `isLoading` to drive the diff. */
 export function useSessionQuery(sessionId: string) {
   return useQuery(sessionQueries.detail(sessionId));
 }

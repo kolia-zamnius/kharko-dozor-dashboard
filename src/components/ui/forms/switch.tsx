@@ -9,15 +9,6 @@ type SwitchProps = React.ComponentProps<typeof SwitchPrimitive.Root> & {
   size?: "sm" | "default";
 };
 
-/**
- * Radix Switch primitive — on/off toggle with sliding thumb.
- *
- * @remarks
- * Prefer `Switch` over `Checkbox` when the action takes effect
- * immediately ("Notifications on/off") rather than staging a change
- * for a form submit. Supports `checked` / `onCheckedChange` for
- * controlled mode.
- */
 function Switch({ className, size = "default", ...props }: SwitchProps) {
   return (
     <SwitchPrimitive.Root

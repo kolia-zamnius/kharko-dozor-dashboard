@@ -12,7 +12,7 @@ import { cn } from "@/lib/cn";
 import { useFormatters } from "@/lib/use-formatters";
 
 type LastUpdatedProps = {
-  /** First element of the query key — all queries starting with this prefix drive the indicator. */
+  /** First element of the query key — every query starting with this prefix drives the indicator. */
   queryKeyPrefix: string;
   /** `dataUpdatedAt` from the primary query — drives the "Xs ago" label. */
   dataUpdatedAt: number;
@@ -21,17 +21,13 @@ type LastUpdatedProps = {
 };
 
 /**
- * Live freshness indicator + manual refresh button.
+ * Live freshness pill + manual-refresh button. Ticks the "Updated Xs ago" label
+ * every second; `useIsFetching` filtered by `queryKeyPrefix` flips it to
+ * "Refreshing…" whenever any matching query is in flight, and the refresh
+ * button invalidates the same prefix.
  *
- * @remarks
- * Ticks the "Updated Xs ago" label every second, flips to
- * "Refreshing…" whenever any query starting with `queryKeyPrefix` is
- * in flight. The refresh button invalidates every matching query.
- * Used directly on list pages (`/users`, `/replays`) and via a thin
- * wrapper on the user detail page.
- *
- * Lives in `src/components/` (not `ui/`) because it carries TanStack
- * Query + state — it's a container, not a presentational primitive.
+ * Lives at `src/components/` (not `ui/`) because it carries TanStack + local
+ * state — it's a container, not a presentational primitive.
  */
 export function LastUpdated({ queryKeyPrefix, dataUpdatedAt, pollIntervalMs }: LastUpdatedProps) {
   const t = useTranslations("common.lastUpdated");

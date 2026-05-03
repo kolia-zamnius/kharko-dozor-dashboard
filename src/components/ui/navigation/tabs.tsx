@@ -6,15 +6,6 @@ import { Tabs as TabsPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/cn";
 
-/**
- * Radix Tabs primitive — horizontal or vertical tabbed interface.
- *
- * @remarks
- * Compound parts: `TabsList` (accepts `variant="default" | "line"`),
- * `TabsTrigger`, `TabsContent`. Orientation propagates via
- * `data-orientation` so list + triggers lay out correctly without
- * the consumer setting orientation on every part.
- */
 function Tabs({ className, orientation = "horizontal", ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
   return (
     <TabsPrimitive.Root

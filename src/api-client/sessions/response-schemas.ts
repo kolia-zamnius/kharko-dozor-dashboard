@@ -1,28 +1,11 @@
 import { z } from "zod";
 
 /**
- * Response DTO schemas for the `sessions` feature — covers list,
- * detail, summary, and per-slice event stream.
- *
- * @remarks
- * Twin of `validators.ts` (inputs). Two notable shape decisions:
- *
- *   - `Slice.reason` is narrowed to the closed enum `"init" | "idle"
- *      | "navigation"` at the wire layer even though the DB column is
- *      `String`. New reason values must be added here explicitly, so
- *      the ingest schema + the replay slice picker can't drift apart
- *      silently.
- *   - `userTraits` is `z.record(z.string(), z.unknown()).nullable()`
- *      — same rationale as in `tracked-users/response-schemas.ts`:
- *      traits are customer-supplied JSON and we refuse to lock the
- *      shape down beyond "object or null".
- *
- * `SessionEvent.data` is `z.unknown()` — these are raw rrweb payloads
- * whose shape varies by event type. The replay viewer hands them
- * straight to `rrweb.Replayer` which does its own discriminated
- * parsing; we refuse to duplicate that contract on our side.
- *
- * @see src/api-client/sessions/validators.ts — request-side schemas.
+ * Output DTOs. `Slice.reason` narrowed to a closed enum (`init` / `idle` /
+ * `navigation`) so ingest + replay can't drift on new values silently.
+ * `userTraits` and `SessionEvent.data` stay `z.unknown()` — traits come from
+ * customer SDK code (any shape), rrweb event payloads are discriminated by
+ * `rrweb.Replayer` and we don't duplicate that contract.
  */
 
 export const sliceInfoSchema = z.object({

@@ -1,20 +1,3 @@
-/**
- * Centralized API route builder. One place where every `/api/*` path lives,
- * so renaming a route is a one-file change instead of a global grep.
- *
- * Every leaf is a plain function returning a `string` — no fancy types, no
- * template literal magic. We get:
- *   - Discoverability: IDE autocomplete from `routes.trackedUsers.*` shows
- *     the whole API surface for a feature at a glance.
- *   - Rename-safety: if an endpoint moves, TypeScript flags every broken
- *     call site (vs grep-and-pray with raw string literals).
- *   - Single source of truth shared by queries and mutations, so a typo
- *     like `/api/tracker-users/...` can't live on one side silently.
- *
- * Intentionally NOT a type-level URL DSL — that's overengineering for a
- * codebase this size. Plain functions compose fine and debug trivially.
- */
-
 export const routes = {
   trackedUsers: {
     list: () => "/api/tracked-users",

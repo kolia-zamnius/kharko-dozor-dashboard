@@ -17,12 +17,7 @@ export const organizationQueries = {
       queryFn: ({ signal }) => apiFetch<OrganizationMember[]>(routes.organizations.members(orgId), { signal }),
       staleTime: 60_000,
     }),
-  /**
-   * Outstanding PENDING invites for a single organization, admin-side.
-   * Short `staleTime` because invite state is countdown-like (expiry,
-   * role tweaks, revocations) and the admin modal should reflect edits
-   * from a concurrent tab quickly.
-   */
+  /** Short staleTime — invite state is countdown-like, concurrent admin tabs should sync fast. */
   invites: (orgId: string) =>
     queryOptions({
       queryKey: organizationKeys.invites(orgId),
@@ -31,36 +26,21 @@ export const organizationQueries = {
     }),
 };
 
-/**
- * Classic (non-Suspense) — tolerates `data: undefined` during the
- * initial load. Used by global layout components (mobile-drawer,
- * avatar-dropdown) that must render *something* before
- * organisations are available.
- */
+/** Classic — tolerates `data: undefined`. Used by global layout (mobile drawer, avatar dropdown) that must render before orgs land. */
 export function useOrganizationsQuery() {
   return useQuery(organizationQueries.all());
 }
 
-/**
- * Suspense-flavoured twin — consumer must be under `<Suspense>`.
- * Returns `{ data: Organization[] }`, never `undefined`. Used by
- * page shells where a single page-level spinner fallback is the
- * desired UX.
- */
+/** Suspense twin — must be inside `<Suspense>`. Used by page shells where a single page-level spinner is the desired UX. */
 export function useOrganizationsSuspenseQuery() {
   return useSuspenseQuery(organizationQueries.all());
 }
 
-/**
- * Gated by `enabled` — called from modals that open on demand.
- * `useSuspenseQuery` does not accept `enabled: false`, so
- * conditional queries stay on classic `useQuery`.
- */
+/** Gated via `enabled` — modals open on demand. Suspense queries don't accept `enabled: false`, so conditional reads stay classic. */
 export function useMembersQuery(orgId: string, enabled = true) {
   return useQuery({ ...organizationQueries.members(orgId), enabled });
 }
 
-/** Gated — same pattern as `useMembersQuery`. */
 export function useInvitesQuery(orgId: string, enabled = true) {
   return useQuery({ ...organizationQueries.invites(orgId), enabled });
 }

@@ -6,21 +6,6 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/cn";
 
-/**
- * Segmented control — styled to match `Button`'s visual language.
- *
- * @remarks
- * Wraps Radix `ToggleGroup` for free keyboard navigation, roving
- * `tabindex`, and proper ARIA. Size propagates via Context so
- * `ToggleGroupItem` stays in sync without a repeated prop.
- *
- * @example
- * <ToggleGroup type="single" value={x} onValueChange={setX}>
- *   <ToggleGroupItem value="a">A</ToggleGroupItem>
- *   <ToggleGroupItem value="b">B</ToggleGroupItem>
- * </ToggleGroup>
- */
-
 const toggleGroupVariants = cva("inline-flex items-center rounded-lg border border-border bg-background p-0.5", {
   variants: {
     size: {

@@ -6,15 +6,7 @@ import { MinusIcon } from "@phosphor-icons/react";
 
 import { cn } from "@/lib/cn";
 
-/**
- * One-time-password input built on `input-otp` — split digit boxes with caret + fake cursor.
- *
- * @remarks
- * Compound parts: `InputOTPGroup` (wraps N slots + adopts invalid
- * state from nested fields), `InputOTPSlot` (one digit cell — reads
- * its char + active state from `OTPInputContext`), `InputOTPSeparator`
- * (decorative minus between groups). Used only by the auth OTP flow.
- */
+/** Used only by the auth OTP flow. */
 function InputOTP({
   className,
   containerClassName,

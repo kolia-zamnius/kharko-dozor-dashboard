@@ -3,21 +3,9 @@ import * as React from "react";
 import { cn } from "@/lib/cn";
 
 /**
- * Shared loading spinner — pure CSS, no JS runtime, no `"use client"`.
- *
- * @remarks
- * Works in three contexts without modification: `loading.tsx` Server
- * Components (importing icon libs there fails), Client Components
- * reading TanStack Query state, and inline slots (toast icon, button
- * label, etc.).
- *
- * Color flows from `currentColor` via `border-current` — override with
- * any `text-*` class on self or parent. Override size with `size-*`
- * via `className`.
- *
- * Announces as `role="status" aria-label="Loading"`. Pass
- * `aria-hidden` when the surrounding container already carries its
- * own label (e.g. a submit button with text), to avoid SR double-talk.
+ * Pure CSS so it works in `loading.tsx` Server Components (icon-lib imports fail
+ * there). Pass `aria-hidden` when the container already has a label (submit
+ * button with text) — avoids screen-reader double-talk.
  */
 function Spinner({ className, ...props }: React.ComponentProps<"div">) {
   return (

@@ -2,17 +2,10 @@ import { z } from "zod";
 import { USER_ACTIVITY_STATUSES } from "./status";
 import { USER_LIST_SORT_OPTIONS, SORT_DIRECTIONS } from "./domain";
 
-
 /**
- * Zod schema for the tracked-users list query string.
- *
- * @remarks
- * Used isomorphically — the server validates inbound params before
- * hitting Prisma; the client builds the same shape from `useSearchParams`
- * before pushing to the URL. Every field is optional, so omission means
- * "no filter on this axis". Comma-separated strings coerce into arrays
- * for `projectIds` and `statuses` so the URL stays human-readable
- * (`?statuses=ONLINE,ACTIVE_24H`).
+ * Used isomorphically — server validates inbound, client builds the same shape
+ * from `useSearchParams` before pushing to the URL. Comma-decoded `projectIds`
+ * + `statuses` keep URLs human-readable (`?statuses=ONLINE,ACTIVE_24H`).
  */
 export const userListParamsSchema = z.object({
   search: z.string().trim().optional(),
@@ -34,19 +27,11 @@ export const userListParamsSchema = z.object({
 
 export type UserListParams = z.infer<typeof userListParamsSchema>;
 
-
 /**
- * Schema for `PATCH /api/tracked-users/[userId]/display-name`.
- *
- * Both fields are optional and each accepts either a non-empty string (set)
- * or explicit `null` (reset to unset). A request may touch one or both
- * fields in a single call.
- *
- * `customName` — explicit override that wins over everything.
- * `traitKey` — key path into the user's traits JSON object.
- *
- * `.refine` rejects the `{}` payload (at least one field must be present)
- * to avoid accidentally successful no-op PATCHes.
+ * Both fields three-state: omit = leave alone, non-empty string = set, `null` =
+ * reset. `.refine` rejects the empty body so a no-op PATCH can't pass silently.
+ * `customName` wins over everything; `traitKey` is a key path into the user's
+ * traits JSON.
  */
 export const updateDisplayNameSchema = z
   .object({

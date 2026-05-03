@@ -1,6 +1,3 @@
-/**
- * Public surface of the `projects` feature.
- */
 export * from "./keys";
 export * from "./queries";
 export * from "./mutations";

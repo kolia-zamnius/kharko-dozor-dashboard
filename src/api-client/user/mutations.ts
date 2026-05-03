@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { signIn } from "next-auth/webauthn";
 import { useSession } from "next-auth/react";
 
+/** Profile mutations also nudge the session — JWT carries `name`/`image` claims. */
 function useProfileInvalidation() {
   const queryClient = useQueryClient();
   const { update } = useSession();
@@ -88,9 +89,8 @@ export function useDeletePasskeyMutation() {
     onSuccess: (_, credentialID) => {
       void queryClient.invalidateQueries({ queryKey: userQueries.profile().queryKey });
 
-      // Tell the browser / OS this credential is gone (Chrome 132+).
-      // Feature-detected + error-swallowing inside the wrapper so
-      // pre-132 browsers and any unexpected rejection both no-op.
+      // Tell the browser this credential is gone (Chrome 132+) so autofill
+      // drops it. Feature-detected + error-swallowing inside the wrapper.
       void signalUnknownCredential({ rpId: window.location.hostname, credentialId: credentialID });
     },
     meta: {
@@ -117,20 +117,9 @@ export function useDisconnectAccountMutation() {
 }
 
 /**
- * Persist a locale preference change on `User.locale`.
- *
- * @remarks
- * Does NOT do the session refresh + router.replace dance itself — the
- * caller composes those in `onSuccess` because the exact behaviour is
- * UI-specific (e.g. `<LocaleSection>` re-navigates to the same pathname
- * with the new locale prefix so the whole tree re-renders under the new
- * language). The mutation stays focused on the single server write + the
- * toast; the composition lives one layer up where the router + session
- * handles are already in scope.
- *
- * @see src/app/api/user/locale/route.ts — PATCH endpoint.
- * @see src/app/[locale]/(dashboard)/settings/user/components/locale-section.tsx —
- *   primary consumer wiring the session / router refresh chain.
+ * Just the server write + toast — no session/router refresh here. The locale
+ * section composes those in `onSuccess` because the right behaviour is UI-specific
+ * (re-navigate to the same pathname under the new locale prefix to re-render the tree).
  */
 export function useUpdateLocaleMutation() {
   return useMutation({
