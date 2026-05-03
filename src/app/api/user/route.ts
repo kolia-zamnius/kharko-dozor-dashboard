@@ -7,17 +7,7 @@ import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 import { transferOrganizationOwnership } from "./_helpers/transfer-ownership";
 
-/**
- * `GET /api/user` — signed-in user's full profile.
- *
- * @remarks
- * Returns name / email / avatar + linked OAuth accounts + registered
- * passkeys. Powers the settings page's connect / disconnect / rename
- * affordances.
- *
- * @throws {HttpError} 404 — user row missing (should never happen post-auth).
- * @see {@link userProfileOptions} — client-side consumer.
- */
+/** Powers the settings page — connect/disconnect/rename affordances over linked accounts + passkeys. */
 export const GET = withAuth(async (req, user) => {
   const profile = await prisma.user.findUnique({
     where: { id: user.id },
@@ -39,11 +29,6 @@ export const GET = withAuth(async (req, user) => {
     throw new HttpError(404, "User not found");
   }
 
-  // Response DTO validated at the server boundary — see the module
-  // JSDoc on `userProfileSchema` for the rationale. A shape drift
-  // (extra field from a Prisma `select` extension, renamed column,
-  // missing timestamp conversion) surfaces as an explicit 500 here
-  // instead of silently reaching the client.
   return NextResponse.json(
     userProfileSchema.parse({
       id: profile.id,
@@ -62,13 +47,7 @@ export const GET = withAuth(async (req, user) => {
   );
 });
 
-/**
- * `PATCH /api/user` — update the signed-in user's display name.
- *
- * @remarks
- * Avatar regeneration has its own endpoint (`POST /api/user/avatar`)
- * — the two actions live in different parts of the profile form.
- */
+/** Name only — avatar regeneration is `POST /api/user/avatar` (different parts of the form). */
 export const PATCH = withAuth(async (req, user) => {
   const body = updateProfileSchema.parse(await req.json());
 
@@ -83,22 +62,10 @@ export const PATCH = withAuth(async (req, user) => {
 });
 
 /**
- * `DELETE /api/user` — hard-delete the signed-in user's account.
- *
- * Destructive.
- *
- * @remarks
- * Body carries a confirmation phrase — `deleteAccountSchema` enforces
- * it server-side so a misclick can't wipe the account.
- *
- * Per-org handling inside one transaction:
- *   - Solo-member orgs are deleted outright (cascades invites + full
- *     data hierarchy).
- *   - Shared orgs get {@link transferOrganizationOwnership} so an
- *     ownerless org is impossible after the cascade.
- *
- * The user row is deleted last — cascades accounts, authenticators,
- * memberships.
+ * `deleteAccountSchema` enforces the confirmation phrase server-side. One tx:
+ * solo-orgs deleted outright (cascades invites + data); shared orgs go through
+ * `transferOrganizationOwnership` so ownerless orgs are impossible. User row
+ * deleted last (cascades accounts/authenticators/memberships).
  */
 export const DELETE = withAuth(async (req, user) => {
   deleteAccountSchema.parse(await req.json());

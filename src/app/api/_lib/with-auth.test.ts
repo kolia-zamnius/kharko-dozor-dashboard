@@ -1,17 +1,6 @@
 /**
- * Unit tests for the `withAuth` HOF.
- *
- * @remarks
- * Covers every branch of the error boundary:
- *   - anonymous → 401 (no `auth()`-returned session)
- *   - authenticated success → handler result passes through
- *   - `HttpError` → mapped status + body
- *   - `ZodError` → 400 + localised message + issues
- *   - other exception → rethrows (Next mounts its own error boundary)
- *   - dynamic params → awaited and passed to the handler
- *
- * Mocks: `@/server/auth` for the session, `next-intl/server` for the
- * locale translator the ZodError branch awaits.
+ * Covers every branch of the error boundary — anon, success, `HttpError`,
+ * `ZodError`, rethrow, dynamic-params unwrap.
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -19,11 +8,10 @@ import type { Session } from "next-auth";
 import type { getTranslations } from "next-intl/server";
 import { z, ZodError } from "zod";
 
-// NextAuth v5's `auth()` is overloaded (middleware variant + session getter).
-// `vi.mocked(auth)` picks the first overload (middleware) which defeats
-// `mockResolvedValue(sessionObject)` at the type level. `vi.hoisted` lets
-// us declare a strongly-typed mock, hoist it above `vi.mock`, and still
-// reference it in tests with `mockResolvedValue` / `mockReset` semantics.
+// NextAuth v5's `auth()` is overloaded (middleware + session getter).
+// `vi.mocked(auth)` picks the middleware overload, defeating
+// `mockResolvedValue(sessionObject)` at the type level. `vi.hoisted` declares
+// a strongly-typed mock above `vi.mock` so tests get clean call semantics.
 const { mockedAuth } = vi.hoisted(() => ({
   mockedAuth: vi.fn<() => Promise<Session | null>>(),
 }));
@@ -61,7 +49,6 @@ describe("withAuth", () => {
   });
 
   it("returns 401 when auth() resolves to a session without user.id", async () => {
-    // Session envelope without `user.id` (e.g. mid-migration edge case).
     mockedAuth.mockResolvedValue({
       user: { id: "" },
       expires: new Date(Date.now() + 60_000).toISOString(),
@@ -90,10 +77,8 @@ describe("withAuth", () => {
     const handler = withAuth<{ orgId: string }>(async (_req, _u, params) =>
       Response.json({ orgId: params.orgId }, { status: 200 }),
     );
-    // Params-handler invocation — built inline because `invokeRoute` only
-    // covers the no-params shape (TS Promise variance prevents a single
-    // helper signature from accepting both). Five lines here is less
-    // friction than a generic-heavy helper overload.
+    // Inlined — `invokeRoute` only covers the no-params shape (TS Promise
+    // variance won't let one helper accept both).
     const req = new Request("http://localhost/test", { method: "GET" });
     const response = await handler(req, { params: Promise.resolve({ orgId: "org_42" }) });
     const json = (await response.json()) as { orgId: string };
@@ -120,7 +105,6 @@ describe("withAuth", () => {
     mockedAuth.mockResolvedValue(buildSession(user));
 
     const handler = withAuth(async () => {
-      // Simulate a route handler that hand-parses and re-throws.
       const schema = z.object({ email: z.email() });
       schema.parse({ email: "bogus" });
       return new Response("unreachable");
@@ -148,9 +132,8 @@ describe("withAuth", () => {
   });
 
   it("does NOT accidentally wrap a non-ZodError instance of Error as 400", async () => {
-    // Sanity: the `err instanceof ZodError` branch must be exact, not
-    // a structural `"issues" in err` sniff. This guard catches a
-    // regression where a future refactor broadens the branch.
+    // The `err instanceof ZodError` check must stay exact — a refactor that
+    // loosens it to a structural `"issues" in err` sniff would regress here.
     const user = buildSessionUser({ id: "user_1" });
     mockedAuth.mockResolvedValue(buildSession(user));
 

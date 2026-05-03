@@ -4,22 +4,8 @@ import { prisma } from "@/server/db/client";
 import type { IngestMetadata, IngestSliceMarker } from "./parse-body";
 
 /**
- * Close previous slices and upsert new markers in one transaction.
- *
- * @remarks
- * Transaction shape:
- *   1. `updateMany` closes every previous open slice whose `index` is
- *      one less than a marker we just received — one round-trip, no
- *      row-at-a-time loop.
- *   2. One `upsert` per marker; the unique `(sessionId, index)` index
- *      handles conflict detection.
- *
- * URLs are sliced to 2048 chars to stay under DB column limits.
- * Overflow past that length is almost always tracking parameters the
- * replay viewer doesn't need.
- *
- * @param sessionId - Internal session primary key from {@link upsertSessionAndLinkTrackedUser}.
- * @param markers - Slice markers from the current ingest batch.
+ * One-tx close-then-upsert. URLs sliced to 2048 chars (overflow is almost
+ * always tracking params).
  */
 export async function upsertSliceMarkers(sessionId: string, markers: readonly IngestSliceMarker[]): Promise<void> {
   const firstMarker = markers[0];
@@ -55,18 +41,7 @@ export async function upsertSliceMarkers(sessionId: string, markers: readonly In
   ]);
 }
 
-/**
- * Backward-compat fallback — create a default `index: 0` slice.
- *
- * @remarks
- * For SDK builds that don't emit `sliceMarkers[]`. Events without a
- * `sliceIndex` default to slice 0 during insertion, so the replay
- * viewer still has a slice to attach them to.
- *
- * @param sessionId - Internal session primary key.
- * @param metadata - Batch metadata (source of `url` + viewport).
- * @param minTimestamp - Earliest event timestamp in the batch.
- */
+/** Back-compat — pre-marker SDK builds. Events without `sliceIndex` default to 0 during insert. */
 export async function ensureDefaultSlice(
   sessionId: string,
   metadata: IngestMetadata,

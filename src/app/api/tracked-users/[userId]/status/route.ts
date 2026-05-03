@@ -9,14 +9,8 @@ import { NextResponse } from "next/server";
 type Params = { userId: string };
 
 /**
- * `GET /api/tracked-users/[userId]/status` — lightweight online-status heartbeat.
- *
- * VIEWER+. Polled from the user detail page.
- *
- * @remarks
- * Uses `MAX(Session.endedAt)` keyed by `trackedUserId` (indexed).
- * Scanning `Event` would be orders of magnitude larger; `Session`
- * tracks the bump on every ingest batch so it's already current.
+ * `MAX(Session.endedAt)` on the indexed `trackedUserId`. Session is bumped on
+ * every ingest batch — scanning Event would be orders of magnitude larger.
  */
 export const GET = withAuth<Params>(async (_req, user, { userId }) => {
   const trackedUser = await prisma.trackedUser.findUnique({

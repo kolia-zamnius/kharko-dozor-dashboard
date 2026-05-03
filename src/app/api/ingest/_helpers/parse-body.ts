@@ -5,29 +5,13 @@ import { z } from "zod";
 import { HttpError } from "@/server/http-error";
 
 /**
- * Zod schemas + body parser for `POST /api/ingest`.
- *
- * @remarks
- * Kept in a sibling file so the route reads as a named-step pipeline
- * rather than 50 lines of validation prelude.
- */
-
-/**
- * Hard cap on the DECOMPRESSED ingest body — guards against gzip-bomb
- * DoS where a small compressed payload expands to gigabytes and exhausts
- * Node heap before Zod validation runs. Vercel caps the compressed body
- * at 4.5 MB; gzip ratio for rrweb event JSON is typically 5-10×, so a
- * ceiling of 10 MB decompressed sits comfortably above realistic SDK
- * batches (500 events × ~5 KB) while denying any attacker enough room
- * to OOM the worker.
+ * Gzip-bomb guard. Vercel caps compressed at 4.5 MB; rrweb gzip ratio is
+ * 5-10×, so 10 MB decompressed sits above realistic batches (500 events ×
+ * ~5 KB) while denying enough room to OOM the worker.
  */
 export const MAX_DECOMPRESSED_INGEST_BYTES = 10 * 1024 * 1024;
 
-/**
- * Streaming byte counter — errors the pipe with `HttpError(413)` the
- * moment cumulative output exceeds `maxBytes`, so a malicious gzip
- * payload never holds more than a single chunk in memory.
- */
+/** Errors the pipe with 413 the moment cumulative output exceeds `maxBytes` — no chunk ever buffered fully in memory. */
 function createByteCapStream(maxBytes: number) {
   let bytes = 0;
   return new TransformStream<Uint8Array, Uint8Array>({
@@ -64,14 +48,7 @@ const userIdentitySchema = z.object({
   traits: z.record(z.string(), z.unknown()).optional(),
 });
 
-/**
- * Full ingest envelope.
- *
- * @remarks
- * `pageViews` is kept for backward compat with old SDK builds — the
- * server ignores it, but rejecting the payload for an extra legacy
- * key would brick customers pinned to old tracker versions.
- */
+/** `pageViews` is ignored — kept for back-compat so old SDK builds don't get bricked. */
 export const ingestSchema = z.object({
   sessionId: z.uuid(),
   events: z.array(eventSchema).max(500),
@@ -96,22 +73,9 @@ export type IngestSliceMarker = NonNullable<IngestPayload["sliceMarkers"]>[numbe
 export type IngestMetadata = IngestPayload["metadata"];
 
 /**
- * Read the request body, transparently decompressing gzip payloads.
- *
- * @remarks
- * The tracker SDK gzips batches above a few KB (5-10× egress savings).
- * Returns `unknown` on purpose — caller runs `ingestSchema.parse()`
- * so malformed payloads fail with per-field errors instead of a
- * generic `"Unexpected token"` from `JSON.parse`.
- *
- * Decompressed output is metered through {@link createByteCapStream};
- * if a pathological payload expands past
- * {@link MAX_DECOMPRESSED_INGEST_BYTES} the pipe errors with
- * `HttpError(413)` before the JSON parser ever runs.
- *
- * @param req - The incoming `POST /api/ingest` request.
- * @returns Parsed JSON body — still unvalidated, pass to `ingestSchema.parse`.
- * @throws {HttpError} 413 when the decompressed body exceeds the cap.
+ * Returns `unknown` on purpose — caller runs `ingestSchema.parse()` so
+ * malformed payloads fail with per-field errors instead of a generic
+ * `JSON.parse` SyntaxError.
  */
 export async function parseIngestBody(req: Request): Promise<unknown> {
   if (req.headers.get("Content-Encoding") === "gzip") {

@@ -12,34 +12,17 @@ import { ensureDefaultSlice, upsertSliceMarkers } from "./_helpers/slice-markers
 export const OPTIONS = corsPreflightResponse;
 
 /**
- * `POST /api/ingest` — rrweb event-batch ingestion from the `@kharko/dozor` SDK.
+ * Always 204 — clients don't need an echo and smaller bodies win on mobile.
  *
- * Public-key endpoint via {@link withPublicKey}. Always returns
- * `204 No Content` on success — clients don't need an echo of what
- * they sent, and the smaller body wins on mobile networks.
- *
- * @remarks
- * Sequential pipeline, each step reads rows the previous one wrote:
- *   1. {@link parseIngestBody} — gzip-aware read + zod validate.
- *   2. {@link upsertSessionAndLinkTrackedUser} — idempotent session
- *      upsert + link identified tracked user.
- *   3. {@link upsertSliceMarkers} OR {@link ensureDefaultSlice} —
- *      close previous slices and upsert new markers; fall back to a
- *      single `index: 0` slice for SDK builds without markers.
- *   4. {@link loadSliceMapForEvents} + {@link insertEventsAndUpdateAggregates}
- *      — bulk-insert events, update per-slice aggregates in one txn.
- *   5. Fire-and-forget `Project.lastUsedAt` bump.
- *
- * Parallelisation isn't worth it — steps are data-dependent, and
- * batches arrive every few seconds per client so hot-path throughput
- * is already bounded by DB write latency, not helper sequencing.
+ * Sequential pipeline (each step reads rows the previous wrote): parse →
+ * session upsert → slice markers (or `ensureDefaultSlice` fallback for
+ * pre-marker SDK builds) → bulk events with per-slice aggregates → f-and-f
+ * `Project.lastUsedAt`. Steps are data-dependent so parallelisation wouldn't help.
  */
 export const POST = withPublicKey(async ({ project, req }) => {
   const payload = ingestSchema.parse(
     await parseIngestBody(req).catch((err) => {
-      // Bubble structured size-cap rejections (413) up to the HOF;
-      // only the malformed-body path collapses to `null` so Zod can
-      // surface a per-field 422.
+      // Bubble size-cap 413s; collapse only malformed-body to null so Zod surfaces per-field 422.
       if (isHttpError(err)) throw err;
       return null;
     }),
@@ -67,8 +50,7 @@ export const POST = withPublicKey(async ({ project, req }) => {
     hasIdentity: Boolean(metadata?.userIdentity),
   });
 
-  // Fire-and-forget lastUsedAt — a slow or failed update here must
-  // never break ingestion.
+  // Fire-and-forget — a slow/failed update must never break ingestion.
   prisma.project.update({ where: { id: project.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
 
   return new Response(null, { status: 204 });

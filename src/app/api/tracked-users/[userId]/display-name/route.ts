@@ -8,15 +8,8 @@ import { log } from "@/server/logger";
 type Params = { userId: string };
 
 /**
- * `PATCH /api/tracked-users/[userId]/display-name` — update display-name overrides.
- *
- * ADMIN+ of the owning org — display names are organizational
- * metadata, not viewer-editable.
- *
- * @remarks
- * Body: `{ customName?: string | null, traitKey?: string | null }`.
- * Omitted field → leave unchanged. `string` → set (trimmed +
- * validated). `null` → clear (fall back through resolver chain).
+ * Three-mode per field — omitted = leave unchanged, string = set, null =
+ * clear (resolver falls through). ADMIN+ — display names are org metadata.
  */
 export const PATCH = withAuth<Params>(async (req, user, { userId }) => {
   const trackedUser = await prisma.trackedUser.findUnique({
@@ -32,7 +25,6 @@ export const PATCH = withAuth<Params>(async (req, user, { userId }) => {
 
   const body = updateDisplayNameSchema.parse(await req.json());
 
-  // Only explicitly-present fields reach Prisma — omitted fields stay untouched.
   const data: { customName?: string | null; displayNameTraitKey?: string | null } = {};
   if (body.customName !== undefined) data.customName = body.customName;
   if (body.traitKey !== undefined) data.displayNameTraitKey = body.traitKey;

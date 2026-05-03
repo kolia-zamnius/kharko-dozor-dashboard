@@ -6,12 +6,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 /**
- * Cron summary shape — inline schema because this response isn't
- * consumed by the api-client layer (Vercel Cron reads status codes
- * and the stdout log, not the JSON body). The parse still fires on
- * the server boundary so a shape drift (renamed counter, forgotten
- * field) surfaces in logs immediately instead of silently landing
- * in whatever observability surface we later wire this up to.
+ * Inline — Vercel Cron reads status codes + stdout, not the JSON body, so
+ * api-client doesn't need this. The parse still runs as a drift sentinel.
  */
 const cronCleanupSummarySchema = z.object({
   invites: z.number().int().nonnegative(),
@@ -21,33 +17,20 @@ const cronCleanupSummarySchema = z.object({
 });
 
 /**
- * `GET /api/cron/daily-cleanup` — nightly database hygiene (Vercel Cron).
+ * Ordered steps — each frees records for the next:
+ *   1. Invites past TTL (PENDING/EXPIRED).
+ *   2. Sessions older than `SESSION_RETENTION_DAYS` (cascades Slices + Events).
+ *   3. TrackedUsers with zero sessions (orphans after step 2).
+ *   4. Memberless orgs. Active-org pointers MUST be nulled FIRST — schema
+ *      doesn't declare `onDelete: SetNull` for `User.activeOrganizationId`,
+ *      so Postgres would block the delete on referenced rows.
  *
- * @remarks
- * Ordered steps, each potentially frees records for the next:
- *   1. Expired invites (PENDING/EXPIRED past TTL) — independent.
- *   2. Sessions older than {@link SESSION_RETENTION_DAYS} — cascades
- *      to Slices and Events via `onDelete: Cascade`.
- *   3. TrackedUsers with zero sessions — may become orphaned after
- *      step 2 clears their last session.
- *   4. Organizations with zero memberships. Cascades projects →
- *      sessions → tracked-users → events. Before deletion we null out
- *      any `User.activeOrganizationId` pointing to them (the schema
- *      does not declare `onDelete: SetNull` for that pointer, so
- *      Postgres would otherwise block the delete on referenced rows).
+ * Auth — Bearer matches `CRON_SECRET`. Prod with unset secret denies every
+ * call (misconfigured deploy stays safe); dev/test with unset secret opens
+ * the endpoint for curl.
  *
- * Auth: caller sends `Authorization: Bearer $CRON_SECRET`. In dev/test
- * an unset `CRON_SECRET` opens the endpoint so it can be curl'd
- * manually. In production an unset `CRON_SECRET` denies every call
- * with 401 — a misconfigured deploy stays safe instead of exposing
- * cascading deletes to the public internet.
- *
- * `GET` because the canonical scheduler (Vercel Cron) issues HTTP GET;
- * destructive-on-GET is ugly but fighting that contract isn't worth a
- * wrapper. Self-hosters off Vercel point any scheduler at the same
- * endpoint with the same bearer header.
- *
- * @see vercel.json — default cron schedule definition.
+ * `GET` because Vercel Cron issues GET — destructive-on-GET is ugly but
+ * fighting the contract isn't worth a wrapper.
  */
 export async function GET(req: Request) {
   if (process.env.NODE_ENV === "production" && !env.CRON_SECRET) {

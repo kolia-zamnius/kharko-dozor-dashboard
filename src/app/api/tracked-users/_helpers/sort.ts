@@ -5,13 +5,7 @@ import type { EnrichedTrackedUser } from "./enrich";
 export type TrackedUsersSortKey = "last-seen" | "sessions" | "active-time" | "newest";
 export type SortDirection = "asc" | "desc";
 
-/**
- * Descending comparators keyed by sort key.
- *
- * @remarks
- * Only desc is defined; asc flips sign via multiplier. Adding a new
- * sort key is a single-file change.
- */
+/** Only desc is defined; asc flips sign via multiplier — adding a key is a single-line edit. */
 const DESC_COMPARATORS: Record<TrackedUsersSortKey, (a: EnrichedTrackedUser, b: EnrichedTrackedUser) => number> = {
   "last-seen": (a, b) => timestampOrZero(b.lastEventAt) - timestampOrZero(a.lastEventAt),
   sessions: (a, b) => b.sessionCount - a.sessionCount,
@@ -19,16 +13,6 @@ const DESC_COMPARATORS: Record<TrackedUsersSortKey, (a: EnrichedTrackedUser, b: 
   newest: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 };
 
-/**
- * Sort enriched rows by key + direction.
- *
- * @remarks
- * Returns a new array; does not mutate.
- *
- * @param rows - Enriched rows (already filtered).
- * @param key - Sort field from the client's `sort` param.
- * @param direction - `"asc"` or `"desc"` from the client's `sortDir` param.
- */
 export function sortEnrichedTrackedUsers(
   rows: readonly EnrichedTrackedUser[],
   key: TrackedUsersSortKey,

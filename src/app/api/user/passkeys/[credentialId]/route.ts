@@ -6,14 +6,7 @@ import { log } from "@/server/logger";
 
 type Params = { credentialId: string };
 
-/**
- * `PATCH /api/user/passkeys/[credentialId]` — rename a registered passkey.
- *
- * @remarks
- * Lets the user distinguish "MacBook Touch ID" from "iPhone Face ID"
- * in the authenticators list. Scoped by `(credentialID, userId)` so
- * a credentialID leak can't let another user rename the passkey.
- */
+/** `(credentialID, userId)` scoping — a credentialID leak can't let another user rename it. 404 (not 403) — no existence oracle. */
 export const PATCH = withAuth<Params>(async (req, user, { credentialId }) => {
   const body = renamePasskeySchema.parse(await req.json());
 
@@ -31,14 +24,7 @@ export const PATCH = withAuth<Params>(async (req, user, { credentialId }) => {
   return new Response(null, { status: 204 });
 });
 
-/**
- * `DELETE /api/user/passkeys/[credentialId]` — unregister a passkey.
- *
- * @remarks
- * Same `(credentialID, userId)` scoping as rename — leak-safe.
- * The account stays usable via other authenticators (OAuth, OTP) as
- * long as at least one remains.
- */
+/** Same scoping as PATCH. The account stays usable via other authenticators (OAuth, OTP) as long as ≥1 remains. */
 export const DELETE = withAuth<Params>(async (req, user, { credentialId }) => {
   const result = await prisma.authenticator.deleteMany({
     where: { credentialID: credentialId, userId: user.id },

@@ -5,14 +5,7 @@ import { log } from "@/server/logger";
 
 type TransactionClient = Prisma.TransactionClient;
 
-/**
- * Promote the oldest remaining ADMIN (or any remaining member) to OWNER.
- *
- * @remarks
- * Successor priority: oldest ADMIN → oldest any-role member → `null`
- * (empty org — caller decides what to do). Falls through in priority
- * order, not preference; the first non-null match wins.
- */
+/** Priority — oldest ADMIN → oldest any-role member → `null` (empty org, caller decides). */
 async function findSuccessor(tx: TransactionClient, orgId: string, excludeUserId: string) {
   return (
     (await tx.membership.findFirst({
@@ -27,26 +20,11 @@ async function findSuccessor(tx: TransactionClient, orgId: string, excludeUserId
 }
 
 /**
- * Hand off org ownership when the current OWNER (or creator) leaves.
- *
- * @remarks
- * Two independent steps, both opt-in based on the departing user's
- * role and relation to `createdById`:
- *   1. If the departing user was an OWNER and no other OWNER remains,
- *      promote {@link findSuccessor}. Silent no-op when the org has no
- *      successor (the caller already handles the empty-org case).
- *   2. If the departing user was the org creator, reassign
- *      `createdById` to whichever OWNER survives step 1 — the
- *      "fallback on creator leaves" contract downstream. Skipped when
- *      `createdById` is null (creator already deleted earlier).
- *
- * @param tx - Active Prisma transaction client.
- * @param orgId - Organization whose ownership we're handing off.
- * @param createdById - Current `Organization.createdById` value, or null
- *   when the original creator has already been deleted (FK SetNull).
- * @param departingUserId - User being removed.
- * @param departingUserRole - The departing user's role — governs whether
- *   step 1 fires at all.
+ * Two independent steps:
+ *   1. Sole-OWNER leave → promote `findSuccessor` (silent no-op on empty org —
+ *      the caller handles that branch).
+ *   2. Creator leave → reassign `createdById` to whichever OWNER survives step
+ *      1. Skipped when `createdById` is null (creator already deleted via SetNull).
  */
 export async function transferOrganizationOwnership(
   tx: TransactionClient,

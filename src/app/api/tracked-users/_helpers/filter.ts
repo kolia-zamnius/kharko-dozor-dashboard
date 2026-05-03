@@ -9,19 +9,9 @@ type FilterParams = {
 };
 
 /**
- * Apply in-JS search + status filters to an enriched row set.
- *
- * @remarks
- * Prisma can only narrow by stored columns (`externalId`, `customName`).
- * The resolved display name often comes from a per-project trait key,
- * so display-name search has to happen post-enrich — and once we're in
- * JS, the status filter (also derived) tags along.
- *
- * Both filters are AND-combined. Returns a new array — does not mutate.
- *
- * @param rows - Enriched rows from {@link enrichTrackedUser}.
- * @param params - Parsed `userListParamsSchema` subset.
- * @returns Filtered rows (new array).
+ * Display-name search lives here because the resolved name often comes from a
+ * per-project trait key — Prisma can only narrow on stored columns. Once
+ * we're in JS the (also-derived) status filter tags along. AND-combined.
  */
 export function filterEnrichedTrackedUsers(
   rows: readonly EnrichedTrackedUser[],

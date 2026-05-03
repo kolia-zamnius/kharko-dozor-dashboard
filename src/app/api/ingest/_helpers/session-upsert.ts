@@ -4,13 +4,7 @@ import { prisma } from "@/server/db/client";
 import { log } from "@/server/logger";
 import type { IngestEvent, IngestMetadata } from "./parse-body";
 
-/**
- * Minimum session info needed by downstream slice + event helpers.
- *
- * @remarks
- * Prisma's default select is wider than we need — narrowing keeps
- * downstream helpers honest about what they actually depend on.
- */
+/** Narrow — keeps downstream helpers honest about what they depend on. */
 export type UpsertedSession = {
   readonly id: string;
   readonly startedAt: Date;
@@ -18,23 +12,9 @@ export type UpsertedSession = {
 };
 
 /**
- * Idempotently upsert the `Session` row + link the identified `TrackedUser`.
- *
- * @remarks
- * First batch creates the Session with full metadata; subsequent
- * batches only bump `endedAt` + `eventCount`. Empty batches (metadata-
- * only pings) skip timestamp updates so a `Date.now()` placeholder
- * can't stomp real event bounds.
- *
- * `TrackedUser` upsert runs only when the SDK reported identity — the
- * link is written back on the Session in the same transaction so
- * every subsequent query resolves the user without a second lookup.
- *
- * @param projectId - Project that the public key authenticated against.
- * @param externalId - Session id minted by the SDK.
- * @param events - Events from this batch (may be empty for metadata pings).
- * @param metadata - SDK-supplied session metadata + optional identity.
- * @returns Narrow session info for downstream slice / event helpers.
+ * First batch creates with full metadata; subsequent batches bump only
+ * `endedAt`/`eventCount`. Empty batches (metadata-only pings) skip timestamp
+ * updates so a `Date.now()` placeholder can't stomp real event bounds.
  */
 export async function upsertSessionAndLinkTrackedUser(
   projectId: string,

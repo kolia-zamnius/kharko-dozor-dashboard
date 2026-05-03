@@ -8,17 +8,7 @@ import { prisma } from "@/server/db/client";
 import { log } from "@/server/logger";
 import { NextResponse } from "next/server";
 
-/**
- * `GET /api/projects` — list projects across every org the caller belongs to.
- *
- * @remarks
- * Optional `?organizationId=` narrows to one org (used by the
- * settings panel's API-keys section). Rows carry **masked** keys
- * only — plaintext never leaves `GET /api/projects/[id]/key`.
- * Ordered `createdAt DESC` so newest projects surface first.
- *
- * @see {@link projectsListOptions} — client-side consumer.
- */
+/** Masked-only — plaintext leaves the server exclusively via `GET /api/projects/[id]/key`. */
 export const GET = withAuth(async (req, user) => {
   const { searchParams } = new URL(req.url);
   const organizationId = searchParams.get("organizationId");
@@ -52,9 +42,7 @@ export const GET = withAuth(async (req, user) => {
   const data = projects.map((p) => ({
     id: p.id,
     name: p.name,
-    // Trust boundary: `p.key` is a string from Prisma that we know was
-    // minted by `generateApiKey` — promote it to the plaintext brand
-    // so `maskApiKey` accepts it. Only legitimate place for this cast.
+    // Trust boundary — Prisma string promoted to the brand `maskApiKey` accepts.
     maskedKey: maskApiKey(p.key as ApiKeyPlaintext),
     organizationId: p.organizationId,
     sessionCount: p._count.sessions,
@@ -67,15 +55,9 @@ export const GET = withAuth(async (req, user) => {
 });
 
 /**
- * `POST /api/projects` — mint a new project (with its own ingest API key) inside an org.
- *
- * OWNER-only.
- *
- * @remarks
- * Key lifecycle (create / regenerate / copy / delete) is concentrated
- * under OWNER across the product. Admins edit existing projects
- * (rename, display-name trait key) but cannot introduce new ingest
- * credentials on their own.
+ * OWNER-only — entire key lifecycle (create/regenerate/copy/delete) lives at
+ * OWNER across the product. ADMIN edits existing projects but can't mint new
+ * ingest credentials.
  */
 export const POST = withAuth(async (req, user) => {
   const body = createProjectSchema.parse(await req.json());
@@ -88,7 +70,6 @@ export const POST = withAuth(async (req, user) => {
       key: generateApiKey(),
       organizationId: body.organizationId,
     },
-    // NOTE: log AFTER select runs (below); cannot reference `project` here.
     select: {
       id: true,
       name: true,
@@ -111,7 +92,6 @@ export const POST = withAuth(async (req, user) => {
     projectSchema.parse({
       id: project.id,
       name: project.name,
-      // Trust boundary: Prisma round-trip of the key we just generated.
       maskedKey: maskApiKey(project.key as ApiKeyPlaintext),
       organizationId: project.organizationId,
       sessionCount: 0,

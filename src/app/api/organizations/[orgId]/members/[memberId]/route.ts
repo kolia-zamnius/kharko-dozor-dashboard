@@ -13,12 +13,7 @@ const updateRoleSchema = z.object({
   role: z.enum(["OWNER", "ADMIN", "VIEWER"], { message: "Invalid role" }),
 });
 
-/**
- * `PATCH /api/organizations/[orgId]/members/[memberId]` — change a member's role.
- *
- * OWNER-only — role changes are governance; admins edit metadata
- * only.
- */
+/** OWNER-only — role changes are governance, ADMIN is metadata only. */
 export const PATCH = withAuth<Params>(async (req, user, { orgId, memberId }) => {
   await requireMember(user.id, orgId, "OWNER");
 
@@ -50,21 +45,10 @@ export const PATCH = withAuth<Params>(async (req, user, { orgId, memberId }) => 
 });
 
 /**
- * `DELETE /api/organizations/[orgId]/members/[memberId]` — remove or self-leave.
- *
- * @remarks
- * Two shapes depending on `isSelf`:
- *   - Self-leave — any member (including a sole OWNER, which triggers
- *     {@link transferOrganizationOwnership} → next-oldest ADMIN →
- *     fallback to any remaining member).
- *   - Remove other — OWNER-only.
- *
- * Also flips the departing user's active-org pointer back to Personal
- * Space if it happened to point here.
- *
- * @throws {HttpError} 403 — leaving Personal Space, or non-owner trying to remove other.
- * @throws {HttpError} 404 — member not found in this org.
- * @throws {HttpError} 409 — leaving as the only member (product answer: delete the org).
+ * Self-leave allowed for any member (sole-OWNER triggers
+ * `transferOrganizationOwnership` → next-oldest ADMIN, falling back to any
+ * remaining member). Remove-other is OWNER-only. Sole-member leave returns 409
+ * — delete the org instead. Departing user's active-org rebases to Personal Space.
  */
 export const DELETE = withAuth<Params>(async (req, user, { orgId, memberId }) => {
   const myMembership = await requireMember(user.id, orgId, "VIEWER");

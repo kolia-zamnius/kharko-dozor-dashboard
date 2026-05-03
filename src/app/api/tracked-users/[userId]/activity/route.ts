@@ -14,19 +14,8 @@ import { computePageDistribution, projectPageDistribution } from "./_helpers/pag
 type Params = { userId: string };
 
 /**
- * `GET /api/tracked-users/[userId]/activity` — activity page data bundle.
- *
- * VIEWER+. One request, three independent SQL queries run in
- * parallel: histogram ({@link computeActivityHistogram}), page
- * distribution ({@link computePageDistribution}), and KPI aggregates
- * ({@link computeActivityAggregates}).
- *
- * @remarks
- * Rolling window picked from `?range=6h|24h|7d`. `Cache-Control:
- * no-store` — the histogram advances with each ingest batch and must
- * never be cached by intermediate proxies.
- *
- * @see {@link userActivityOptions} — client-side consumer.
+ * Three independent SQL calls in parallel — histogram, page distribution,
+ * KPI aggregates. `no-store` because the histogram advances with each ingest.
  */
 export const GET = withAuth<Params>(async (req, user, { userId }) => {
   const trackedUser = await prisma.trackedUser.findUnique({
@@ -48,7 +37,7 @@ export const GET = withAuth<Params>(async (req, user, { userId }) => {
   const to = new Date();
   const from = new Date(to.getTime() - cfg.windowMs);
 
-  // Three independent SQL calls → Promise.all (~60% latency cut on a warm DB).
+  // ~60% latency cut on a warm DB vs sequential awaits.
   const [histogramBuckets, pageSnapshot, aggregates] = await Promise.all([
     computeActivityHistogram(trackedUser.id, from, to, cfg.pgInterval),
     computePageDistribution(trackedUser.id, from, to),
@@ -61,8 +50,7 @@ export const GET = withAuth<Params>(async (req, user, { userId }) => {
     avgSessionDuration:
       aggregates.sessionCount > 0 ? Math.round(aggregates.totalActiveTime / aggregates.sessionCount) : 0,
     totalEvents: aggregates.totalEvents,
-    // Reflects the full distribution, not the `pageLimit`-trimmed slice —
-    // the client compares against `pageDistribution.length` for "Show more".
+    // Full distribution count (not the `pageLimit`-trimmed slice) — the client compares against `pageDistribution.length` for "Show more".
     uniquePages: pageSnapshot.totalUniquePages,
     topPage: pageSnapshot.topPathname,
     firstEventAt: aggregates.firstEventAt,

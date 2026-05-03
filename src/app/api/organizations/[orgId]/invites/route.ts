@@ -23,16 +23,8 @@ import { refreshOrCreatePendingInvite } from "./_helpers/refresh-or-create";
 type Params = { orgId: string };
 
 /**
- * `GET /api/organizations/[orgId]/invites` — admin-side list of outstanding invites.
- *
- * OWNER-only — invite lifecycle (send, extend, revoke, change role)
- * is a governance surface; admins can't act on it so there's no value
- * in showing it to them.
- *
- * @remarks
- * Lazy expiry matches `GET /api/user/invites` — past-TTL rows are
- * filtered out and flipped to `EXPIRED` in the background via
- * {@link expireStaleInvites}.
+ * OWNER-only — invite lifecycle is governance, ADMIN can't act on it.
+ * Lazy expiry on read (matches `GET /api/user/invites`).
  */
 export const GET = withAuth<Params>(async (_req, user, { orgId }) => {
   await requireMember(user.id, orgId, "OWNER");
@@ -66,8 +58,7 @@ export const GET = withAuth<Params>(async (_req, user, { orgId }) => {
       live.map((i) => ({
         id: i.id,
         email: i.email,
-        // Defensive downgrade — `inviteSchema` rejects OWNER, but any legacy
-        // OWNER rows in the wild should still render as VIEWER on the client.
+        // Defensive — `inviteSchema` rejects OWNER, but legacy OWNER rows in the wild render as VIEWER.
         role: i.role === "OWNER" ? "VIEWER" : i.role,
         expiresAt: i.expiresAt.toISOString(),
         createdAt: i.createdAt.toISOString(),
@@ -78,40 +69,21 @@ export const GET = withAuth<Params>(async (_req, user, { orgId }) => {
 });
 
 /**
- * `POST /api/organizations/[orgId]/invites` — send or resend an invite.
- *
- * OWNER-only.
- *
- * @remarks
- * Idempotent "refresh-or-create" via {@link refreshOrCreatePendingInvite}
- * — mirrors Notion / Linear / Slack semantics: pressing Invite on an
- * already-invited email bumps the TTL, swaps role, and re-fires the
- * email. Doubles as the "email lost in spam" recovery path.
- *
- * Email send is fire-and-forget. The invite row is already persisted,
- * so a transient SMTP failure must never block the API response — the
- * in-app list is the primary acceptance surface regardless.
- *
- * @throws {HttpError} 403 — attempting to invite into Personal Space.
- * @throws {HttpError} 409 — recipient is already a member (raised
- *   inside the helper; the admin should change their role instead).
- * @throws {HttpError} 429 — daily invite-send cap hit (per-sender
- *   rate-limit, see {@link assertInviteRateLimit}).
+ * Idempotent refresh-or-create (Notion/Linear/Slack semantics) — re-pressing
+ * Invite bumps TTL, swaps role, re-fires the email; doubles as the "lost in
+ * spam" recovery path. Email is fire-and-forget — the row is already persisted
+ * and the in-app list is the primary acceptance surface.
  */
 export const POST = withAuth<Params>(async (req, user, { orgId }) => {
   await requireMember(user.id, orgId, "OWNER");
 
-  // Sending invites requires SMTP — without it the invitee never hears
-  // about the invite, so creating a dangling row is worse than refusing
-  // the request. 503 because this is an instance-config issue (the
-  // self-hoster didn't wire SMTP), not a permission or input problem.
+  // 503 — instance-config issue (self-hoster didn't wire SMTP), not a permission/input problem.
+  // A dangling invite row with no email is worse than refusing.
   if (!getEnabledProviders().otp) {
     throw new HttpError(503, "Email sending is not configured on this instance");
   }
 
-  // Rate-limit probe BEFORE the work so a capped admin sees the
-  // right error instantly, with no DB write or SMTP dispatch on a
-  // send that'll 429 anyway.
+  // Probe before the work — capped admin sees 429 instantly, no wasted DB write or SMTP.
   await assertInviteRateLimit(user.id);
 
   const org = await prisma.organization.findUniqueOrThrow({
@@ -141,21 +113,14 @@ export const POST = withAuth<Params>(async (req, user, { orgId }) => {
     byUserId: user.id,
   });
 
-  // Count this send against today's quota. Bumped AFTER the invite
-  // row landed (and before the fire-and-forget email — we've done
-  // real work at this point) so a DB failure above doesn't burn a
-  // quota slot on a no-op. SMTP failures are tolerated — the invite
-  // already exists in the in-app list, which is the primary
-  // acceptance surface.
+  // Bumped AFTER the row landed so a DB failure above doesn't burn a quota slot on a no-op.
   await bumpInviteRateLimit(user.id);
 
-  // Resolve recipient locale (invitee's stored preference; falls back to
-  // `DEFAULT_LOCALE` when they haven't registered yet — deliberately not
-  // the inviter's locale, since the invitee may not share it).
+  // Invitee's stored locale (NOT inviter's — they may not share one). Falls
+  // back to `DEFAULT_LOCALE` for unregistered recipients.
   const locale = await resolveLocaleForUser(body.email);
   const t = await getTranslations({ locale, namespace: "emailInvite" });
 
-  // Fire-and-forget email (see JSDoc @remarks).
   sendMail({
     to: body.email,
     subject: t("subject", { orgName: org.name }),
@@ -170,19 +135,14 @@ export const POST = withAuth<Params>(async (req, user, { orgId }) => {
   })
     .then(() => log.info("org:invite:email:sent", { email: body.email }))
     .catch((err: unknown) => {
-      // Fire-and-forget delivery — the route already returned 200, the
-      // user got their "invite sent" toast, but SMTP threw on us. The
-      // catch swallows the error so it never bubbles to onRequestError,
-      // hence the explicit Sentry capture: an unmonitored SMTP outage
-      // would silently let invites pile up un-delivered.
+      // Route already returned 200, catch swallows so it never bubbles to
+      // onRequestError — explicit Sentry call so an SMTP outage doesn't pile
+      // up un-delivered invites silently.
       log.error("org:invite:email:delivery_failed", { err, email: body.email });
       Sentry.captureException(err, { tags: { area: "org:invite:email" }, extra: { email: body.email } });
     });
 
-  // Always 200 — 201 would only be accurate on the create branch, and
-  // the client's `apiFetch` only inspects `res.ok`. Response schema
-  // also narrows `role` to `ADMIN | VIEWER`, mirroring `inviteSchema`
-  // on the way in — a drift either side fails fast at the boundary.
+  // 200 not 201 — 201 would only be right on create, and `apiFetch` only inspects `res.ok`.
   return NextResponse.json(
     organizationInviteCreatedSchema.parse({ id: invite.id, email: invite.email, role: invite.role }),
   );

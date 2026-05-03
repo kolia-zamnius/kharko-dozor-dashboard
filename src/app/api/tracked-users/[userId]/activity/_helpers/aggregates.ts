@@ -22,18 +22,6 @@ export type ActivityAggregates = {
   readonly lastEventAt: string | null;
 };
 
-/**
- * Session + event aggregates inside `[from, to)` for the activity page.
- *
- * @remarks
- * Single helper (not two) because the route always needs both, and
- * Prisma's driver pipelines `$queryRaw` calls inside `Promise.all` —
- * so splitting wouldn't buy latency, just cognitive overhead.
- *
- * @param trackedUserId - Internal tracked-user primary key.
- * @param from - Window start (inclusive).
- * @param to - Window end (exclusive).
- */
 export async function computeActivityAggregates(
   trackedUserId: string,
   from: Date,

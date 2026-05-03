@@ -11,19 +11,10 @@ const cancelSchema = z.object({
 export const OPTIONS = corsPreflightResponse;
 
 /**
- * `POST /api/sessions/cancel` — SDK `stop()` teardown path.
- *
- * Public-key endpoint — authenticated via {@link withPublicKey}.
- *
- * @remarks
- * Called when a session should be discarded rather than persisted
- * (dev recordings, tests, user-requested cancels). Hard-deletes the
- * session row (cascades slices + events) and no-ops quietly when no
- * matching session exists — cancellation can race with the first
- * batch arriving.
- *
- * `(projectId, externalId)` scoping prevents a key for project A
- * from deleting a session that belongs to project B.
+ * Hard-delete (cascades slices + events). 204 no-op on miss — cancel can race
+ * with the first ingest batch arriving (treating it as 404 would spam Sentry).
+ * `(projectId, externalId)` scoping prevents a key for project A from deleting
+ * project B's session.
  */
 export const POST = withPublicKey(async ({ project, req }) => {
   const { sessionId: externalId } = cancelSchema.parse(await req.json().catch(() => null));
@@ -34,7 +25,7 @@ export const POST = withPublicKey(async ({ project, req }) => {
   });
 
   if (!session) {
-    // Race: cancel arrived before the first ingest batch created the row. Quiet no-op.
+    // Cancel arrived before the first ingest batch — quiet no-op.
     log.debug("session:cancel:noop_race", { projectId: project.id, externalId });
     return new Response(null, { status: 204 });
   }

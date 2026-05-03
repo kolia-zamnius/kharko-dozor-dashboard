@@ -10,18 +10,8 @@ import { prisma } from "@/server/db/client";
 import { NextResponse } from "next/server";
 
 /**
- * `GET /api/sessions` — cursor-paginated session list scoped to the active org.
- *
- * VIEWER+. Search by external id, project filter, date-range preset
- * (`today` / `7d` / `30d` / `all`), sort by date or duration.
- *
- * @remarks
- * Display-name resolution runs server-side (4-level fallback via
- * {@link resolveDisplayName}) so each row ships with the final
- * string. `?projectIds=` is re-intersected against the caller's org
- * server-side to prevent cross-org leakage.
- *
- * @see {@link sessionsListOptions} — client-side consumer.
+ * Display-name resolved server-side (4-level chain) so each row ships final.
+ * `?projectIds=` re-intersected with the caller's org — stray IDs are dropped.
  */
 export const GET = withAuth(async (req, user) => {
   const activeOrgId = user.activeOrganizationId;
@@ -52,7 +42,6 @@ export const GET = withAuth(async (req, user) => {
   const projectNameMap = new Map(orgProjects.map((p) => [p.id, p.name]));
   const projectTraitKeyMap = new Map(orgProjects.map((p) => [p.id, p.defaultDisplayNameTraitKey]));
 
-  // Filter by specific projects if requested, but always scope to org
   let projectFilter = orgProjectIds;
   if (params.projectIds?.length) {
     const requested = params.projectIds.filter((id) => orgProjectIds.includes(id));
@@ -64,10 +53,8 @@ export const GET = withAuth(async (req, user) => {
     ...(params.search ? { externalId: { contains: params.search, mode: "insensitive" as const } } : {}),
   };
 
-  // Date range filter — compute UTC boundary from the preset name.
-  // Missing `?range=` defaults to the widest preset, which is anchored
-  // to `SESSION_RETENTION_MS` on the client side, so the server never
-  // queries for rows older than the cron would have hard-deleted anyway.
+  // Default range is anchored to `SESSION_RETENTION_MS` so the server never
+  // queries past what the cron would have already deleted.
   const rangeFrom = dateRangeToFrom(params.range ?? DEFAULT_SESSION_DATE_RANGE);
   where.createdAt = { gte: rangeFrom };
 
@@ -98,7 +85,6 @@ export const GET = withAuth(async (req, user) => {
   const enriched = sessions.map((s) => {
     const traits = (s.trackedUser?.traits as SessionTraits | null) ?? null;
 
-    // Resolve display name using the same 4-level chain as the users list.
     const userDisplayName = s.trackedUser
       ? resolveDisplayName({
           externalId: s.trackedUser.externalId,

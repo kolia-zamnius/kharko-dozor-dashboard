@@ -1,21 +1,7 @@
 /**
- * Property-based tests for `ingestSchema`.
- *
- * @remarks
- * Ingest is the SDK wire contract — every self-hoster depends on the
- * schema being permissive enough to accept real SDK payloads and strict
- * enough to reject malformed ones. Hand-written unit tests cover the
- * happy path in `tests/integration/ingest.test.ts`; this suite adds
- * `fast-check` properties that walk the input space systematically:
- *
- *   - Valid envelopes of varying shape → always parse.
- *   - Invariants enforced at the boundary (UUID format, event cap,
- *     enum reason) → rejections fire deterministically regardless of
- *     neighbouring valid fields.
- *
- * Pure parser — no DB, no prisma, no mocks. Belongs in the `unit`
- * project even though the source file carries `server-only` (the
- * test-env alias neutralises that guard).
+ * Ingest is the SDK wire contract — `fast-check` walks the input space to
+ * prove valid envelopes always parse and boundary invariants (UUID, 500-event
+ * cap, enum reason) fire deterministically regardless of neighbouring fields.
  */
 
 import { describe, expect, it } from "vitest";
@@ -23,8 +9,6 @@ import fc from "fast-check";
 
 import { MAX_DECOMPRESSED_INGEST_BYTES, ingestSchema, parseIngestBody } from "./parse-body";
 
-// Minimal valid base used by several properties — the common skeleton
-// callers mutate with `{ ...BASE, events: [...] }` etc.
 const BASE_SESSION_ID = "550e8400-e29b-41d4-a716-446655440000";
 
 const validEventArb = fc.record({
@@ -155,8 +139,6 @@ describe("ingestSchema", () => {
   });
 
   it("tolerates the legacy `pageViews` field (unused, but must not reject)", () => {
-    // Old SDK builds still emit `pageViews`; schema keeps it permissive so
-    // a pinned customer doesn't brick on an extra-key strict reject.
     const result = ingestSchema.safeParse({
       sessionId: BASE_SESSION_ID,
       events: [],
@@ -173,9 +155,7 @@ async function gzipBody(text: string): Promise<ArrayBuffer> {
 
 describe("parseIngestBody — gzip decompressed cap", () => {
   it("rejects payloads that decompress past the cap with HttpError(413)", async () => {
-    // Highly-compressible filler — 10 MiB of 'x' shrinks to ~10 KiB
-    // compressed, so the inbound request size stays small even though
-    // the decompressed stream blows past the cap on the first chunk.
+    // 10 MiB of 'x' compresses to ~10 KiB — small inbound, decompressed stream blows past the cap.
     const oversized = "x".repeat(MAX_DECOMPRESSED_INGEST_BYTES + 1);
     const body = await gzipBody(oversized);
     const req = new Request("http://localhost/api/ingest", {

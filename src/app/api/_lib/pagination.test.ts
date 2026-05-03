@@ -1,11 +1,6 @@
 /**
- * Unit tests for `parseLimitParam` + `buildCursorResponse`.
- *
- * @remarks
- * Defense-in-depth: routes often run `parseLimitParam` after a zod schema
- * already clamped `limit` to `[1, 100]`, but a handful of routes read
- * `searchParams.get("limit")` directly. Both paths must produce the same
- * output.
+ * Routes use both shapes — schema-clamped numbers AND raw `searchParams.get`
+ * strings. Both paths must normalise identically.
  */
 
 import { describe, expect, it } from "vitest";
@@ -79,9 +74,7 @@ describe("buildCursorResponse", () => {
   });
 
   it("type-parameterises the cursor field at compile time", () => {
-    // This isn't a runtime assertion — the point is that `"label"` is
-    // accepted as a keyof Row, and the return type carries `string | null`.
-    // A typo like `"idd"` would fail `tsc` at the call site.
+    // Compile-time assertion — a typo like `"idd"` fails `tsc` at the call site.
     const rows: Row[] = [{ id: "r1", label: "first" }];
     const out = buildCursorResponse(rows, 1, "label");
     expect(out.nextCursor).toBeNull();

@@ -9,17 +9,10 @@ const switchOrgSchema = z.object({
 });
 
 /**
- * `PATCH /api/organizations/active` — switch the caller's "acting as" org.
- *
- * @remarks
- * Persisted on `User.activeOrganizationId` and mirrored into the JWT,
- * so subsequent route calls see the new scope immediately.
- *
- * Permission check + update run in one transaction — the active-org
- * pointer can never flip to an org the caller isn't a member of, even
- * under concurrent edits.
- *
- * @throws {HttpError} 403 — caller is not a member of `organizationId`.
+ * Membership check + update in one tx — the active-org pointer can never flip
+ * to an org the caller isn't a member of, even under a concurrent
+ * "remove member" race. Mirrored into the JWT so subsequent calls see the
+ * new scope immediately.
  */
 export const PATCH = withAuth(async (req, user) => {
   const { organizationId } = switchOrgSchema.parse(await req.json());

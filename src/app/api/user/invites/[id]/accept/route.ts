@@ -10,21 +10,12 @@ import { NextResponse } from "next/server";
 type Params = { id: string };
 
 /**
- * `POST /api/user/invites/[id]/accept` — claim a pending invite.
+ * Serializable tx — `Membership` create + invite ACCEPT in one round-trip.
+ * Prevents the double-accept race (two tabs/re-click); both `P2002` (unique
+ * violation) and `P2034` (serialization conflict) collapse to 409.
  *
- * @remarks
- * Atomic Serializable transaction: `Membership` create AND invite
- * `status → ACCEPTED` in one round-trip. The Serializable isolation
- * level prevents the double-accept race (two tabs / a re-click) where
- * read-committed lets both transactions see PENDING and the second
- * commit hits the `(userId, organizationId)` unique constraint as a
- * 500. Both `P2002` (unique violation) and `P2034` (serialization
- * conflict) collapse to a clean `409 already accepted`.
- *
- * Authorization layers: `withAuth` establishes the user;
- * {@link assertInviteUsableForUser} enforces status / TTL / email
- * match. The invite id is a Prisma `cuid()` (unguessable) + the email
- * guard belt-and-braces against a leaked id.
+ * Invite id is `cuid()` (unguessable) + `assertInviteUsableForUser` enforces
+ * status/TTL/email — belt-and-braces against a leaked id.
  */
 export const POST = withAuth<Params>(async (_req, user, { id }) => {
   const invite = await prisma.invite.findUnique({
@@ -42,7 +33,7 @@ export const POST = withAuth<Params>(async (_req, user, { id }) => {
 
   await assertInviteUsableForUser(invite, user.email);
 
-  // `assertInviteUsableForUser` throws on null — narrowing for TS.
+  // Already threw if null — narrowing for TS.
   if (!invite) throw new HttpError(404, "This invitation is invalid or has already been used.");
 
   try {

@@ -6,20 +6,7 @@ import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { NextResponse } from "next/server";
 
-/**
- * `GET /api/tracked-users/summary` — KPI aggregate for the users list stats strip.
- *
- * @remarks
- * Four KPIs scoped to the caller's active org: total tracked users,
- * online now (last event within {@link ONLINE_THRESHOLD_MS}), active
- * in last 24h, new this week (`createdAt ≥ now - 7d`).
- *
- * Single `$queryRaw` with conditional aggregation + a `LATERAL` join
- * to resolve `MAX(Session.endedAt)` per user. One round-trip, one
- * `TrackedUser` scan. VIEWER+.
- *
- * @see {@link trackedUsersSummaryOptions} — client-side consumer.
- */
+/** Single `$queryRaw` + `LATERAL` for `MAX(Session.endedAt)` per user — one round-trip, one TrackedUser scan. */
 export const GET = withAuth(async (_req, user) => {
   const activeOrgId = user.activeOrganizationId;
   if (!activeOrgId) {

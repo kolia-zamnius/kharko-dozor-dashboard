@@ -9,15 +9,8 @@ import { NextResponse } from "next/server";
 type Params = { id: string };
 
 /**
- * `POST /api/user/invites/[id]/decline` — decline a pending invite.
- *
- * @remarks
- * Hard-delete, not an `InviteStatus.DECLINED` flip — a declined invite
- * carries no audit value (admin-side list renders only PENDING rows)
- * and the extra enum would buy nothing. If an admin still wants the
- * user they just re-send.
- *
- * Shares invariants with Accept via {@link assertInviteUsableForUser}.
+ * Hard-delete (no `DECLINED` enum) — admin list filters PENDING anyway, the
+ * extra status would buy nothing. Re-send is the recovery path.
  */
 export const POST = withAuth<Params>(async (_req, user, { id }) => {
   const invite = await prisma.invite.findUnique({

@@ -6,11 +6,7 @@ import { log } from "@/server/logger";
 
 type Params = { projectId: string };
 
-/**
- * `PATCH /api/projects/[projectId]` — rename a project.
- *
- * ADMIN+ — metadata only, not key lifecycle.
- */
+/** ADMIN+ — metadata only, not key lifecycle. */
 export const PATCH = withAuth<Params>(async (req, user, { projectId }) => {
   await requireProjectMember(user.id, projectId, "ADMIN");
 
@@ -27,14 +23,9 @@ export const PATCH = withAuth<Params>(async (req, user, { projectId }) => {
 });
 
 /**
- * `DELETE /api/projects/[projectId]` — hard-delete a project.
- *
- * OWNER-only. Cascades sessions → slices → events → tracked users.
- *
- * @remarks
- * Admin flows top out at rename + key-regen — they can replace a
- * leaked key but cannot wipe history. Dataset-level destruction is
- * governance-tier.
+ * OWNER-only. Cascades sessions → slices → events → tracked users. ADMIN can
+ * replace a leaked key (regen) but never wipe history — dataset destruction
+ * stays governance-tier.
  */
 export const DELETE = withAuth<Params>(async (req, user, { projectId }) => {
   await requireProjectMember(user.id, projectId, "OWNER");

@@ -5,29 +5,9 @@ import { HttpError } from "@/server/http-error";
 import { log } from "@/server/logger";
 
 /**
- * Shared invariants + lazy-expiry helpers for the `Invite` row lifecycle.
- *
- * @remarks
- * Lives in `api/_lib/` because the checks live at the API boundary —
- * they `throw` `HttpError` with route-specific status codes. Accept /
- * decline / admin-manage routes all share the same "not pending /
- * expired / wrong user" surface, so centralising removes the previous
- * duplication across five route files.
- */
-
-/**
- * Fire-and-forget expiration of stale PENDING invite rows.
- *
- * @remarks
- * Called from list endpoints that enforce the TTL on read
- * (`GET /api/user/invites`, `GET /api/organizations/[orgId]/invites`)
- * so expired rows disappear between nightly cron runs. Failed updates
- * are logged and swallowed — worst case the row stays PENDING and gets
- * re-flipped on the next call (self-healing).
- *
- * No-op on empty input to avoid a wasted round-trip.
- *
- * @param expiredIds - IDs of invite rows whose `expiresAt` has passed.
+ * Lazy expiration on read — list endpoints fire this so stale PENDING rows
+ * disappear between nightly cron runs. Failures are swallowed; a missed flip
+ * just gets re-flipped on the next call.
  */
 export function expireStaleInvites(expiredIds: readonly string[]): void {
   if (expiredIds.length === 0) return;
@@ -39,7 +19,6 @@ export function expireStaleInvites(expiredIds: readonly string[]): void {
     .catch((err: unknown) => log.error("org:invite:expire_sweep:failed", { err }));
 }
 
-/** Minimal shape needed by {@link assertInviteUsableForUser}. */
 type InviteForUserGuard = {
   readonly id: string;
   readonly status: string;
@@ -48,25 +27,10 @@ type InviteForUserGuard = {
 };
 
 /**
- * Guard invariants on `/api/user/invites/[id]/{accept,decline}`:
- * the invite must exist, still be PENDING, still be within TTL, and
- * address the signed-in user's email.
- *
- * @remarks
- * Side effect: a past-TTL row that's still PENDING is flipped to
- * EXPIRED before throwing, so subsequent hits short-circuit cleanly
- * instead of re-running the guard.
- *
- * The 404 on "missing OR already consumed" is intentional — the two
- * cases are merged so an attacker can't enumerate invite IDs by
- * probing for 404 vs 410.
- *
- * @param invite - Invite row from `findUnique` (or `null` if missing).
- * @param userEmail - Signed-in user's email from the session.
- *
- * @throws {HttpError} 404 — invite missing or already consumed.
- * @throws {HttpError} 410 — row existed but TTL expired (also flips status).
- * @throws {HttpError} 403 — row belongs to a different recipient email.
+ * Used by `/api/user/invites/[id]/{accept,decline}`. 404 merges "missing" with
+ * "already consumed" so an attacker can't enumerate invite IDs by probing 404 vs 410.
+ * Side-effect — a past-TTL PENDING row is flipped to EXPIRED before throwing
+ * so subsequent hits short-circuit cleanly.
  */
 export async function assertInviteUsableForUser(
   invite: InviteForUserGuard | null,
@@ -92,7 +56,6 @@ export async function assertInviteUsableForUser(
   }
 }
 
-/** Minimal shape returned by {@link loadPendingOrgInvite}. */
 type PendingOrgInvite = {
   readonly id: string;
   readonly organizationId: string;
@@ -101,20 +64,8 @@ type PendingOrgInvite = {
 };
 
 /**
- * Load an invite and assert it belongs to `orgId` and is still PENDING.
- *
- * @remarks
- * Used by admin-side mutations (`PATCH` / `DELETE` on
- * `/api/organizations/[orgId]/invites/[inviteId]`). "Not found" and
- * "wrong org" are merged into 404 so a cross-org peek can't enumerate
- * IDs in orgs the caller doesn't administer.
- *
- * @param orgId - Organization the URL claims the invite belongs to.
- * @param inviteId - Invite primary key from the URL.
- * @returns The loaded invite — caller can skip a second `findUnique`.
- *
- * @throws {HttpError} 404 — invite missing or belongs to a different org.
- * @throws {HttpError} 409 — invite exists but is no longer PENDING.
+ * Admin-side mutations. "Not found" + "wrong org" merge into 404 so a
+ * cross-org peek can't enumerate invite IDs in orgs the caller doesn't admin.
  */
 export async function loadPendingOrgInvite(orgId: string, inviteId: string): Promise<PendingOrgInvite> {
   const invite = await prisma.invite.findUnique({

@@ -5,17 +5,7 @@ import type { IngestEvent } from "./parse-body";
 
 type SliceMeta = { readonly id: string; readonly startedAt: Date };
 
-/**
- * Resolve slice metadata for every `sliceIndex` referenced by events.
- *
- * @remarks
- * One `findMany` indexed on `(sessionId, index IN (...))` is cheaper
- * than per-event lookups. The returned map is reused downstream for
- * both event linkage and aggregate recomputation.
- *
- * @param sessionId - Internal session primary key.
- * @param events - Events from the batch (empty → still returns the default slice map).
- */
+/** Single `findMany` on `(sessionId, index IN ...)` — reused for both event linkage and aggregate recompute. */
 export async function loadSliceMapForEvents(
   sessionId: string,
   events: readonly IngestEvent[],
@@ -30,21 +20,7 @@ export async function loadSliceMapForEvents(
   return new Map(rows.map((r) => [r.index, { id: r.id, startedAt: r.startedAt }]));
 }
 
-/**
- * Bulk-insert events AND recompute per-slice aggregates in one transaction.
- *
- * @remarks
- * `createMany` is a single round-trip. Aggregate updates (`eventCount`
- * increment + `endedAt` + `duration`) are bundled into `$transaction`
- * so aggregates never desync from event rows mid-batch.
- *
- * No-op on empty batches — the session upsert already bumped
- * `endedAt` / `eventCount` if applicable.
- *
- * @param sessionId - Internal session primary key.
- * @param events - Events from the batch.
- * @param sliceMap - Output of {@link loadSliceMapForEvents}.
- */
+/** `$transaction` bundles `createMany` + per-slice aggregate updates so aggregates never desync mid-batch. */
 export async function insertEventsAndUpdateAggregates(
   sessionId: string,
   events: readonly IngestEvent[],
@@ -82,12 +58,7 @@ export async function insertEventsAndUpdateAggregates(
   }
 }
 
-/**
- * Fold events into `(sliceIndex → { count, maxTimestamp })` in one pass.
- *
- * @remarks
- * Cheaper than grouping twice (once for count, once for max).
- */
+/** Single-pass fold — cheaper than grouping twice (once for count, once for max). */
 function buildSliceAggregates(events: readonly IngestEvent[]): Map<number, { count: number; maxTimestamp: number }> {
   const byIndex = new Map<number, { count: number; maxTimestamp: number }>();
   for (const e of events) {
