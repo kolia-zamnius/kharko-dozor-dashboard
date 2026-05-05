@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from "react";
 
-import { Spinner } from "@/components/ui/feedback/spinner";
 import { useSliceEventsQuery } from "@/api-client/sessions/queries";
 import type { SessionDetail } from "@/api-client/sessions/types";
+import { Spinner } from "@/components/ui/feedback/spinner";
 import { ConsolePanel } from "./console-panel";
 import { ControlBar } from "./control-bar";
 import { SlicePicker } from "./slice-picker";
@@ -17,9 +17,15 @@ type PlayerProps = {
 /** Owns slice-events subscription, syncs into Zustand. Children read from the store — zero prop drilling. */
 export function Player({ session }: PlayerProps) {
   const { setSlices, setEvents, setSliceLoading } = usePlayerStore();
+  const selectSlice = usePlayerStore((s) => s.selectSlice);
 
   const slices = session.slices;
   useEffect(() => setSlices(slices ?? []), [slices, setSlices]);
+
+  // Store outlives the route — without this reset, a slice index from a prior session 404s on a session with fewer slices.
+  useEffect(() => {
+    selectSlice(0);
+  }, [session.id, selectSlice]);
 
   const activeSliceIndex = usePlayerStore((s) => s.activeSliceIndex);
   const consoleOpen = usePlayerStore((s) => s.consoleOpen);
