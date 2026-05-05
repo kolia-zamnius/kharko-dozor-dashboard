@@ -31,7 +31,7 @@ export function ConsoleSection() {
           Log an error
         </Button>
       </div>
-      {lastLog && <p className="text-sm text-muted-foreground">{lastLog}</p>}
+      {lastLog && <p className="text-muted-foreground text-sm">{lastLog}</p>}
     </Section>
   );
 }

@@ -13,7 +13,7 @@ export default function PlaygroundPage() {
     <div className="space-y-10">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Playground</h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="text-muted-foreground mt-2">
           Test the SDK without wiring it into your own app — paste a key, identify a user, click around, then check
           Replays.
         </p>
@@ -25,7 +25,7 @@ export default function PlaygroundPage() {
       <PrivacyDemo />
 
       <Section heading="5. Try interactions on the next page">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           SPA navigation creates a new slice marker — Replays will show two slices side-by-side.
         </p>
         <Link href="/playground/interactions" className="inline-block text-sm font-medium hover:underline">

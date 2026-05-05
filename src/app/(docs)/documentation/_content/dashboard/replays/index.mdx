@@ -9,20 +9,20 @@ they hit the [retention cutoff](/documentation/resources/security#retention)
 
 <Callout type="info">
   **Empty list?** No sessions land here until the SDK posts at least one batch. Fastest way to populate it without
-  integrating into a real app: paste an API key into the [Playground](/documentation/playground), click around for
-  ~30 seconds, refresh.
+  integrating into a real app: paste an API key into the [Playground](/documentation/playground), click around for ~30
+  seconds, refresh.
 </Callout>
 
 ## KPI strip
 
 Four cards above the list, scoped to the active org:
 
-| Card | Source |
-| --- | --- |
-| **Total sessions** | All sessions in the active org (so capped at ~90 days by retention) |
-| **Total duration** | `SUM(session.duration)` |
-| **Avg duration** | `AVG(session.duration)`, rounded |
-| **Active today** | Sessions created in the **last 24 hours** (rolling window, not calendar day) |
+| Card               | Source                                                                       |
+| ------------------ | ---------------------------------------------------------------------------- |
+| **Total sessions** | All sessions in the active org (so capped at ~90 days by retention)          |
+| **Total duration** | `SUM(session.duration)`                                                      |
+| **Avg duration**   | `AVG(session.duration)`, rounded                                             |
+| **Active today**   | Sessions created in the **last 24 hours** (rolling window, not calendar day) |
 
 Single `GET /api/sessions/summary` query — one round-trip with
 `COUNT … FILTER (...)` conditional aggregation, not four separate
@@ -30,14 +30,14 @@ queries.
 
 ## Columns
 
-| Column | Content |
-| --- | --- |
-| **Session** | The SDK-side `externalId` (a UUID), linked to the player at `/replays/[id]` |
-| **User** | Display name resolved via the [4-step chain](/documentation/dashboard/tracked-users/display-name); empty dash for anonymous sessions |
-| **Project** | Badge with the project's label |
-| **Pages** | Number of slices in the session (one per SPA navigation / idle gap) |
-| **Duration** | `MM:SS` recording length. Sortable — click the header to toggle desc/asc |
-| **Date** | Relative timestamp (e.g. "3 minutes ago"); hover for the full timestamp. Sortable |
+| Column       | Content                                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Session**  | The SDK-side `externalId` (a UUID), linked to the player at `/replays/[id]`                                                          |
+| **User**     | Display name resolved via the [4-step chain](/documentation/dashboard/tracked-users/display-name); empty dash for anonymous sessions |
+| **Project**  | Badge with the project's label                                                                                                       |
+| **Pages**    | Number of slices in the session (one per SPA navigation / idle gap)                                                                  |
+| **Duration** | `MM:SS` recording length. Sortable — click the header to toggle desc/asc                                                             |
+| **Date**     | Relative timestamp (e.g. "3 minutes ago"); hover for the full timestamp. Sortable                                                    |
 
 The right-most column is a per-row kebab menu visible only to OWNER /
 ADMIN — currently just **Delete** (see below).

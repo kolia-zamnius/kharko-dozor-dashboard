@@ -16,12 +16,12 @@ export default function PlaygroundLayout({ children }: { children: ReactNode }) 
   return (
     <DozorProvider>
       <div className="min-h-screen">
-        <header className="border-b border-border/50">
+        <header className="border-border/50 border-b">
           <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
             <Link href="/playground" className="font-semibold tracking-tight">
               Dozor Playground
             </Link>
-            <Link href="/documentation" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/documentation" className="text-muted-foreground hover:text-foreground text-sm">
               Docs →
             </Link>
           </div>

@@ -17,12 +17,12 @@ dashboard keeps them apart.
 
 Four cards above the list, scoped to the active org:
 
-| Card | Source |
-| --- | --- |
-| **Total tracked** | Distinct tracked users across the org's projects |
-| **Online now** | Users with their last event within the last **2 minutes** |
-| **Active 24h** | Users with their last event within the last 24 hours |
-| **New this week** | Users with `createdAt` in the last 7 days |
+| Card              | Source                                                    |
+| ----------------- | --------------------------------------------------------- |
+| **Total tracked** | Distinct tracked users across the org's projects          |
+| **Online now**    | Users with their last event within the last **2 minutes** |
+| **Active 24h**    | Users with their last event within the last 24 hours      |
+| **New this week** | Users with `createdAt` in the last 7 days                 |
 
 Single `GET /api/tracked-users/summary` query — one round-trip with
 `COUNT … FILTER (...)` plus a `LATERAL` join to resolve each user's
@@ -30,25 +30,25 @@ Single `GET /api/tracked-users/summary` query — one round-trip with
 
 ## Columns
 
-| Column | Content | Sortable? |
-| --- | --- | --- |
-| **User** | Display name resolved via the [4-step chain](/documentation/dashboard/tracked-users/display-name). Two optional subtitle lines render under it: `externalId` (when the displayName isn't already the externalId fallback) and `traits.email` (when the email isn't already the displayName or externalId). The duplicate-suppression keeps the row tight: a project that resolves names from the `email` trait shows the email once at the top, not twice. | ✓ (sort by `createdAt`, "newest") |
-| **Project** | Badge with the project label | — |
-| **Status** | Activity bucket — see below | — |
-| **Last seen** | Relative timestamp of the most recent event | ✓ |
-| **Sessions** | Total session count for this user-in-this-project | ✓ |
-| **Active 7d** | Sum of session durations in the last 7 days, formatted | ✓ |
+| Column        | Content                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Sortable?                         |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **User**      | Display name resolved via the [4-step chain](/documentation/dashboard/tracked-users/display-name). Two optional subtitle lines render under it: `externalId` (when the displayName isn't already the externalId fallback) and `traits.email` (when the email isn't already the displayName or externalId). The duplicate-suppression keeps the row tight: a project that resolves names from the `email` trait shows the email once at the top, not twice. | ✓ (sort by `createdAt`, "newest") |
+| **Project**   | Badge with the project label                                                                                                                                                                                                                                                                                                                                                                                                                               | —                                 |
+| **Status**    | Activity bucket — see below                                                                                                                                                                                                                                                                                                                                                                                                                                | —                                 |
+| **Last seen** | Relative timestamp of the most recent event                                                                                                                                                                                                                                                                                                                                                                                                                | ✓                                 |
+| **Sessions**  | Total session count for this user-in-this-project                                                                                                                                                                                                                                                                                                                                                                                                          | ✓                                 |
+| **Active 7d** | Sum of session durations in the last 7 days, formatted                                                                                                                                                                                                                                                                                                                                                                                                     | ✓                                 |
 
 ### Status buckets
 
 Derived per row from the most recent session's `endedAt`:
 
-| Bucket | Threshold |
-| --- | --- |
-| `ONLINE` | Last event within the last 2 minutes |
+| Bucket       | Threshold                                                             |
+| ------------ | --------------------------------------------------------------------- |
+| `ONLINE`     | Last event within the last 2 minutes                                  |
 | `ACTIVE_24H` | Last event within the last 24 hours (but past the 2-min ONLINE bound) |
-| `IDLE_7D` | Last event within the last 7 days (but past the 24-hour bound) |
-| `DORMANT` | Last event older than 7 days, **or** the user has no events ever |
+| `IDLE_7D`    | Last event within the last 7 days (but past the 24-hour bound)        |
+| `DORMANT`    | Last event older than 7 days, **or** the user has no events ever      |
 
 Thresholds live in [`src/api-client/tracked-users/status.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/tracked-users/status.ts);
 the same enum is used server-side (filter) and client-side (badge
@@ -76,11 +76,11 @@ indexed `MAX(sessions.endedAt)`, flagged in the route's JSDoc.
 Click any sortable column header to set / toggle the sort. The
 sort keys map to:
 
-| Header | Sort key | Behaviour |
-| --- | --- | --- |
-| **User** | `newest` | By `createdAt`, descending by default |
-| **Last seen** | `last-seen` | By most recent event timestamp |
-| **Sessions** | `sessions` | By total session count |
+| Header        | Sort key      | Behaviour                                     |
+| ------------- | ------------- | --------------------------------------------- |
+| **User**      | `newest`      | By `createdAt`, descending by default         |
+| **Last seen** | `last-seen`   | By most recent event timestamp                |
+| **Sessions**  | `sessions`    | By total session count                        |
 | **Active 7d** | `active-time` | By summed session duration in the last 7 days |
 
 ## Drilling into a user

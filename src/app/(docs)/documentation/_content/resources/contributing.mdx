@@ -26,15 +26,15 @@ Vercel cron), follow the [Self-host guide](/documentation/self-host).
 
 ## Scripts
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Next.js dev server (Turbopack) |
-| `npm run build` | Production build — run by Vercel on deploy, not in CI |
-| `npm run lint` | ESLint with type-aware rules on `.ts`/`.tsx` |
-| `npm run type-check` | `tsc --noEmit`, strict mode + `noUncheckedIndexedAccess` |
-| `npm run test:unit` | Vitest — pure functions, no Docker |
-| `npm run test:contract` | Vitest — OpenAPI snapshot drift + route-auth-wrapper invariant, no Docker |
-| `npm run test:integration` | Vitest — Testcontainers Postgres 17, slowest |
+| Command                    | What it does                                                              |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `npm run dev`              | Next.js dev server (Turbopack)                                            |
+| `npm run build`            | Production build — run by Vercel on deploy, not in CI                     |
+| `npm run lint`             | ESLint with type-aware rules on `.ts`/`.tsx`                              |
+| `npm run type-check`       | `tsc --noEmit`, strict mode + `noUncheckedIndexedAccess`                  |
+| `npm run test:unit`        | Vitest — pure functions, no Docker                                        |
+| `npm run test:contract`    | Vitest — OpenAPI snapshot drift + route-auth-wrapper invariant, no Docker |
+| `npm run test:integration` | Vitest — Testcontainers Postgres 17, slowest                              |
 
 CI runs `lint`, `type-check`, `unit`, `contract`, `integration` on every
 PR. The build is run by Vercel on deploy with real env vars (not in CI).
@@ -64,11 +64,11 @@ The short version reviewers will flag:
 - **No raw `queryKey: [...]` arrays.** Every cache read or invalidate
   goes through hierarchical factories in `src/api-client/<feature>/keys.ts`.
 - **HOFs serialise errors.** Route handlers `throw new HttpError(status,
-  msg)`; the `withAuth` / `withPublicKey` wrappers convert to JSON
+msg)`; the `withAuth` / `withPublicKey` wrappers convert to JSON
   responses. **No `try/catch` in handler bodies.**
 - **RBAC double-validation.** If the UI hides a button, the API must
   also 403 the corresponding mutation. `requireMember(userId, orgId,
-  minRole)` is the entry point.
+minRole)` is the entry point.
 
 ### TypeScript
 
@@ -163,7 +163,7 @@ auto-deletes on merge.
 
 - Title prefix: `[<branch-name>]` (or `[<linear-ticket>]` if there's
   one). Example: `[observability] add pino logger and Sentry via
-  instrumentation hook`. After squash + branch delete, the prefix is
+instrumentation hook`. After squash + branch delete, the prefix is
   the breadcrumb back to the PR.
 - Body has three blocks:
 

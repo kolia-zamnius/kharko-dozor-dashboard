@@ -153,8 +153,8 @@ import { dozor } from "./dozor";
 
 export async function onLogout() {
   dozor.release({ discard: true }); // drop anything held in the buffer
-  dozor.cancel();                   // delete the session row server-side, return to idle
-  dozor.start();                    // start a fresh anonymous session against a new sessionId
+  dozor.cancel(); // delete the session row server-side, return to idle
+  dozor.start(); // start a fresh anonymous session against a new sessionId
 }
 ```
 
@@ -163,4 +163,3 @@ counterpart that explicitly drops the session. Both return the
 recorder to `idle` — `start()` then mints a new session. Calling
 `Dozor.init()` again would be a no-op, since the singleton is
 already initialised.
-

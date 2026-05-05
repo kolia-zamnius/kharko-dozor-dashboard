@@ -47,10 +47,7 @@ export const POST = withAuth<Params>(async (_req, user, { id }) => {
       { isolationLevel: "Serializable" },
     );
   } catch (err) {
-    if (
-      err instanceof Prisma.PrismaClientKnownRequestError &&
-      (err.code === "P2002" || err.code === "P2034")
-    ) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && (err.code === "P2002" || err.code === "P2034")) {
       log.debug("user:invite:accept:race", {
         inviteId: invite.id,
         orgId: invite.organizationId,

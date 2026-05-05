@@ -40,8 +40,12 @@ Long sessions are split into slices automatically. The reason for
 each split is one of:
 
 - **`init`** — first slice on session start.
-- **`navigation`** — SPA route change or hard navigation.
-- **`idle`** — extended idle gap with no DOM mutations.
+- **`navigation`** — pathname change via SPA route or hard
+  navigation. Hash-only and query-only changes don't open a new
+  slice (`?utm=…` rewrites and anchor jumps stay in the current
+  one).
+- **`idle`** — gap >60s with no DOM mutations. The first event after
+  the gap opens the new slice.
 
 The slice picker renders one button per slice with an icon for the
 reason, a truncated pathname, and the slice's duration. Hover for the

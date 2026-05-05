@@ -26,8 +26,7 @@ export function MemberRow({ org, member, isOwner, isSelf, isOnlyMember, onLeaveS
   const t = useTranslations("settings.orgs.members");
   const tRoles = useTranslations("settings.orgs.roles");
   const updateRole = useUpdateMemberRoleMutation(org.id);
-  const isAnyRoleMutating =
-    useIsMutating({ mutationKey: organizationKeys.memberRoleMutation(org.id) }) > 0;
+  const isAnyRoleMutating = useIsMutating({ mutationKey: organizationKeys.memberRoleMutation(org.id) }) > 0;
 
   return (
     <div className="flex items-center gap-3">

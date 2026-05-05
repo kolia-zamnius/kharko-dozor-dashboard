@@ -22,9 +22,8 @@ export function ConnectedAccounts({ accounts }: { accounts: UserAccount[] }) {
       ) : (
         <div className="space-y-2">
           {accounts.map((account) => {
-            const meta = account.provider in PROVIDER_META
-              ? PROVIDER_META[account.provider as OAuthProvider]
-              : undefined;
+            const meta =
+              account.provider in PROVIDER_META ? PROVIDER_META[account.provider as OAuthProvider] : undefined;
             const Icon = meta?.icon;
             const label = meta?.label ?? account.provider;
             return (

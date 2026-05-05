@@ -25,11 +25,11 @@ Content-Type: application/json
 Content-Encoding: gzip          # only when the body is gzipped
 ```
 
-| Header | Required | Notes |
-| --- | :-: | --- |
-| `X-Dozor-Public-Key` | ✓ | Project key, format `dp_` + 32 hex chars. Copy from **Avatar → Manage organizations → \[org card] → API keys**. |
-| `Content-Type` | ✓ | Always `application/json`. |
-| `Content-Encoding` | — | Set to `gzip` when the body is compressed. The SDK does this for payloads &gt; ~1 KB via `CompressionStream`. |
+| Header               | Required | Notes                                                                                                           |
+| -------------------- | :------: | --------------------------------------------------------------------------------------------------------------- |
+| `X-Dozor-Public-Key` |    ✓     | Project key, format `dp_` + 32 hex chars. Copy from **Avatar → Manage organizations → \[org card] → API keys**. |
+| `Content-Type`       |    ✓     | Always `application/json`.                                                                                      |
+| `Content-Encoding`   |    —     | Set to `gzip` when the body is compressed. The SDK does this for payloads &gt; ~1 KB via `CompressionStream`.   |
 
 ## Body schema
 
@@ -88,20 +88,21 @@ A few things worth knowing:
   format. The dashboard stores events verbatim; the replay player
   reads them back through rrweb's `Replayer`.
 - **Slices and events**: the SDK ships one `SliceMarker` on session
-  start, then one each time it detects an idle gap or SPA navigation.
-  Events between markers carry the matching `sliceIndex` so the server
-  can group them on persist.
+  start, then one on each pathname change (hash-only and query-only
+  URL changes are ignored) and one after every >60s idle gap. Events
+  between markers carry the matching `sliceIndex` so the server can
+  group them on persist.
 - **`pageViews`** was an older protocol field — the dashboard accepts
   but ignores it, so older `@kharko/dozor` builds keep working.
 
 ## Response codes
 
-| Code | Body | When | What the SDK does |
-| --- | --- | --- | --- |
-| `204 No Content` | empty | Batch accepted | Proceed to next batch |
-| `400 Bad Request` | empty | Body failed Zod validation | Drop batch, no retry. Almost always means an SDK ↔ dashboard version mismatch — update the SDK |
-| `401 Unauthorized` | empty | Missing / unknown key | Drop batch, no retry. Subsequent batches keep returning `401` until the client is redeployed with the fresh key |
-| `5xx` / network | — | Server / infra issue | Retry **3×** with exponential backoff (1 s → 2 s → 4 s), then drop |
+| Code               | Body  | When                       | What the SDK does                                                                                               |
+| ------------------ | ----- | -------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `204 No Content`   | empty | Batch accepted             | Proceed to next batch                                                                                           |
+| `400 Bad Request`  | empty | Body failed Zod validation | Drop batch, no retry. Almost always means an SDK ↔ dashboard version mismatch — update the SDK                  |
+| `401 Unauthorized` | empty | Missing / unknown key      | Drop batch, no retry. Subsequent batches keep returning `401` until the client is redeployed with the fresh key |
+| `5xx` / network    | —     | Server / infra issue       | Retry **3×** with exponential backoff (1 s → 2 s → 4 s), then drop                                              |
 
 `400` triggers (the most common ones, in case you're chasing one):
 
@@ -123,12 +124,12 @@ dashboard side, not the SDK.
 
 The endpoint sets these headers on every response:
 
-| Header | Value |
-| --- | --- |
-| `Access-Control-Allow-Origin` | `*` |
+| Header                         | Value                                                |
+| ------------------------------ | ---------------------------------------------------- |
+| `Access-Control-Allow-Origin`  | `*`                                                  |
 | `Access-Control-Allow-Headers` | `Content-Type, X-Dozor-Public-Key, Content-Encoding` |
-| `Access-Control-Allow-Methods` | `POST, OPTIONS` |
-| `Cache-Control` | `no-store` |
+| `Access-Control-Allow-Methods` | `POST, OPTIONS`                                      |
+| `Cache-Control`                | `no-store`                                           |
 
 `OPTIONS /api/ingest` always returns `204` with the same CORS
 headers. No auth required — the browser fires it automatically before

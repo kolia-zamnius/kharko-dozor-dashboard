@@ -18,15 +18,12 @@ export default function DocumentationNotFound() {
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Page not found</h1>
         <p className="text-fd-muted-foreground max-w-md text-sm">
-          The page you&apos;re looking for doesn&apos;t exist, has moved, or never made it into
-          the docs in the first place.
+          The page you&apos;re looking for doesn&apos;t exist, has moved, or never made it into the docs in the first
+          place.
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-3">
-        <Link
-          href="/documentation/introduction"
-          className={cn(buttonVariants({ variant: "primary" }), "gap-2")}
-        >
+        <Link href="/documentation/introduction" className={cn(buttonVariants({ variant: "primary" }), "gap-2")}>
           <BookOpenIcon className="size-4" />
           Get started
         </Link>

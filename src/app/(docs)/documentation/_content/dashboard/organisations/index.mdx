@@ -19,10 +19,10 @@ in elsewhere keeps you in the same org until you switch.
 
 ## Org types
 
-| Type | Created when | Properties |
-| --- | --- | --- |
-| `PERSONAL` | Auto on first sign-in (Auth.js `createUser` event) | One per user, can't be left or deleted, can't have additional members invited. It's the fallback context every signed-in user must always have. |
-| `TEAM` | Manually via **Avatar → Manage organizations → Create a new organization** | Multiple per user, supports invites + role changes, can be deleted by an OWNER. |
+| Type       | Created when                                                               | Properties                                                                                                                                      |
+| ---------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PERSONAL` | Auto on first sign-in (Auth.js `createUser` event)                         | One per user, can't be left or deleted, can't have additional members invited. It's the fallback context every signed-in user must always have. |
+| `TEAM`     | Manually via **Avatar → Manage organizations → Create a new organization** | Multiple per user, supports invites + role changes, can be deleted by an OWNER.                                                                 |
 
 ## Switching orgs
 
@@ -56,4 +56,3 @@ A red badge with a count appears on the avatar dropdown's **Manage
 organizations** item when someone has invited you to an org and you
 haven't accepted or declined yet. The number is the count of
 outstanding invites addressed to your email.
-

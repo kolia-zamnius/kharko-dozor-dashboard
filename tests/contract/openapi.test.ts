@@ -20,18 +20,6 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { z, type ZodType } from "zod";
 
-import { ingestSchema } from "@/app/api/ingest/_helpers/parse-body";
-import {
-  projectListSchema,
-  projectSchema,
-  projectKeySchema,
-} from "@/api-client/projects/response-schemas";
-import {
-  createProjectSchema,
-  updateProjectSchema,
-  deleteProjectSchema,
-  updateProjectDisplayNameTraitKeySchema,
-} from "@/api-client/projects/validators";
 import {
   organizationCreatedSchema,
   organizationInviteCreatedSchema,
@@ -45,6 +33,13 @@ import {
   updateInviteSchema,
   updateOrgSchema,
 } from "@/api-client/organizations/validators";
+import { projectKeySchema, projectListSchema, projectSchema } from "@/api-client/projects/response-schemas";
+import {
+  createProjectSchema,
+  deleteProjectSchema,
+  updateProjectDisplayNameTraitKeySchema,
+  updateProjectSchema,
+} from "@/api-client/projects/validators";
 import {
   paginatedSessionsSchema,
   sessionDetailSchema,
@@ -60,25 +55,20 @@ import {
   userStatusSchema,
   userTimelineSchema,
 } from "@/api-client/tracked-users/response-schemas";
+import { updateDisplayNameSchema, userListParamsSchema } from "@/api-client/tracked-users/validators";
 import {
-  updateDisplayNameSchema,
-  userListParamsSchema,
-} from "@/api-client/tracked-users/validators";
-import {
-  userAvatarResponseSchema,
-  userProfileSchema,
-} from "@/api-client/user/response-schemas";
+  userInviteAcceptResponseSchema,
+  userInviteDeclineResponseSchema,
+  userInviteListSchema,
+} from "@/api-client/user-invites/response-schemas";
+import { userAvatarResponseSchema, userProfileSchema } from "@/api-client/user/response-schemas";
 import {
   deleteAccountSchema,
   renamePasskeySchema,
   updateLocaleSchema,
   updateProfileSchema,
 } from "@/api-client/user/validators";
-import {
-  userInviteAcceptResponseSchema,
-  userInviteDeclineResponseSchema,
-  userInviteListSchema,
-} from "@/api-client/user-invites/response-schemas";
+import { ingestSchema } from "@/app/api/ingest/_helpers/parse-body";
 
 /**
  * Mirrors of schemas that live inline in route files (not in `validators.ts`) —
@@ -746,8 +736,7 @@ const manifest: OperationManifest[] = [
       "204": { description: "Member removed / left" },
       "401": { description: "Not authenticated" },
       "403": {
-        description:
-          "Caller is not OWNER (when removing other), or attempting to leave Personal Space",
+        description: "Caller is not OWNER (when removing other), or attempting to leave Personal Space",
       },
       "404": { description: "Member not found" },
       "409": {
@@ -1716,9 +1705,7 @@ describe("REST contract — OpenAPI snapshot", () => {
         if (spec.schema && spec.example !== undefined) {
           const result = spec.schema.safeParse(spec.example);
           if (!result.success) {
-            failures.push(
-              `${where} response[${status}] example: ${JSON.stringify(result.error.issues)}`,
-            );
+            failures.push(`${where} response[${status}] example: ${JSON.stringify(result.error.issues)}`);
           }
         }
       }

@@ -41,10 +41,7 @@ export function ConsolePanel() {
   // memoisation, `allLogs.filter(...)` allocates a fresh array every
   // frame, defeating React's stable-reference reconciliation and
   // hammering the main thread on long sessions.
-  const visibleLogs = useMemo(
-    () => allLogs.filter((l) => l.timeOffset <= currentTime),
-    [allLogs, currentTime],
-  );
+  const visibleLogs = useMemo(() => allLogs.filter((l) => l.timeOffset <= currentTime), [allLogs, currentTime]);
 
   useEffect(() => {
     const el = containerRef.current;

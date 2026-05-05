@@ -31,9 +31,10 @@ When you call `Dozor.init({ apiKey, endpoint })` in your app:
    input events.
 2. **Events accumulate in a buffer** — in-memory array, capped at
    10,000 events.
-3. **Slice markers track navigation** — every SPA route change or
-   extended idle gap creates a "slice" boundary so long sessions can
-   be replayed in chunks.
+3. **Slice markers track navigation** — every pathname change (SPA
+   route or hard navigation; hash-only and query-only changes are
+   ignored) and every >60s gap without activity create a "slice"
+   boundary so long sessions can be replayed in chunks.
 4. **Privacy filters apply at source** — fields with `data-dozor-mask`
    have their text replaced with asterisks **before** the event is
    buffered. Masked content never enters the network.

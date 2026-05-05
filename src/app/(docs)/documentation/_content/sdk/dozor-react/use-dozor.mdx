@@ -29,15 +29,15 @@ All state properties are reactive — they update via
 `useSyncExternalStore` whenever the recorder fires a change
 notification.
 
-| Property | Type | Notes |
-| --- | --- | --- |
-| `state` | `"not_initialized" \| "idle" \| "recording" \| "paused"` | Includes `"not_initialized"` (only meaningful when [`options` was omitted](/documentation/sdk/dozor-react/provider#deferring-initialisation) from the provider). After `stop()` / `cancel()` the recorder returns to `"idle"` — there is no terminal `"stopped"` variant. |
-| `sessionId` | `string \| null` | `null` before `init()` and after `stop()` / `cancel()` until the next `start()`. |
-| `isRecording` | `boolean` | Convenience for `state === "recording"`. |
-| `isPaused` | `boolean` | `true` whenever `state === "paused"` — covers both manual `pause()` and auto-pause from tab visibility. |
-| `isHeld` | `boolean` | True between `hold()` and `release()`. |
-| `userId` | `string \| null` | From `identify()`, `null` otherwise. |
-| `bufferSize` | `number` | Reflects the value at the last state-change notification — does **not** update in real-time as rrweb emits. |
+| Property      | Type                                                     | Notes                                                                                                                                                                                                                                                                     |
+| ------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state`       | `"not_initialized" \| "idle" \| "recording" \| "paused"` | Includes `"not_initialized"` (only meaningful when [`options` was omitted](/documentation/sdk/dozor-react/provider#deferring-initialisation) from the provider). After `stop()` / `cancel()` the recorder returns to `"idle"` — there is no terminal `"stopped"` variant. |
+| `sessionId`   | `string \| null`                                         | `null` before `init()` and after `stop()` / `cancel()` until the next `start()`.                                                                                                                                                                                          |
+| `isRecording` | `boolean`                                                | Convenience for `state === "recording"`.                                                                                                                                                                                                                                  |
+| `isPaused`    | `boolean`                                                | `true` whenever `state === "paused"` — covers both manual `pause()` and auto-pause from tab visibility.                                                                                                                                                                   |
+| `isHeld`      | `boolean`                                                | True between `hold()` and `release()`.                                                                                                                                                                                                                                    |
+| `userId`      | `string \| null`                                         | From `identify()`, `null` otherwise.                                                                                                                                                                                                                                      |
+| `bufferSize`  | `number`                                                 | Reflects the value at the last state-change notification — does **not** update in real-time as rrweb emits.                                                                                                                                                               |
 
 Note on `bufferSize` cadence: the underlying SDK fires state-change
 notifications on lifecycle transitions (start, pause, hold, etc.),
@@ -63,11 +63,7 @@ function RecordingBadge() {
 
   if (!dozor.isRecording) return null;
 
-  return (
-    <span className="badge">
-      ● Recording — {dozor.bufferSize} events
-    </span>
-  );
+  return <span className="badge">● Recording — {dozor.bufferSize} events</span>;
 }
 ```
 
@@ -97,7 +93,12 @@ function CheckoutFlow() {
   // nothing ships yet.
   return (
     <>
-      <button onClick={() => { submitOrder(); dozor.release(); }}>
+      <button
+        onClick={() => {
+          submitOrder();
+          dozor.release();
+        }}
+      >
         Complete purchase
       </button>
       <button onClick={() => dozor.cancel()}>Leave</button>
@@ -107,4 +108,3 @@ function CheckoutFlow() {
 ```
 
 See [Recipes](/documentation/sdk/recipes) for more patterns.
-

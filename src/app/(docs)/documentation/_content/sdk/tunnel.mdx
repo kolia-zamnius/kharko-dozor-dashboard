@@ -55,9 +55,7 @@ is a config-only rewrite:
 ```ts title="next.config.ts"
 export default {
   async rewrites() {
-    return [
-      { source: "/api/monitor", destination: "https://your-dashboard.com/api/ingest" },
-    ];
+    return [{ source: "/api/monitor", destination: "https://your-dashboard.com/api/ingest" }];
   },
 };
 ```

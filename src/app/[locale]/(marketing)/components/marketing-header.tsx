@@ -31,7 +31,6 @@ export async function MarketingHeader() {
         <LocaleSelectCompact currentLocale={locale} />
         {/* Raw `<a href>` — docs zone is outside `[locale]/`, typed Link would prefix `/uk/documentation/...` and 404. */}
         <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-
           <a href={EXTERNAL_LINKS.docs}>{t("documentation")}</a>
         </Button>
         <Button asChild size="sm">

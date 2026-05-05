@@ -27,11 +27,11 @@ and break cache dedup. Both endpoints are `Cache-Control: no-store`.
 Bar chart of total events per time bucket. Bucket size + count scale
 with range:
 
-| Range | Bucket | Buckets shown |
-| --- | --- | --- |
-| `6h` | 5 minutes | 72 |
-| `24h` | 15 minutes | 96 |
-| `7d` | 1 hour | 168 |
+| Range | Bucket     | Buckets shown |
+| ----- | ---------- | ------------- |
+| `6h`  | 5 minutes  | 72            |
+| `24h` | 15 minutes | 96            |
+| `7d`  | 1 hour     | 168           |
 
 Each bucket also carries a `byPage` array — the top pathnames that
 contributed events in that bucket — so hover surfaces the breakdown.

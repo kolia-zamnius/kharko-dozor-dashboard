@@ -6,21 +6,21 @@ For the auth-specific architecture (JWT, providers, callbacks, locale routing) s
 
 ## Tech stack
 
-| Layer | Choice | Notes |
-| --- | --- | --- |
-| Framework | Next.js 16 (App Router, Turbopack) | `proxy.ts` middleware, async params, `instrumentation.ts` for Sentry boot |
-| Language | TypeScript 6 (strict + `noUncheckedIndexedAccess`) | type-aware ESLint catches floating promises, missing switch branches, type-only imports |
-| UI | Radix Primitives + `cva` + Tailwind v4 | shadcn-derived layer for now; Phosphor icons (`Regular` weight) |
-| Auth | Auth.js v5 + custom Prisma adapter | JWT sessions; Google OAuth + GitHub OAuth + Email OTP (Nodemailer/Gmail SMTP) + Passkeys |
-| Database | PostgreSQL 17 via Neon serverless + `@prisma/adapter-neon` | Prisma migrations workflow — see below |
-| ORM | Prisma 7 | Generated client at `src/generated/prisma/` |
-| Server state | TanStack Query 5 | Suspense + classic twins, hierarchical key factories per feature |
-| Client state | Zustand 5 | Colocated next to feature when state crosses sibling components |
-| Forms | React Hook Form 7 + Zod 4 | Native `z.toJSONSchema` |
-| i18n | next-intl 4 | Six locales (en, uk, de, es, pt, it); locale stored in `User.locale`, JWT-cached |
-| Logging | pino 10 (`@/server/logger`) | Tag-first format: `domain:entity:action[:state]` |
-| Errors | Sentry via `instrumentation.ts::onRequestError` | DSN unset = no-op; only unhandled errors reach Sentry |
-| Tests | Vitest 3 + Testcontainers (Postgres 17) + fast-check | Three projects: `unit` / `contract` / `integration` |
+| Layer        | Choice                                                     | Notes                                                                                    |
+| ------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Framework    | Next.js 16 (App Router, Turbopack)                         | `proxy.ts` middleware, async params, `instrumentation.ts` for Sentry boot                |
+| Language     | TypeScript 6 (strict + `noUncheckedIndexedAccess`)         | type-aware ESLint catches floating promises, missing switch branches, type-only imports  |
+| UI           | Radix Primitives + `cva` + Tailwind v4                     | shadcn-derived layer for now; Phosphor icons (`Regular` weight)                          |
+| Auth         | Auth.js v5 + custom Prisma adapter                         | JWT sessions; Google OAuth + GitHub OAuth + Email OTP (Nodemailer/Gmail SMTP) + Passkeys |
+| Database     | PostgreSQL 17 via Neon serverless + `@prisma/adapter-neon` | Prisma migrations workflow — see below                                                   |
+| ORM          | Prisma 7                                                   | Generated client at `src/generated/prisma/`                                              |
+| Server state | TanStack Query 5                                           | Suspense + classic twins, hierarchical key factories per feature                         |
+| Client state | Zustand 5                                                  | Colocated next to feature when state crosses sibling components                          |
+| Forms        | React Hook Form 7 + Zod 4                                  | Native `z.toJSONSchema`                                                                  |
+| i18n         | next-intl 4                                                | Six locales (en, uk, de, es, pt, it); locale stored in `User.locale`, JWT-cached         |
+| Logging      | pino 10 (`@/server/logger`)                                | Tag-first format: `domain:entity:action[:state]`                                         |
+| Errors       | Sentry via `instrumentation.ts::onRequestError`            | DSN unset = no-op; only unhandled errors reach Sentry                                    |
+| Tests        | Vitest 3 + Testcontainers (Postgres 17) + fast-check       | Three projects: `unit` / `contract` / `integration`                                      |
 
 ## Repo layout
 
@@ -159,7 +159,7 @@ read, every invalidate, goes through `keys.<feature>.<scope>(args)`.
   401 boilerplate.
 - **`routes.ts`** — typed URL builder.
 - **`polling.ts`** — `pollingOptions(ms)` returning `{ staleTime: ms/2,
-  refetchInterval: ms }`.
+refetchInterval: ms }`.
 
 ### Server vs client components
 
@@ -315,4 +315,3 @@ pages ARE, not a workaround.
 
 Rendered by Fumadocs UI — performance is on the framework. We bring
 content; they bring layout/typography/animations.
-

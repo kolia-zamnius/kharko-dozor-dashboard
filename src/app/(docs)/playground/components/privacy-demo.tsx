@@ -12,7 +12,7 @@ import { Section } from "./section";
 export function PrivacyDemo() {
   return (
     <Section heading="4. Privacy demo">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         By default the SDK auto-masks every input. The playground turns that off so you can see what each privacy
         attribute does individually.
       </p>
@@ -27,7 +27,7 @@ export function PrivacyDemo() {
           <p className="text-sm font-medium">
             Blocked element — replaced with a same-size placeholder via data-dozor-block
           </p>
-          <div data-dozor-block className="mt-2 rounded-md border border-dashed border-border bg-muted/40 p-6 text-sm">
+          <div data-dozor-block className="border-border bg-muted/40 mt-2 rounded-md border border-dashed p-6 text-sm">
             This whole section never reaches the recording. The replay shows a grey rectangle the same size.
           </div>
         </div>

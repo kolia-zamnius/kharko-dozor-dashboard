@@ -44,11 +44,9 @@ export function Controls() {
           </Button>
         )}
       </div>
-      {!isInitialized && (
-        <p className="text-sm text-muted-foreground">Initialize the SDK above to enable controls.</p>
-      )}
+      {!isInitialized && <p className="text-muted-foreground text-sm">Initialize the SDK above to enable controls.</p>}
 
-      <div className="space-y-4 rounded-md border border-border p-4">
+      <div className="border-border space-y-4 rounded-md border p-4">
         <p className="text-sm font-medium">Identify the current session</p>
         <Field label="User ID" htmlFor="pg-user-id">
           <Input
@@ -81,11 +79,7 @@ export function Controls() {
             />
           </Field>
         </div>
-        <Button
-          variant="secondary"
-          onClick={handleIdentify}
-          disabled={!isInitialized || !trimmedUserId}
-        >
+        <Button variant="secondary" onClick={handleIdentify} disabled={!isInitialized || !trimmedUserId}>
           Identify user
         </Button>
       </div>

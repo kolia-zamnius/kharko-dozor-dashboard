@@ -17,7 +17,7 @@ The recorder subscribes to:
 
 - `MutationObserver` — every DOM node added, removed, attribute changed
 - `mousemove` / `mousedown` / `mouseup` / `click` / `scroll` — pointer
-  + scroll positions
+  - scroll positions
 - `input` / `focus` / `blur` — form interactions (with masking applied
   before the event is buffered)
 - `console.log/warn/error/info/debug` — when `recordConsole: true`
@@ -27,9 +27,9 @@ Each capture produces an `rrweb` event:
 
 ```ts
 type rrwebEvent = {
-  type: number;          // discriminator: 2 = FullSnapshot, 3 = IncrementalSnapshot, 4 = Meta, ...
-  data: unknown;          // type-specific payload
-  timestamp: number;      // ms since epoch
+  type: number; // discriminator: 2 = FullSnapshot, 3 = IncrementalSnapshot, 4 = Meta, ...
+  data: unknown; // type-specific payload
+  timestamp: number; // ms since epoch
 };
 ```
 
@@ -52,23 +52,26 @@ redact later — masked stays masked.
 Captured events go into an in-memory array. The buffer fills until
 one of these triggers:
 
-| Trigger | When |
-| --- | --- |
-| Flush interval | Every `flushInterval` ms (default 60_000) |
-| Buffer size cap | When `events.length >= batchSize` (default 2000) |
-| Tab visibility change | `visibilitychange` → hidden |
-| Page unload | `beforeunload` / `pagehide` |
-| Manual `release()` | When transport was held |
+| Trigger               | When                                             |
+| --------------------- | ------------------------------------------------ |
+| Flush interval        | Every `flushInterval` ms (default 60_000)        |
+| Buffer size cap       | When `events.length >= batchSize` (default 2000) |
+| Tab visibility change | `visibilitychange` → hidden                      |
+| Page unload           | `beforeunload` / `pagehide`                      |
+| Manual `release()`    | When transport was held                          |
 
 ### Slice marker emission
 
 The SDK emits a slice marker on:
 
 - **Init** — first slice on session start (`reason: "init"`)
-- **Idle gap >30s** — extended period with no DOM mutations
+- **Idle gap >60s** — extended period with no DOM mutations
   (`reason: "idle"`)
-- **Navigation** — SPA route change via `popstate` / History API, or
-  hard navigation (`reason: "navigation"`)
+- **Navigation** — pathname change via `popstate`, `pushState`, or
+  `replaceState`, or a hard navigation (`reason: "navigation"`).
+  Hash-only changes (`#anchor`) and query-only rewrites (`?utm=…`)
+  deliberately do **not** fire a marker — they're not real
+  navigations.
 
 A marker carries `{ index, reason, startedAt, url, pathname,
 viewportWidth, viewportHeight }`. The next batch ships markers
@@ -124,13 +127,13 @@ Subsequent batches omit it.
 
 ### Retry semantics
 
-| Server response | SDK behaviour |
-| --- | --- |
-| `204` | Success — proceed to next batch |
-| `4xx` (`400`, `401`, etc.) | **No retry.** Buffer dropped, error logged in `[dozor]` |
-| `5xx` or network error | Retry with exponential backoff: 1s → 2s → 4s |
-| All retries exhausted | Events re-queued to buffer, retried on the next flush cycle |
-| Buffer reaches 10,000 events | Oldest dropped first (FIFO) |
+| Server response              | SDK behaviour                                               |
+| ---------------------------- | ----------------------------------------------------------- |
+| `204`                        | Success — proceed to next batch                             |
+| `4xx` (`400`, `401`, etc.)   | **No retry.** Buffer dropped, error logged in `[dozor]`     |
+| `5xx` or network error       | Retry with exponential backoff: 1s → 2s → 4s                |
+| All retries exhausted        | Events re-queued to buffer, retried on the next flush cycle |
+| Buffer reaches 10,000 events | Oldest dropped first (FIFO)                                 |
 
 Page-unload flushes use `fetch({ keepalive: true })` — the browser
 ships the request even after navigation, fire-and-forget. No retry
@@ -326,9 +329,7 @@ in the same `$transaction`.
 ### Step 5 — Fire-and-forget `lastUsedAt`
 
 ```ts title="src/app/api/ingest/route.ts"
-prisma.project
-  .update({ where: { id: project.id }, data: { lastUsedAt: new Date() } })
-  .catch(() => {});
+prisma.project.update({ where: { id: project.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
 ```
 
 A slow or failed update here must never break ingestion itself. The
@@ -352,11 +353,11 @@ Every state-mutating step emits a structured pino log with a
 [Architecture → Observability](/documentation/resources/architecture#observability)
 for the full convention. Tags emitted by ingest:
 
-| Tag | When | Level |
-| --- | --- | --- |
-| `ingest:batch:received` | Successful batch acceptance | `info` |
+| Tag                          | When                        | Level   |
+| ---------------------------- | --------------------------- | ------- |
+| `ingest:batch:received`      | Successful batch acceptance | `info`  |
 | `ingest:tracked_user:linked` | Identity linked or relinked | `debug` |
-| `ingest:auth:invalid_key` | 401 from `withPublicKey` | `warn` |
+| `ingest:auth:invalid_key`    | 401 from `withPublicKey`    | `warn`  |
 
 These are the search keys for finding ingestion-related events in
 your host's function logs (Vercel logs, or wherever you ship pino
@@ -390,16 +391,16 @@ for concrete numbers on when this matters.
 
 ## Code map (every file referenced)
 
-| File | Role |
-| --- | --- |
-| [`src/app/api/ingest/route.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/route.ts) | Entry point — composes the helpers below |
-| [`src/app/api/_lib/with-public-key.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/_lib/with-public-key.ts) | Public-key auth HOF + CORS |
-| [`src/app/api/_lib/cors.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/_lib/cors.ts) | OPTIONS preflight + CORS headers |
-| [`src/app/api/ingest/_helpers/parse-body.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/parse-body.ts) | gzip-aware body read + Zod schema |
-| [`src/app/api/ingest/_helpers/session-upsert.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/session-upsert.ts) | Step 1 — session upsert + identity link |
-| [`src/app/api/ingest/_helpers/slice-markers.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/slice-markers.ts) | Step 2 — slice marker upsert + default slice fallback |
-| [`src/app/api/ingest/_helpers/events.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/events.ts) | Steps 3 + 4 — slice map + bulk insert + aggregates |
-| [`prisma/schema.prisma`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/prisma/schema.prisma) | Tables: `Session`, `Slice`, `Event`, `TrackedUser`, `Project` |
+| File                                                                                                                                                               | Role                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| [`src/app/api/ingest/route.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/route.ts)                                     | Entry point — composes the helpers below                      |
+| [`src/app/api/_lib/with-public-key.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/_lib/with-public-key.ts)                     | Public-key auth HOF + CORS                                    |
+| [`src/app/api/_lib/cors.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/_lib/cors.ts)                                           | OPTIONS preflight + CORS headers                              |
+| [`src/app/api/ingest/_helpers/parse-body.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/parse-body.ts)         | gzip-aware body read + Zod schema                             |
+| [`src/app/api/ingest/_helpers/session-upsert.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/session-upsert.ts) | Step 1 — session upsert + identity link                       |
+| [`src/app/api/ingest/_helpers/slice-markers.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/slice-markers.ts)   | Step 2 — slice marker upsert + default slice fallback         |
+| [`src/app/api/ingest/_helpers/events.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/events.ts)                 | Steps 3 + 4 — slice map + bulk insert + aggregates            |
+| [`prisma/schema.prisma`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/prisma/schema.prisma)                                                   | Tables: `Session`, `Slice`, `Event`, `TrackedUser`, `Project` |
 
 ## See also
 

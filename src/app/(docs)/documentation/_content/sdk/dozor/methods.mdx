@@ -91,7 +91,7 @@ and resumes normal sending. Pass `{ discard: true }` to drop the held
 events instead.
 
 ```ts
-dozor.release();                  // flush buffered events, resume
+dozor.release(); // flush buffered events, resume
 dozor.release({ discard: true }); // drop buffered events, resume
 ```
 
@@ -117,10 +117,10 @@ dozor.identify("user_123", {
 });
 ```
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| `userId` | `string` | ✓ | Stable user identifier (1–255 chars). |
-| `traits` | `Record<string, unknown>` | — | Free-form object with user properties. Anything you'd want to filter or display in the dashboard. |
+| Parameter | Type                      | Required | Description                                                                                       |
+| --------- | ------------------------- | -------- | ------------------------------------------------------------------------------------------------- |
+| `userId`  | `string`                  | ✓        | Stable user identifier (1–255 chars).                                                             |
+| `traits`  | `Record<string, unknown>` | —        | Free-form object with user properties. Anything you'd want to filter or display in the dashboard. |
 
 Identified sessions roll up under the user in the dashboard's
 **Users** tab.
@@ -143,4 +143,3 @@ unsubscribe();
 Used internally by `@kharko/dozor-react` for `useSyncExternalStore` —
 direct use is rare in app code, but exposed for non-React frameworks
 that want reactive state.
-

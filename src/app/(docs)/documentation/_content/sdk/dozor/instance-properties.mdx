@@ -11,23 +11,23 @@ fire on every change.
 ```ts
 const dozor = Dozor.init({ apiKey: "dp_...", endpoint: "..." });
 
-dozor.sessionId;     // "9b2e1d4c-6a3f-4f8e-9b1d-2c8a4e6f7a90"
-dozor.state;         // "recording"
-dozor.isRecording;   // true
-dozor.bufferSize;    // 47
+dozor.sessionId; // "9b2e1d4c-6a3f-4f8e-9b1d-2c8a4e6f7a90"
+dozor.state; // "recording"
+dozor.isRecording; // true
+dozor.bufferSize; // 47
 ```
 
 ## Properties
 
-| Property | Type | Description |
-| --- | --- | --- |
-| `sessionId` | `string \| null` | Current session UUID, `null` before the first `start()`. Persisted in `sessionStorage` (or in-memory if storage unavailable), so it survives reloads in the same tab. |
-| `state` | `DozorState` | One of `"idle"` \| `"recording"` \| `"paused"`. There is no `"stopped"` variant — see [Lifecycle](/documentation/sdk/dozor/lifecycle). |
-| `isRecording` | `boolean` | `true` when actively recording. Convenience for `state === "recording"`. |
-| `isPaused` | `boolean` | `true` whenever `state === "paused"` — covers both manual `pause()` and auto-pause via tab visibility. The manual-vs-auto distinction lives internally as `pauseReason` and isn't surfaced here. |
-| `isHeld` | `boolean` | `true` after `hold()` until `release()`. Orthogonal to `state` — `recording + held` is a valid combination. |
-| `userId` | `string \| null` | From `identify()`, otherwise `null`. |
-| `bufferSize` | `number` | Events buffered in memory, not yet shipped. Counts up on capture, drops to 0 after a successful flush. |
+| Property      | Type             | Description                                                                                                                                                                                      |
+| ------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sessionId`   | `string \| null` | Current session UUID, `null` before the first `start()`. Persisted in `sessionStorage` (or in-memory if storage unavailable), so it survives reloads in the same tab.                            |
+| `state`       | `DozorState`     | One of `"idle"` \| `"recording"` \| `"paused"`. There is no `"stopped"` variant — see [Lifecycle](/documentation/sdk/dozor/lifecycle).                                                           |
+| `isRecording` | `boolean`        | `true` when actively recording. Convenience for `state === "recording"`.                                                                                                                         |
+| `isPaused`    | `boolean`        | `true` whenever `state === "paused"` — covers both manual `pause()` and auto-pause via tab visibility. The manual-vs-auto distinction lives internally as `pauseReason` and isn't surfaced here. |
+| `isHeld`      | `boolean`        | `true` after `hold()` until `release()`. Orthogonal to `state` — `recording + held` is a valid combination.                                                                                      |
+| `userId`      | `string \| null` | From `identify()`, otherwise `null`.                                                                                                                                                             |
+| `bufferSize`  | `number`         | Events buffered in memory, not yet shipped. Counts up on capture, drops to 0 after a successful flush.                                                                                           |
 
 ## React equivalent
 
@@ -45,4 +45,3 @@ shape.
   a "buffered events" counter. The React Hook does this for you;
   outside React, use `dozor.subscribe(listener)` and re-render however
   your framework expects.
-
