@@ -22,8 +22,8 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
     "@hookform/resolvers": "^5.2.2",
-    "@kharko/dozor": "^1.2.0",
-    "@kharko/dozor-react": "^1.2.0",
+    "@kharko/dozor": "^1.2.1",
+    "@kharko/dozor-react": "^1.2.1",
     "@neondatabase/serverless": "^1.1.0",
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/adapter-neon": "^7.6.0",
