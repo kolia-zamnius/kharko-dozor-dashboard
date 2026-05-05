@@ -32,11 +32,11 @@ the iframe contains scripts.
 
 rrweb events come in three families:
 
-| Type | What it carries |
-| --- | --- |
-| `2` Full snapshot | Complete DOM tree at session/slice start |
+| Type                     | What it carries                                   |
+| ------------------------ | ------------------------------------------------- |
+| `2` Full snapshot        | Complete DOM tree at session/slice start          |
 | `3` Incremental snapshot | DOM mutation, mouse position, scroll, input event |
-| `4` Meta | Page metadata (URL, viewport dimensions) |
+| `4` Meta                 | Page metadata (URL, viewport dimensions)          |
 
 The Replayer:
 
@@ -176,17 +176,17 @@ captured / not captured.
 All paths are relative to the repo root. Player files live under
 `src/app/[locale]/(dashboard)/replays/[sessionId]/`.
 
-| Module | Responsibility |
-| --- | --- |
-| [`replays/[sessionId]/page.tsx`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/page.tsx) | Server Component prefetch of session detail |
-| [`components/player/index.tsx`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/index.tsx) | Composition root — mounts viewport + controls + slice picker |
-| [`components/player/viewport/index.tsx`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/viewport/index.tsx) | Shadow DOM host + rrweb Replayer instantiation + ResizeObservers |
-| [`components/player/viewport/replayer-css.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/viewport/replayer-css.ts) | The CSS string injected into the shadow root (rrweb requirements) |
-| [`components/player/store.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/store.ts) | Zustand store — `activeSliceIndex`, `events`, `replayer`, ... |
-| [`components/player/control-bar/`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/tree/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/control-bar) | Play/pause/scrub/speed controls |
-| [`components/player/slice-picker.tsx`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/slice-picker.tsx) | Slice list + click-to-seek |
-| [`components/player/console-panel.tsx`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/console-panel.tsx) | Console event rendering |
-| [`api-client/sessions/queries.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/sessions/queries.ts) | `useSliceEventsQuery` — TanStack lazy-load |
+| Module                                                                                                                                                                                                                  | Responsibility                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [`replays/[sessionId]/page.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/page.tsx>)                                                 | Server Component prefetch of session detail                       |
+| [`components/player/index.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/index.tsx>)                               | Composition root — mounts viewport + controls + slice picker      |
+| [`components/player/viewport/index.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/viewport/index.tsx>)             | Shadow DOM host + rrweb Replayer instantiation + ResizeObservers  |
+| [`components/player/viewport/replayer-css.ts`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/viewport/replayer-css.ts>) | The CSS string injected into the shadow root (rrweb requirements) |
+| [`components/player/store.ts`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/store.ts>)                                 | Zustand store — `activeSliceIndex`, `events`, `replayer`, ...     |
+| [`components/player/control-bar/`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/tree/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/control-bar>)                          | Play/pause/scrub/speed controls                                   |
+| [`components/player/slice-picker.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/slice-picker.tsx>)                 | Slice list + click-to-seek                                        |
+| [`components/player/console-panel.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/console-panel.tsx>)               | Console event rendering                                           |
+| [`api-client/sessions/queries.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/sessions/queries.ts)                                                                                | `useSliceEventsQuery` — TanStack lazy-load                        |
 
 ## See also
 

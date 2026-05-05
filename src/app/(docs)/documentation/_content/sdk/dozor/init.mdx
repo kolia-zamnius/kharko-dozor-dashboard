@@ -26,23 +26,23 @@ All options come off the `DozorOptions` interface (exported from
 
 ### Required
 
-| Option | Type | Description |
-| --- | --- | --- |
-| `apiKey` | `string` | Public project API key, format `dp_...`. Copy it from your dashboard at **Avatar → Manage organizations → \[org card] → API keys**. |
+| Option     | Type     | Description                                                                                                                                                        |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apiKey`   | `string` | Public project API key, format `dp_...`. Copy it from your dashboard at **Avatar → Manage organizations → \[org card] → API keys**.                                |
 | `endpoint` | `string` | Ingest URL — full URL (`https://your-dashboard.com/api/ingest`) or same-origin relative path (`/api/monitor`) for the [tunnel pattern](/documentation/sdk/tunnel). |
 
 ### Behaviour
 
-| Option | Type | Default | Description |
-| --- | --- | --- | --- |
-| `autoStart` | `boolean` | `true` | Start recording immediately on `init()`. Set to `false` to control start manually via `start()`. |
-| `hold` | `boolean` | `false` | Start with transport held — events buffer locally but don't ship until `release()`. Useful for conditional recording. |
-| `pauseOnHidden` | `boolean` | `true` | Auto-pause when the tab becomes hidden, auto-resume when visible. |
-| `flushInterval` | `number` (ms) | `60000` | How often the buffer is flushed to the server. |
-| `batchSize` | `number` | `2000` | Max events in the buffer before an automatic flush is triggered. |
-| `fetchTimeout` | `number` (ms) | `10000` | Timeout for each batch send. Page-unload `keepalive` flushes don't honour this — they're fire-and-forget. |
-| `recordConsole` | `boolean` | `true` | Capture `console.log/warn/error/info/debug` calls in the recording. |
-| `debug` | `boolean` | `false` | Print verbose `[dozor]`-prefixed console output for every internal operation. Off has zero overhead. |
+| Option          | Type          | Default | Description                                                                                                           |
+| --------------- | ------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| `autoStart`     | `boolean`     | `true`  | Start recording immediately on `init()`. Set to `false` to control start manually via `start()`.                      |
+| `hold`          | `boolean`     | `false` | Start with transport held — events buffer locally but don't ship until `release()`. Useful for conditional recording. |
+| `pauseOnHidden` | `boolean`     | `true`  | Auto-pause when the tab becomes hidden, auto-resume when visible.                                                     |
+| `flushInterval` | `number` (ms) | `60000` | How often the buffer is flushed to the server.                                                                        |
+| `batchSize`     | `number`      | `2000`  | Max events in the buffer before an automatic flush is triggered.                                                      |
+| `fetchTimeout`  | `number` (ms) | `10000` | Timeout for each batch send. Page-unload `keepalive` flushes don't honour this — they're fire-and-forget.             |
+| `recordConsole` | `boolean`     | `true`  | Capture `console.log/warn/error/info/debug` calls in the recording.                                                   |
+| `debug`         | `boolean`     | `false` | Print verbose `[dozor]`-prefixed console output for every internal operation. Off has zero overhead.                  |
 
 ### Privacy
 
@@ -50,12 +50,12 @@ The privacy options have their own page — see
 [Privacy & masking](/documentation/sdk/privacy) for the full table plus
 recipes.
 
-| Option | Type | Default |
-| --- | --- | --- |
-| `privacyMaskInputs` | `boolean` | `true` |
-| `privacyMaskAttribute` | `string` | `"data-dozor-mask"` |
-| `privacyBlockAttribute` | `string` | `"data-dozor-block"` |
-| `privacyBlockMedia` | `boolean` | `false` |
+| Option                  | Type      | Default              |
+| ----------------------- | --------- | -------------------- |
+| `privacyMaskInputs`     | `boolean` | `true`               |
+| `privacyMaskAttribute`  | `string`  | `"data-dozor-mask"`  |
+| `privacyBlockAttribute` | `string`  | `"data-dozor-block"` |
+| `privacyBlockMedia`     | `boolean` | `false`              |
 
 ## What `init()` does on the inside
 
@@ -74,4 +74,3 @@ Useful to know if you're debugging at the network layer:
 5. **Subscribes to `visibilitychange`** for `pauseOnHidden`, and to
    `beforeunload` / `pagehide` for the keepalive final flush.
 6. **Starts capturing** unless `autoStart: false`.
-

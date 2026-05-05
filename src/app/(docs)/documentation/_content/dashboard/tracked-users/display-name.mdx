@@ -36,11 +36,11 @@ header. Click the pencil-edit icon next to the display name (visible
 only to OWNER / ADMIN — viewers don't see the trigger). Inside, three
 stacked sections — each with its own input + Save / Reset:
 
-| Section | Field set | Scope |
-| --- | --- | --- |
-| **Custom name** | `TrackedUser.customName` | This user only |
-| **Trait key (this user)** | `TrackedUser.displayNameTraitKey` | This user only |
-| **Project default** | `Project.defaultDisplayNameTraitKey` | Every user in this project |
+| Section                   | Field set                            | Scope                      |
+| ------------------------- | ------------------------------------ | -------------------------- |
+| **Custom name**           | `TrackedUser.customName`             | This user only             |
+| **Trait key (this user)** | `TrackedUser.displayNameTraitKey`    | This user only             |
+| **Project default**       | `Project.defaultDisplayNameTraitKey` | Every user in this project |
 
 `null` clears any field — chain falls through to the next step. A
 non-empty string sets the override.
@@ -56,11 +56,11 @@ the owning org, double-validated server-side.
 Project `Production` has `defaultDisplayNameTraitKey = "email"`.
 Three users in this project:
 
-| User | Traits |
-| --- | --- |
-| A | `{ email: "alice@acme.com", plan: "pro" }` |
-| B | `{ name: "Bob", plan: "free" }` |
-| C | `{ plan: "free" }` (no email, no name) |
+| User | Traits                                     |
+| ---- | ------------------------------------------ |
+| A    | `{ email: "alice@acme.com", plan: "pro" }` |
+| B    | `{ name: "Bob", plan: "free" }`            |
+| C    | `{ plan: "free" }` (no email, no name)     |
 
 Resolved display names:
 

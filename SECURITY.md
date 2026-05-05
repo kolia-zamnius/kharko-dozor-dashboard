@@ -22,6 +22,7 @@ anonymous.
 ## Scope
 
 **In scope:**
+
 - The dashboard application in this repository (`src/app`, `src/api-client`, `src/server`, `src/lib`, `prisma/`).
 - The ingest API (`/api/ingest`) — reachable with a project public key.
 - Auth flows — OAuth (Google / GitHub), Email OTP, Passkey (WebAuthn).
@@ -29,6 +30,7 @@ anonymous.
 - The `/api/cron/*` surface — secured via `Authorization: Bearer $CRON_SECRET`.
 
 **Out of scope:**
+
 - The tracker SDK itself — reported at
   [`kolia-zamnius/kharko-dozor-packages`](https://github.com/kolia-zamnius/kharko-dozor-packages/security/advisories/new).
 - Third-party services (Neon, Vercel, Google, GitHub, Gmail SMTP) — report those

@@ -8,11 +8,11 @@ export default function PlaygroundInteractionsPage() {
   return (
     <div className="space-y-10">
       <header>
-        <Link href="/playground" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/playground" className="text-muted-foreground hover:text-foreground text-sm">
           ← Back to Playground
         </Link>
         <h1 className="mt-2 text-3xl font-bold tracking-tight">Playground · Interactions</h1>
-        <p className="mt-2 text-muted-foreground">
+        <p className="text-muted-foreground mt-2">
           More elements to exercise click / scroll / hover capture, plus a console log so you can verify recordConsole
           works.
         </p>
@@ -32,7 +32,7 @@ export default function PlaygroundInteractionsPage() {
         heading="Scroll events"
         description="Scroll inside this box — the SDK captures scroll offsets and replays them."
       >
-        <div className="h-48 overflow-y-auto rounded-md border border-border bg-muted/30 p-4">
+        <div className="border-border bg-muted/30 h-48 overflow-y-auto rounded-md border p-4">
           {Array.from({ length: 30 }, (_, i) => (
             <p key={i} className="py-1 text-sm">
               Scroll content {i + 1}
@@ -45,7 +45,7 @@ export default function PlaygroundInteractionsPage() {
         heading="Hover events"
         description="Mouse-move + hover state are captured; replay reproduces cursor position."
       >
-        <div className="rounded-md border border-border p-6 text-center text-sm transition-colors hover:bg-muted">
+        <div className="border-border hover:bg-muted rounded-md border p-6 text-center text-sm transition-colors">
           Hover over me
         </div>
       </Section>

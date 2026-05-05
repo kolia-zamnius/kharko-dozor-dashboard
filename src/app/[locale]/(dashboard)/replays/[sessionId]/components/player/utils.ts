@@ -1,12 +1,10 @@
 import type { SessionEvent, SliceInfo } from "@/api-client/sessions/types";
 import type { ConsoleLogEntry } from "./types";
 
-
 const RRWEB_META_TYPE = 4;
 const RRWEB_FULL_SNAPSHOT_TYPE = 2;
 const EVENT_TYPE_PLUGIN = 6;
 const CONSOLE_PLUGIN_NAME = "rrweb/console@1";
-
 
 /**
  * rrweb requires Meta(4) → FullSnapshot(2) → Mutations ordering. We synthesize
@@ -33,7 +31,6 @@ export function ensureMetaEvent(events: SessionEvent[], slice: SliceInfo): Sessi
   return events;
 }
 
-
 /** Format milliseconds as MM:SS */
 export function formatTime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -50,7 +47,6 @@ export function formatTimePrecise(ms: number): string {
   const cs = Math.floor((ms % 1000) / 10);
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(cs).padStart(2, "0")}`;
 }
-
 
 export function extractConsoleLogs(events: SessionEvent[]): ConsoleLogEntry[] {
   const firstEvent = events[0];

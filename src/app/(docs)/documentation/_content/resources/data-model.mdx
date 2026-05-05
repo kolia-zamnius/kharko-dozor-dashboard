@@ -20,27 +20,27 @@ cold.
 
 ## Auth-side ER
 
-| Table | Key fields | Relations | Purpose |
-| --- | --- | --- | --- |
-| `User` | `id` (cuid), `email` (unique), `locale`, `activeOrganizationId` (FK → `Organization`, SetNull) | Owns: Account, Authenticator, Membership, InviteSendRateLimit (all Cascade) | The signed-in human |
-| `Account` | (`provider`, `providerAccountId`) unique, `userId` (FK → User, Cascade) | Belongs to User | OAuth links (Google, GitHub) |
-| `Authenticator` | `credentialID` (unique), composite PK with `userId` (FK → User, Cascade) | Belongs to User | WebAuthn / passkey registration |
-| `Membership` | (`userId`, `organizationId`) unique, `role`, both FKs Cascade | User ↔ Organization | Per-org role (OWNER / ADMIN / VIEWER) |
-| `VerificationToken` | (`identifier`, `token`) unique, `expires` | — | One-time email OTP (Auth.js managed) |
-| `OtpRateLimit` | (`email`, `date`) unique, `count` | — | Per-day OTP send cap (5/day, 60s cooldown) |
-| `InviteSendRateLimit` | (`userId`, `date`) unique, `count`, `userId` (FK → User, Cascade) | Belongs to User | Per-day invite send cap (100/day per signed-in user) |
+| Table                 | Key fields                                                                                     | Relations                                                                   | Purpose                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `User`                | `id` (cuid), `email` (unique), `locale`, `activeOrganizationId` (FK → `Organization`, SetNull) | Owns: Account, Authenticator, Membership, InviteSendRateLimit (all Cascade) | The signed-in human                                  |
+| `Account`             | (`provider`, `providerAccountId`) unique, `userId` (FK → User, Cascade)                        | Belongs to User                                                             | OAuth links (Google, GitHub)                         |
+| `Authenticator`       | `credentialID` (unique), composite PK with `userId` (FK → User, Cascade)                       | Belongs to User                                                             | WebAuthn / passkey registration                      |
+| `Membership`          | (`userId`, `organizationId`) unique, `role`, both FKs Cascade                                  | User ↔ Organization                                                         | Per-org role (OWNER / ADMIN / VIEWER)                |
+| `VerificationToken`   | (`identifier`, `token`) unique, `expires`                                                      | —                                                                           | One-time email OTP (Auth.js managed)                 |
+| `OtpRateLimit`        | (`email`, `date`) unique, `count`                                                              | —                                                                           | Per-day OTP send cap (5/day, 60s cooldown)           |
+| `InviteSendRateLimit` | (`userId`, `date`) unique, `count`, `userId` (FK → User, Cascade)                              | Belongs to User                                                             | Per-day invite send cap (100/day per signed-in user) |
 
 ## Business-side ER
 
-| Table | Key fields | Relations | Purpose |
-| --- | --- | --- | --- |
-| `Organization` | `id`, `name`, `type` (`PERSONAL \| TEAM`) | Owns: Membership (Cascade), Invite (Cascade), Project (Cascade) | The team / personal-space tenant |
-| `Project` | `id`, `name`, `key` (unique), `organizationId` (FK → Org, Cascade), `defaultDisplayNameTraitKey` | Owns: TrackedUser (Cascade), Session (Cascade) | The recording target — one project = one regeneratable API key |
-| `Invite` | `email`, `role`, `status` (enum), `expiresAt`, `organizationId` (FK → Org, Cascade), `invitedById` (FK → User) | Belongs to Org + inviter | Pending invitation to join an org |
-| `TrackedUser` | `externalId`, `projectId` (FK → Project, Cascade), `customName`, `displayNameTraitKey`, `traits` (Json) | Belongs to Project, owns Sessions (via SetNull on delete) | A visitor identified via `dozor.identify()` |
-| `Session` | `externalId`, `projectId` (FK → Project, Cascade), `trackedUserId` (FK → TrackedUser, SetNull), `url`, `userAgent`, `duration`, `eventCount`, `startedAt`, `endedAt` | Owns: Slice (Cascade), Event (Cascade) | One browser session as captured by the SDK |
-| `Slice` | `index`, `reason` (`init \| idle \| navigation`), `url`, `pathname`, `duration`, `startedAt`, (`sessionId`, `index`) unique | Belongs to Session, owns Events (SetNull on delete) | Replayable segment within a session |
-| `Event` | `type`, `timestamp`, `data` (Json), `sessionId` (FK → Session, Cascade), `sliceId` (FK → Slice, SetNull), `sliceIndex` | Belongs to Session + Slice | Raw rrweb event |
+| Table          | Key fields                                                                                                                                                           | Relations                                                       | Purpose                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
+| `Organization` | `id`, `name`, `type` (`PERSONAL \| TEAM`)                                                                                                                            | Owns: Membership (Cascade), Invite (Cascade), Project (Cascade) | The team / personal-space tenant                               |
+| `Project`      | `id`, `name`, `key` (unique), `organizationId` (FK → Org, Cascade), `defaultDisplayNameTraitKey`                                                                     | Owns: TrackedUser (Cascade), Session (Cascade)                  | The recording target — one project = one regeneratable API key |
+| `Invite`       | `email`, `role`, `status` (enum), `expiresAt`, `organizationId` (FK → Org, Cascade), `invitedById` (FK → User)                                                       | Belongs to Org + inviter                                        | Pending invitation to join an org                              |
+| `TrackedUser`  | `externalId`, `projectId` (FK → Project, Cascade), `customName`, `displayNameTraitKey`, `traits` (Json)                                                              | Belongs to Project, owns Sessions (via SetNull on delete)       | A visitor identified via `dozor.identify()`                    |
+| `Session`      | `externalId`, `projectId` (FK → Project, Cascade), `trackedUserId` (FK → TrackedUser, SetNull), `url`, `userAgent`, `duration`, `eventCount`, `startedAt`, `endedAt` | Owns: Slice (Cascade), Event (Cascade)                          | One browser session as captured by the SDK                     |
+| `Slice`        | `index`, `reason` (`init \| idle \| navigation`), `url`, `pathname`, `duration`, `startedAt`, (`sessionId`, `index`) unique                                          | Belongs to Session, owns Events (SetNull on delete)             | Replayable segment within a session                            |
+| `Event`        | `type`, `timestamp`, `data` (Json), `sessionId` (FK → Session, Cascade), `sliceId` (FK → Slice, SetNull), `sliceIndex`                                               | Belongs to Session + Slice                                      | Raw rrweb event                                                |
 
 ## Cascade rules — the destructive map
 
@@ -79,18 +79,18 @@ the recording target. Personal Space can never be deleted.
 
 Hot read paths:
 
-| Query | Index used |
-| --- | --- |
-| Sessions list (per project, newest first) | `[projectId, createdAt(sort: Desc)]` on `Session` |
-| Tracked users list (per project, recent first) | `[projectId, updatedAt(sort: Desc)]` on `TrackedUser` |
-| Ingest upsert (per project, by external id) | `[projectId, externalId]` unique on `Session` + `TrackedUser` |
-| Slice events (one slice's events) | `sliceId` on `Event` |
-| Session events fallback (legacy pre-slice) | `sessionId` on `Event` |
-| Member's orgs | `userId` on `Membership` |
-| Org's members | `organizationId` on `Membership` |
-| OAuth account lookup | `[provider, providerAccountId]` unique on `Account` |
-| Project key lookup (ingest auth) | `key @unique` on `Project` |
-| Invite by email (recipient inbox) | `email` on `Invite` |
+| Query                                          | Index used                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------- |
+| Sessions list (per project, newest first)      | `[projectId, createdAt(sort: Desc)]` on `Session`             |
+| Tracked users list (per project, recent first) | `[projectId, updatedAt(sort: Desc)]` on `TrackedUser`         |
+| Ingest upsert (per project, by external id)    | `[projectId, externalId]` unique on `Session` + `TrackedUser` |
+| Slice events (one slice's events)              | `sliceId` on `Event`                                          |
+| Session events fallback (legacy pre-slice)     | `sessionId` on `Event`                                        |
+| Member's orgs                                  | `userId` on `Membership`                                      |
+| Org's members                                  | `organizationId` on `Membership`                              |
+| OAuth account lookup                           | `[provider, providerAccountId]` unique on `Account`           |
+| Project key lookup (ingest auth)               | `key @unique` on `Project`                                    |
+| Invite by email (recipient inbox)              | `email` on `Invite`                                           |
 
 Cold reads (admin / cron only) — no indexes beyond the FK ones.
 
@@ -99,18 +99,18 @@ Cold reads (admin / cron only) — no indexes beyond the FK ones.
 For capacity estimation. These are order-of-magnitude — your traffic
 profile shifts them.
 
-| Table | Bytes per row (typical) | Cardinality scaling |
-| --- | :-: | --- |
-| `User` | 200 | One per signed-in user (10s–100s) |
-| `Organization` | 150 | ~1.5× user count (personal + team orgs) |
-| `Membership` | 80 | Sum of org sizes (10s–1000s) |
-| `Project` | 250 | A few per org (10s–100s total) |
-| `TrackedUser` | 300 + traits JSON | One per `(project, externalId)` (1000s–100000s) |
-| `Session` | 300 | One per browser session (10000s–1000000s) |
-| `Slice` | 250 | ~3× session count (init + idle + navigation) |
-| `Event` | 100 + data JSON (avg 200 bytes) | rrweb-volume — **dominant table by 10–100×** |
-| `Invite` | 200 | Low cardinality, swept daily |
-| `OtpRateLimit` | 80 | Bucket-resets at UTC midnight |
+| Table          |     Bytes per row (typical)     | Cardinality scaling                             |
+| -------------- | :-----------------------------: | ----------------------------------------------- |
+| `User`         |               200               | One per signed-in user (10s–100s)               |
+| `Organization` |               150               | ~1.5× user count (personal + team orgs)         |
+| `Membership`   |               80                | Sum of org sizes (10s–1000s)                    |
+| `Project`      |               250               | A few per org (10s–100s total)                  |
+| `TrackedUser`  |        300 + traits JSON        | One per `(project, externalId)` (1000s–100000s) |
+| `Session`      |               300               | One per browser session (10000s–1000000s)       |
+| `Slice`        |               250               | ~3× session count (init + idle + navigation)    |
+| `Event`        | 100 + data JSON (avg 200 bytes) | rrweb-volume — **dominant table by 10–100×**    |
+| `Invite`       |               200               | Low cardinality, swept daily                    |
+| `OtpRateLimit` |               80                | Bucket-resets at UTC midnight                   |
 
 `Event` is by far the heaviest. A 5-minute session of normal browsing
 typically captures 1000–3000 events, so the table grows ~10000 rows
@@ -133,4 +133,3 @@ The free Neon tier is **0.5 GB** of storage. Rough fits:
 For higher traffic, Neon's paid tiers scale linearly. There's no
 soft limit in the dashboard itself — the cap is whatever your
 Postgres instance supports.
-

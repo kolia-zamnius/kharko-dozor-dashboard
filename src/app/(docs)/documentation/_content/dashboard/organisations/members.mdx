@@ -9,26 +9,26 @@ direct call). The single source of truth is `requireMember(...)` in
 
 ## Capability matrix
 
-| Capability | OWNER | ADMIN | VIEWER |
-| --- | :-: | :-: | :-: |
-| Read everything in the org | ✓ | ✓ | ✓ |
-| Edit own profile | ✓ | ✓ | ✓ |
-| Self-leave the org | ✓ | ✓ | ✓ |
-| Accept / decline invites | ✓ | ✓ | ✓ |
-| Edit org name + avatar | ✓ | ✓ | — |
-| Rename a project | ✓ | ✓ | — |
-| Set `defaultDisplayNameTraitKey` | ✓ | ✓ | — |
-| Edit tracked-user `displayName` | ✓ | ✓ | — |
-| Delete a session | ✓ | ✓ | — |
-| Invite members | ✓ | — | — |
-| Cancel pending invites | ✓ | — | — |
-| Change member roles | ✓ | — | — |
-| Remove members | ✓ | — | — |
-| Create a project | ✓ | — | — |
-| Regenerate an API key | ✓ | — | — |
-| View an API key (plaintext) | ✓ | — | — |
-| Delete a project | ✓ | — | — |
-| Delete the org | ✓ | — | — |
+| Capability                       | OWNER | ADMIN | VIEWER |
+| -------------------------------- | :---: | :---: | :----: |
+| Read everything in the org       |   ✓   |   ✓   |   ✓    |
+| Edit own profile                 |   ✓   |   ✓   |   ✓    |
+| Self-leave the org               |   ✓   |   ✓   |   ✓    |
+| Accept / decline invites         |   ✓   |   ✓   |   ✓    |
+| Edit org name + avatar           |   ✓   |   ✓   |   —    |
+| Rename a project                 |   ✓   |   ✓   |   —    |
+| Set `defaultDisplayNameTraitKey` |   ✓   |   ✓   |   —    |
+| Edit tracked-user `displayName`  |   ✓   |   ✓   |   —    |
+| Delete a session                 |   ✓   |   ✓   |   —    |
+| Invite members                   |   ✓   |   —   |   —    |
+| Cancel pending invites           |   ✓   |   —   |   —    |
+| Change member roles              |   ✓   |   —   |   —    |
+| Remove members                   |   ✓   |   —   |   —    |
+| Create a project                 |   ✓   |   —   |   —    |
+| Regenerate an API key            |   ✓   |   —   |   —    |
+| View an API key (plaintext)      |   ✓   |   —   |   —    |
+| Delete a project                 |   ✓   |   —   |   —    |
+| Delete the org                   |   ✓   |   —   |   —    |
 
 Multiple OWNERs are allowed — single-OWNER lock-out is **not** a
 problem the dashboard tries to enforce. The UI lets you make every

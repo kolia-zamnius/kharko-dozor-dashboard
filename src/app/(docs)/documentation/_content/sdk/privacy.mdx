@@ -9,11 +9,11 @@ after the fact.
 
 ## Defaults
 
-| Default | Effect |
-| --- | --- |
-| `privacyMaskInputs: true` | All `input` / `textarea` / `select` values are replaced with asterisks in the recording. Includes `type="password"`, `type="email"`, etc. |
-| `privacyMaskAttribute: "data-dozor-mask"` | Elements with this attribute have their text content replaced with asterisks. Descendants are masked too. |
-| `privacyBlockAttribute: "data-dozor-block"` | Elements with this attribute are removed entirely from the recording — replaced with a same-size empty placeholder. |
+| Default                                     | Effect                                                                                                                                    |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `privacyMaskInputs: true`                   | All `input` / `textarea` / `select` values are replaced with asterisks in the recording. Includes `type="password"`, `type="email"`, etc. |
+| `privacyMaskAttribute: "data-dozor-mask"`   | Elements with this attribute have their text content replaced with asterisks. Descendants are masked too.                                 |
+| `privacyBlockAttribute: "data-dozor-block"` | Elements with this attribute are removed entirely from the recording — replaced with a same-size empty placeholder.                       |
 
 The recorded page is reconstructed from the event stream inside a
 **sandboxed iframe** during replay — even if a recorded page tried to
@@ -28,8 +28,10 @@ asterisks in the recording. Descendant text is masked too:
 
 ```html
 <div data-dozor-mask>
-  <p>John Doe</p>           <!-- recorded as "********" -->
-  <span>+1 555-0123</span>  <!-- recorded as "************" -->
+  <p>John Doe</p>
+  <!-- recorded as "********" -->
+  <span>+1 555-0123</span>
+  <!-- recorded as "************" -->
 </div>
 ```
 
@@ -120,13 +122,7 @@ import { useDozor } from "@kharko/dozor-react";
 export function CardForm() {
   const dozor = useDozor();
 
-  return (
-    <input
-      type="text"
-      onFocus={() => dozor.pause()}
-      onBlur={() => dozor.resume()}
-    />
-  );
+  return <input type="text" onFocus={() => dozor.pause()} onBlur={() => dozor.resume()} />;
 }
 ```
 

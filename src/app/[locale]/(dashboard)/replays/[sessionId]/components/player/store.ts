@@ -13,14 +13,12 @@ import type { PlayerState, ReplayerHandle } from "./types";
  * lifecycle is driven by Viewport's effect. React shouldn't own it.
  */
 
-
 /**
  * 10s — rrweb emits ≥1 event every few seconds during active use, so a 10s
  * gap is an unambiguous "stopped interacting" signal. 3-5s is noisy during
  * normal reading; 30s+ hides genuine drop-offs from the timeline.
  */
 const IDLE_THRESHOLD_MS = 10_000;
-
 
 export type IdlePeriod = { start: number; end: number };
 
@@ -44,7 +42,6 @@ function computeIdlePeriods(events: SessionEvent[]): IdlePeriod[] {
   }
   return periods;
 }
-
 
 /**
  * Live object refs whose identity should never enter React rendering.
@@ -93,7 +90,6 @@ function stopPolling() {
   cancelAnimationFrame(rafId);
 }
 
-
 type PlayerStoreState = {
   // Playback
   state: PlayerState;
@@ -141,7 +137,6 @@ type PlayerStoreActions = {
   setSliceLoading: (loading: boolean) => void;
 };
 
-
 export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((set, get) => ({
   state: "idle" as PlayerState,
   currentTime: 0,
@@ -158,7 +153,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
   autoContinue: false,
   consoleOpen: false,
   pendingAutoPlay: false,
-
 
   onReplayerReady: (h) => {
     handle = h;
@@ -203,7 +197,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
     });
   },
 
-
   play: () => {
     if (!handle) return;
     const { currentTime, totalTime } = get();
@@ -234,7 +227,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
     }
   },
 
-
   setSpeed: (speed) => {
     handle?.setConfig({ speed });
     set({ speed });
@@ -243,9 +235,7 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
   toggleSkipInactive: () => set((s) => ({ skipInactive: !s.skipInactive })),
   toggleAutoContinue: () => set((s) => ({ autoContinue: !s.autoContinue })),
 
-
   toggleConsole: () => set((s) => ({ consoleOpen: !s.consoleOpen })),
-
 
   selectSlice: (index) => {
     stopPolling();
@@ -264,7 +254,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
 
   setSliceLoading: (isSliceLoading) => set({ isSliceLoading }),
 }));
-
 
 /** Single source of truth for the disabled-gate — adjusting it (e.g. during refresh transitions) is a one-line edit. */
 export const selectIsPlayerDisabled = (s: PlayerStoreState) => s.state === "idle" || s.isSliceLoading;

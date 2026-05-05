@@ -23,10 +23,7 @@ if (typeof window !== "undefined") {
     const original = console.error;
     console.error = (...args: unknown[]) => {
       const first = args[0];
-      if (
-        typeof first === "string" &&
-        first.includes("Encountered a script tag while rendering React component")
-      ) {
+      if (typeof first === "string" && first.includes("Encountered a script tag while rendering React component")) {
         return;
       }
       original(...args);

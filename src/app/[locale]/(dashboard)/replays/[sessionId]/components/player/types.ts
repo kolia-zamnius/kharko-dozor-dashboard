@@ -1,9 +1,7 @@
 import type { SessionEvent, SliceInfo } from "@/api-client/sessions/types";
 
-
 /** `idle` = no replayer (initial/post-reset); `paused` = either user-paused or just-ready. */
 export type PlayerState = "idle" | "playing" | "paused" | "finished";
-
 
 /** Thin interface over the raw rrweb Replayer — Viewport creates it, consumers only get this handle. */
 export type ReplayerHandle = {
@@ -15,7 +13,6 @@ export type ReplayerHandle = {
   on: (event: string, handler: () => void) => void;
 };
 
-
 export type ConsoleLogEntry = {
   /** ms offset from the first event in the session. */
   timeOffset: number;
@@ -23,6 +20,5 @@ export type ConsoleLogEntry = {
   payload: string[];
   trace: string[];
 };
-
 
 export type { SessionEvent, SliceInfo };

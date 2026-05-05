@@ -32,11 +32,11 @@ scripts in the dashboard's chrome.
 
 The SDK ships with these privacy defaults:
 
-| Default | Effect |
-| --- | --- |
-| `privacyMaskInputs: true` | All `input` / `textarea` / `select` values are replaced with asterisks in the recording. Includes `type="password"`, `type="email"`, etc. |
-| `privacyMaskAttribute: "data-dozor-mask"` | Add this attribute to any element whose text content should be replaced with asterisks. Descendants are masked too. |
-| `privacyBlockAttribute: "data-dozor-block"` | Add this attribute to remove an element entirely from the recording — replaced with a same-size empty placeholder. |
+| Default                                     | Effect                                                                                                                                    |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `privacyMaskInputs: true`                   | All `input` / `textarea` / `select` values are replaced with asterisks in the recording. Includes `type="password"`, `type="email"`, etc. |
+| `privacyMaskAttribute: "data-dozor-mask"`   | Add this attribute to any element whose text content should be replaced with asterisks. Descendants are masked too.                       |
+| `privacyBlockAttribute: "data-dozor-block"` | Add this attribute to remove an element entirely from the recording — replaced with a same-size empty placeholder.                        |
 
 If your product handles especially sensitive content (medical records,
 financial data, legal text), you can opt into stronger defaults:
@@ -96,7 +96,7 @@ This is treated as an **operational secret**, not a user secret:
   click — no caching in TanStack Query.
 - Branded TypeScript types (`ApiKeyPlaintext`, `ApiKeyMasked`) make
   every plaintext-handling site visible in code review. The cast `as
-  ApiKeyPlaintext` is the one grep-able marker of a deliberate
+ApiKeyPlaintext` is the one grep-able marker of a deliberate
   trust-boundary crossing.
 
 ### What the SDK sends
@@ -165,12 +165,12 @@ deploy environment.
 
 Applied to every non-static response (`next.config.ts`):
 
-| Header | Value | Reason |
-| --- | --- | --- |
-| `X-Frame-Options` | `DENY` | Blocks clickjacking — dashboard refuses to render in any iframe |
-| `X-Content-Type-Options` | `nosniff` | Forces declared `Content-Type` over MIME sniffing |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` | Default in modern browsers, pinned to survive downstream proxies |
-| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Disables APIs the dashboard never uses |
+| Header                   | Value                                      | Reason                                                           |
+| ------------------------ | ------------------------------------------ | ---------------------------------------------------------------- |
+| `X-Frame-Options`        | `DENY`                                     | Blocks clickjacking — dashboard refuses to render in any iframe  |
+| `X-Content-Type-Options` | `nosniff`                                  | Forces declared `Content-Type` over MIME sniffing                |
+| `Referrer-Policy`        | `strict-origin-when-cross-origin`          | Default in modern browsers, pinned to survive downstream proxies |
+| `Permissions-Policy`     | `camera=(), microphone=(), geolocation=()` | Disables APIs the dashboard never uses                           |
 
 A full Content Security Policy is **not** configured yet — it requires
 per-request nonces (Next.js inline scripts + Radix styles need allow-list

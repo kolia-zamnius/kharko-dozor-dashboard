@@ -12,7 +12,6 @@ import { env } from "@/server/env";
 import { log } from "@/server/logger";
 import { cookies } from "next/headers";
 
-
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
 type CheckEmailResult = {
@@ -24,7 +23,6 @@ type RateLimitResult = {
   allowed: boolean;
   retryAfter?: number;
 };
-
 
 export async function checkEmailExists(email: string): Promise<ActionResult<CheckEmailResult>> {
   const parsed = signInSchema.safeParse({ email });

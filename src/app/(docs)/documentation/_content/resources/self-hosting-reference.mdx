@@ -14,37 +14,37 @@ when unset, so you can see what's required vs optional at a glance.
 
 ### Required
 
-| Variable | What it does | Sourced from |
-| --- | --- | --- |
-| `APP_URL` | Absolute base URL — prepended to relative URLs by the server-side `apiFetch` bridge. Without it, Server Components can't fetch their own API routes. | Your domain (e.g. `https://docs.example.com`). Falls back to `VERCEL_URL` (auto-set on Vercel) then `http://localhost:3000` |
-| `AUTH_URL` | Auth.js base URL. Used to construct OAuth callback URLs. Set the same as `APP_URL` in production. | Same as `APP_URL` |
-| `AUTH_SECRET` | JWT signing secret. **Don't reuse across instances.** Rotating it invalidates every active session. | `openssl rand -base64 32` |
-| `DATABASE_URL` | Postgres connection string. On Neon: the **pooled** URL (`-pooler` in the host). On any other Postgres: a regular connection string. | Neon project dashboard or your own Postgres host |
+| Variable       | What it does                                                                                                                                         | Sourced from                                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `APP_URL`      | Absolute base URL — prepended to relative URLs by the server-side `apiFetch` bridge. Without it, Server Components can't fetch their own API routes. | Your domain (e.g. `https://docs.example.com`). Falls back to `VERCEL_URL` (auto-set on Vercel) then `http://localhost:3000` |
+| `AUTH_URL`     | Auth.js base URL. Used to construct OAuth callback URLs. Set the same as `APP_URL` in production.                                                    | Same as `APP_URL`                                                                                                           |
+| `AUTH_SECRET`  | JWT signing secret. **Don't reuse across instances.** Rotating it invalidates every active session.                                                  | `openssl rand -base64 32`                                                                                                   |
+| `DATABASE_URL` | Postgres connection string. On Neon: the **pooled** URL (`-pooler` in the host). On any other Postgres: a regular connection string.                 | Neon project dashboard or your own Postgres host                                                                            |
 
 ### At least one primary sign-in method
 
 The boot-time refine in `src/server/env.ts` asserts at least one of these is configured — otherwise the dashboard has no way to create accounts. Passkey doesn't count: it's an add-on registered after a primary-method sign-in.
 
-| Pair | Provider |
-| --- | --- |
-| `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` | Google OAuth |
-| `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` | GitHub OAuth |
-| `GMAIL_USER` + `GMAIL_APP_PASSWORD` | Email OTP (also required for sending org invites) |
+| Pair                                    | Provider                                          |
+| --------------------------------------- | ------------------------------------------------- |
+| `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` | Google OAuth                                      |
+| `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` | GitHub OAuth                                      |
+| `GMAIL_USER` + `GMAIL_APP_PASSWORD`     | Email OTP (also required for sending org invites) |
 
 ### Optional
 
-| Variable | Default | Effect |
-| --- | --- | --- |
-| `DATABASE_URL_UNPOOLED` | unset | Direct (non-pooled) Postgres URL — used **only** by `prisma migrate` CLI. Required only on Neon (the pooled URL doesn't support session-level features migrations need). On any other host, `prisma.config.ts` falls back to `DATABASE_URL`. |
-| `CRON_SECRET` | unset | Bearer token for `/api/cron/*`. Required only if you wire the [daily cleanup cron](/documentation/self-host#8-daily-cleanup-cron-optional) on a public deploy — without it any internet caller could trigger DB-deletion. Unset is fine locally and on instances that don't run the cron. |
-| `NEXT_PUBLIC_KHARKO_DEMO_MODE` | unset | Set to `"true"` ONLY on a public demo deployment. Shows the persistent "this is a demo" disclosure banner. **Leave unset on a self-hosted instance.** |
-| `SENTRY_DSN` | unset | Error monitoring. Unset = Sentry is a no-op; structured pino logs still go to stdout. |
-| `LOG_LEVEL` | `info` (prod), `debug` (dev), `silent` (tests) | pino level: `fatal \| error \| warn \| info \| debug \| trace \| silent` |
+| Variable                       | Default                                        | Effect                                                                                                                                                                                                                                                                                    |
+| ------------------------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL_UNPOOLED`        | unset                                          | Direct (non-pooled) Postgres URL — used **only** by `prisma migrate` CLI. Required only on Neon (the pooled URL doesn't support session-level features migrations need). On any other host, `prisma.config.ts` falls back to `DATABASE_URL`.                                              |
+| `CRON_SECRET`                  | unset                                          | Bearer token for `/api/cron/*`. Required only if you wire the [daily cleanup cron](/documentation/self-host#8-daily-cleanup-cron-optional) on a public deploy — without it any internet caller could trigger DB-deletion. Unset is fine locally and on instances that don't run the cron. |
+| `NEXT_PUBLIC_KHARKO_DEMO_MODE` | unset                                          | Set to `"true"` ONLY on a public demo deployment. Shows the persistent "this is a demo" disclosure banner. **Leave unset on a self-hosted instance.**                                                                                                                                     |
+| `SENTRY_DSN`                   | unset                                          | Error monitoring. Unset = Sentry is a no-op; structured pino logs still go to stdout.                                                                                                                                                                                                     |
+| `LOG_LEVEL`                    | `info` (prod), `debug` (dev), `silent` (tests) | pino level: `fatal \| error \| warn \| info \| debug \| trace \| silent`                                                                                                                                                                                                                  |
 
 ### Auto-set by Vercel
 
-| Variable | What it does |
-| --- | --- |
+| Variable     | What it does                                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `VERCEL_URL` | Auto-set by Vercel; consumed as the fallback base URL when `APP_URL` is unset. You don't write this — Vercel does. |
 
 The canonical schema lives in
@@ -86,10 +86,10 @@ The dominant table is `Event` — see
 Order-of-magnitude:
 
 | Sessions/day | Events/day | DB growth/day | Days to fill 0.5 GB (Neon Free) |
-| --- | --- | --- | --- |
-| 100 | ~150,000 | ~40 MB | ~12 |
-| 1,000 | ~1.5M | ~400 MB | ~1.2 |
-| 10,000 | ~15M | ~4 GB | Hits free-tier cap same day |
+| ------------ | ---------- | ------------- | ------------------------------- |
+| 100          | ~150,000   | ~40 MB        | ~12                             |
+| 1,000        | ~1.5M      | ~400 MB       | ~1.2                            |
+| 10,000       | ~15M       | ~4 GB         | Hits free-tier cap same day     |
 
 The daily 90-day-retention cron caps total volume — at steady state
 you hold ~90 days of traffic. Beyond that the schedule clears the
@@ -119,12 +119,12 @@ Practical limits:
 
 Rough adoption thresholds:
 
-| Symptom | What's happening | Next step |
-| --- | --- | --- |
-| Function timeouts on /api/ingest | Single batches taking >60 s | Reduce SDK `batchSize`, scale up Neon compute |
-| Connection pool exhaustion | More concurrent batches than pooled connections | Scale Neon pooler, or move to self-managed Postgres |
-| Steady-state DB size growth | Retention cron not enough | Lower `SESSION_RETENTION_DAYS`, archive selectively, or shard |
-| Ingest p95 latency >500 ms | Postgres write contention | Move to a queue + worker pattern (Inngest, Trigger.dev, BullMQ) |
+| Symptom                          | What's happening                                | Next step                                                       |
+| -------------------------------- | ----------------------------------------------- | --------------------------------------------------------------- |
+| Function timeouts on /api/ingest | Single batches taking >60 s                     | Reduce SDK `batchSize`, scale up Neon compute                   |
+| Connection pool exhaustion       | More concurrent batches than pooled connections | Scale Neon pooler, or move to self-managed Postgres             |
+| Steady-state DB size growth      | Retention cron not enough                       | Lower `SESSION_RETENTION_DAYS`, archive selectively, or shard   |
+| Ingest p95 latency >500 ms       | Postgres write contention                       | Move to a queue + worker pattern (Inngest, Trigger.dev, BullMQ) |
 
 The queue + worker pattern is the canonical "next architecture" — see
 [Ingest pipeline → Why no queue?](/documentation/resources/ingest-pipeline#why-no-queue)
@@ -135,21 +135,21 @@ for the deliberate reasoning behind not shipping it yet.
 Search keys for finding events in Vercel function logs (or wherever
 you ship pino output). Format: `domain:entity:action[:state]`.
 
-| Tag | When | Level |
-| --- | --- | --- |
-| `ingest:batch:received` | Successful ingest batch | `info` |
-| `ingest:tracked_user:linked` | Identity linked to session | `debug` |
-| `ingest:auth:invalid_key` | Bad API key on `/api/ingest` | `warn` |
-| `auth:otp:cooldown_blocked` | OTP daily/cooldown hit | `warn` |
-| `auth:account:unlink:guard_blocked` | Last-login-method guard fired | `warn` |
-| `org:invite:create_or_refresh:ok` | Invite sent / refreshed | `info` |
-| `org:invite:email` | Invite email send (success or fail) | `info` / `warn` |
-| `project:key:regenerate:ok` | API key rotated | `info` |
-| `cron:cleanup:start` | Daily cleanup cron fired | `info` |
-| `cron:cleanup:summary` | Daily cleanup completed with counts | `info` |
-| `cron:cleanup:unauthorized` | Bearer mismatch on cron endpoint | `warn` |
-| `session:cancel:ok` | SDK-side session cancel succeeded | `info` |
-| `session:cancel:noop_race` | Cancel arrived before any ingest batch | `debug` |
+| Tag                                 | When                                   | Level           |
+| ----------------------------------- | -------------------------------------- | --------------- |
+| `ingest:batch:received`             | Successful ingest batch                | `info`          |
+| `ingest:tracked_user:linked`        | Identity linked to session             | `debug`         |
+| `ingest:auth:invalid_key`           | Bad API key on `/api/ingest`           | `warn`          |
+| `auth:otp:cooldown_blocked`         | OTP daily/cooldown hit                 | `warn`          |
+| `auth:account:unlink:guard_blocked` | Last-login-method guard fired          | `warn`          |
+| `org:invite:create_or_refresh:ok`   | Invite sent / refreshed                | `info`          |
+| `org:invite:email`                  | Invite email send (success or fail)    | `info` / `warn` |
+| `project:key:regenerate:ok`         | API key rotated                        | `info`          |
+| `cron:cleanup:start`                | Daily cleanup cron fired               | `info`          |
+| `cron:cleanup:summary`              | Daily cleanup completed with counts    | `info`          |
+| `cron:cleanup:unauthorized`         | Bearer mismatch on cron endpoint       | `warn`          |
+| `session:cancel:ok`                 | SDK-side session cancel succeeded      | `info`          |
+| `session:cancel:noop_race`          | Cancel arrived before any ingest batch | `debug`         |
 
 ## Troubleshooting catalog
 
@@ -183,6 +183,7 @@ Common failure modes with concrete diagnostic steps.
 ### OAuth callback fails with `redirect_uri_mismatch`
 
 Confirm:
+
 - `APP_URL` matches your actual domain exactly (`https://`, no
   trailing slash)
 - The OAuth provider's authorised redirect URI is
@@ -223,7 +224,7 @@ migrator needs). On any other host the migrator falls back to
 1. **Check the slice events query** — open DevTools → Network → look
    for `/api/sessions/{id}/slices/{N}/events`. Did it 200?
 2. **Check the slice list in the metadata** — `GET
-   /api/sessions/{id}` should return `slices: [...]` non-empty.
+/api/sessions/{id}` should return `slices: [...]` non-empty.
    Empty means the ingest pipeline didn't write a default slice (very
    old SDK builds) — the player should fall back to inline events
    from the detail response.
@@ -239,9 +240,7 @@ Vercel Cron pulls it on the schedule pinned in `vercel.json`:
 
 ```json title="vercel.json"
 {
-  "crons": [
-    { "path": "/api/cron/daily-cleanup", "schedule": "30 3 * * *" }
-  ]
+  "crons": [{ "path": "/api/cron/daily-cleanup", "schedule": "30 3 * * *" }]
 }
 ```
 
@@ -334,13 +333,13 @@ A successful response is `200 OK` with a JSON summary like:
 
 ## Performance tuning levers
 
-| Lever | What it changes | Trade-off |
-| --- | --- | --- |
-| SDK `flushInterval` | How often batches ship | Lower = fresher data, more requests; higher = quieter ingest, stale UI |
-| SDK `batchSize` | Max events per batch | Lower = more batches, higher = bigger payloads |
-| `SESSION_RETENTION_DAYS` (`src/lib/time.ts`) | How long sessions live | Lower = smaller DB, less history; higher = more capacity needed |
-| Neon compute size | Postgres throughput ceiling | Higher tier = more concurrent ingest, more $ |
-| Vercel plan | Function timeout, cron frequency | Pro for >daily cron, large batches |
+| Lever                                        | What it changes                  | Trade-off                                                              |
+| -------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------- |
+| SDK `flushInterval`                          | How often batches ship           | Lower = fresher data, more requests; higher = quieter ingest, stale UI |
+| SDK `batchSize`                              | Max events per batch             | Lower = more batches, higher = bigger payloads                         |
+| `SESSION_RETENTION_DAYS` (`src/lib/time.ts`) | How long sessions live           | Lower = smaller DB, less history; higher = more capacity needed        |
+| Neon compute size                            | Postgres throughput ceiling      | Higher tier = more concurrent ingest, more $                           |
+| Vercel plan                                  | Function timeout, cron frequency | Pro for >daily cron, large batches                                     |
 
 ## See also
 

@@ -28,7 +28,7 @@ type Session = {
     name: string | null;
     email: string;
     image: string;
-    locale: Locale;            // mirrored from User.locale
+    locale: Locale; // mirrored from User.locale
     activeOrganizationId: string | null;
   };
   expires: string;
@@ -54,12 +54,12 @@ refine in `src/server/env.ts` asserts at least one primary is
 configured; the FE conditionally renders only the methods this
 instance has wired (see `src/server/auth/enabled-providers.ts`).
 
-| Method | Provider | Storage | Role |
-| --- | --- | --- | --- |
-| Google OAuth | `next-auth/providers/google` | `Account` row | Primary |
-| GitHub OAuth | `next-auth/providers/github` | `Account` row | Primary |
-| Email OTP | `next-auth/providers/nodemailer` over Gmail SMTP | One-time-token `VerificationToken` | Primary |
-| Passkey (WebAuthn) | `next-auth/providers/passkey` (`@simplewebauthn` underneath) | `Authenticator` row | Add-on (registered after a primary-method sign-in) |
+| Method             | Provider                                                     | Storage                            | Role                                               |
+| ------------------ | ------------------------------------------------------------ | ---------------------------------- | -------------------------------------------------- |
+| Google OAuth       | `next-auth/providers/google`                                 | `Account` row                      | Primary                                            |
+| GitHub OAuth       | `next-auth/providers/github`                                 | `Account` row                      | Primary                                            |
+| Email OTP          | `next-auth/providers/nodemailer` over Gmail SMTP             | One-time-token `VerificationToken` | Primary                                            |
+| Passkey (WebAuthn) | `next-auth/providers/passkey` (`@simplewebauthn` underneath) | `Authenticator` row                | Add-on (registered after a primary-method sign-in) |
 
 Mix-and-match — a user can link any combination. The
 last-login-method guard prevents accidental lockout when unlinking;
@@ -70,8 +70,8 @@ see [User settings → Connected accounts](/documentation/dashboard/profile#auth
 The Prisma adapter is wrapped to handle:
 
 - **`createUser` event** — auto-creates a Personal Space organisation
-  + OWNER membership for every new user. Without this, a fresh
-  sign-in lands on a dashboard with no org context.
+  - OWNER membership for every new user. Without this, a fresh
+    sign-in lands on a dashboard with no org context.
 - **`User.activeOrganizationId` validation** — JWT callback checks
   membership before passing the cached value through. Stale pointer
   → fall back to the user's oldest org.
@@ -103,7 +103,7 @@ Every request hits `src/proxy.ts` first:
    pipeline; the playground is deliberately public (paste-key-and-test).
 2. **Locale enforcement** — apply the priority chain, redirect if the
    URL doesn't match (`/users` for an authed user with `User.locale =
-   "uk"` → `/uk/users`).
+"uk"` → `/uk/users`).
 3. **Auth check** — protected paths (`/users`, `/replays`, `/settings`)
    require an authed session. Anonymous → redirect to
    `/sign-in?callbackUrl=...`.
@@ -119,9 +119,9 @@ control flow — easier to audit than middleware composition.
 
 Two thresholds, both per email address:
 
-| Limit | Value | Source |
-| --- | --- | --- |
-| `OTP_DAILY_LIMIT` | 5 codes / day | `src/lib/auth/otp.constants.ts` |
+| Limit                  | Value                    | Source                          |
+| ---------------------- | ------------------------ | ------------------------------- |
+| `OTP_DAILY_LIMIT`      | 5 codes / day            | `src/lib/auth/otp.constants.ts` |
 | `OTP_COOLDOWN_SECONDS` | 60 seconds between sends | `src/lib/auth/otp.constants.ts` |
 
 Daily caps reset at UTC midnight via the `(email, date)` unique index
@@ -133,9 +133,9 @@ and the sign-in form displays the cooldown directly.
 
 Per-sender (signed-in user), counted across all orgs they admin:
 
-| Limit | Value |
-| --- | --- |
-| `INVITE_EXPIRY_DAYS` | 3 days |
+| Limit                | Value             |
+| -------------------- | ----------------- |
+| `INVITE_EXPIRY_DAYS` | 3 days            |
 | `INVITE_DAILY_LIMIT` | 100 invites / day |
 
 Sized below the shared Gmail SMTP free quota. A compromised OWNER

@@ -36,7 +36,7 @@ export function InitForm() {
 
   return (
     <Section heading="1. Initialize the SDK">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-muted-foreground text-sm">
         Paste an API key from one of your projects. The SDK posts recorded events to this dashboard&apos;s own ingest
         endpoint.
       </p>
@@ -53,11 +53,11 @@ export function InitForm() {
             data-dozor-mask
           />
         </Field>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-destructive text-sm">{error}</p>}
         {!isInitialized ? (
           <Button type="submit">Initialize</Button>
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             SDK initialized. Use the controls below to start, pause, or identify a user.
           </p>
         )}

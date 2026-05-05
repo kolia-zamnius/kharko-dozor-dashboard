@@ -122,32 +122,32 @@ Copy `.env.example` to `.env.local` and fill in the values. Three tiers:
 
 ### Required
 
-| Variable                | Source                                  | Notes                                                                  |
-| ----------------------- | --------------------------------------- | ---------------------------------------------------------------------- |
-| `APP_URL`               | Your deployed URL                       | e.g. `https://dozor.example.com`. Used in emails and server-side fetch. |
-| `AUTH_URL`              | Same as `APP_URL`                       | Auth.js requires it explicitly.                                        |
-| `AUTH_SECRET`           | `openssl rand -base64 32`               | Random 32-byte secret. Don't reuse across instances.                   |
-| `DATABASE_URL`          | Postgres connection string              | Neon: the **pooled** (`-pooler`) URL. Other hosts: any standard Postgres URL.        |
+| Variable       | Source                     | Notes                                                                         |
+| -------------- | -------------------------- | ----------------------------------------------------------------------------- |
+| `APP_URL`      | Your deployed URL          | e.g. `https://dozor.example.com`. Used in emails and server-side fetch.       |
+| `AUTH_URL`     | Same as `APP_URL`          | Auth.js requires it explicitly.                                               |
+| `AUTH_SECRET`  | `openssl rand -base64 32`  | Random 32-byte secret. Don't reuse across instances.                          |
+| `DATABASE_URL` | Postgres connection string | Neon: the **pooled** (`-pooler`) URL. Other hosts: any standard Postgres URL. |
 
 ### Pick at least one auth provider
 
-| Variable                                | Source                                |
-| --------------------------------------- | ------------------------------------- |
-| `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` | Step 3 — Google                       |
-| `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` | Step 3 — GitHub                       |
-| `GMAIL_USER` + `GMAIL_APP_PASSWORD`     | Step 4 — Email OTP (also: invites)    |
+| Variable                                | Source                             |
+| --------------------------------------- | ---------------------------------- |
+| `AUTH_GOOGLE_ID` + `AUTH_GOOGLE_SECRET` | Step 3 — Google                    |
+| `AUTH_GITHUB_ID` + `AUTH_GITHUB_SECRET` | Step 3 — GitHub                    |
+| `GMAIL_USER` + `GMAIL_APP_PASSWORD`     | Step 4 — Email OTP (also: invites) |
 
 Passkey works as an add-on only — first-time sign-up always goes through one of the email-verifying methods above. Don't ship without at least one.
 
 ### Optional
 
-| Variable                       | Default | Effect                                                                 |
-| ------------------------------ | ------- | ---------------------------------------------------------------------- |
-| `DATABASE_URL_UNPOOLED`        | unset   | Direct (non-pooled) Postgres URL — only used by `prisma migrate` CLI. **Required only on Neon** (their pooled URL doesn't support session-level features migrations need). On any other host the migrator falls back to `DATABASE_URL`. |
+| Variable                       | Default | Effect                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------ | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL_UNPOOLED`        | unset   | Direct (non-pooled) Postgres URL — only used by `prisma migrate` CLI. **Required only on Neon** (their pooled URL doesn't support session-level features migrations need). On any other host the migrator falls back to `DATABASE_URL`.                                                                                                            |
 | `CRON_SECRET`                  | unset   | Bearer token for `/api/cron/*`. Required to actually run the [daily cleanup cron](#8-daily-cleanup-cron-optional) in production — in `NODE_ENV=production` an unset value denies every call with a `401`, so a misconfigured deploy stays safe instead of exposing cascading deletes. Unset is fine locally and on instances that don't wire cron. |
-| `SENTRY_DSN`                   | unset   | Error monitoring. Unset → Sentry no-ops; pino still logs to stdout.    |
-| `LOG_LEVEL`                    | `info`  | pino level (fatal / error / warn / info / debug / trace / silent).     |
-| `NEXT_PUBLIC_KHARKO_DEMO_MODE` | unset   | Shows the "this is a demo" banner. Leave unset on a self-hosted instance. |
+| `SENTRY_DSN`                   | unset   | Error monitoring. Unset → Sentry no-ops; pino still logs to stdout.                                                                                                                                                                                                                                                                                |
+| `LOG_LEVEL`                    | `info`  | pino level (fatal / error / warn / info / debug / trace / silent).                                                                                                                                                                                                                                                                                 |
+| `NEXT_PUBLIC_KHARKO_DEMO_MODE` | unset   | Shows the "this is a demo" banner. Leave unset on a self-hosted instance.                                                                                                                                                                                                                                                                          |
 
 ## 6. Initialize the database
 
@@ -172,9 +172,9 @@ npm run dev
 Open `http://localhost:3000`, sign up with whichever auth method you configured. If it works locally, deploy with confidence. If it doesn't — the error is in front of you immediately, no Vercel logs round-trip.
 
 <Callout type="info">
-  **Don't need `prisma migrate dev`.** That's for contributors editing the schema — it creates new migration files
-  when `prisma/schema.prisma` has uncommitted changes. As a self-hoster running unmodified upstream code, you only ever
-  need `migrate deploy` (and again after pulling upstream commits that include new migrations — see [Updating](#updating)).
+  **Don't need `prisma migrate dev`.** That's for contributors editing the schema — it creates new migration files when
+  `prisma/schema.prisma` has uncommitted changes. As a self-hoster running unmodified upstream code, you only ever need
+  `migrate deploy` (and again after pulling upstream commits that include new migrations — see [Updating](#updating)).
 </Callout>
 
 ## 7. Deploy
@@ -272,16 +272,16 @@ After the domain is live:
 
 Every infra layer the dashboard depends on is wired through a single file. Substituting any of them is small and well-scoped:
 
-| Layer | Default | Swap to | File | Size |
-| --- | --- | --- | --- | --- |
-| Postgres adapter | `@prisma/adapter-neon` | Any Postgres via `@prisma/adapter-pg` | [`src/server/db/client.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/db/client.ts) | ~5 lines |
-| Email transport | Gmail SMTP via Nodemailer | SendGrid / Resend / Postmark / your SMTP | [`src/server/mailer.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/mailer.ts) | ~10 lines |
-| Cron runner | Vercel cron via `vercel.json` | Any external scheduler hitting the endpoint | [`vercel.json`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/vercel.json) (delete) + your cron | 0 code lines |
-| Auth providers | Google + GitHub + email OTP + Passkey | Add Discord / Apple / Microsoft / Twitch / etc. | [`src/server/auth/providers.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/auth/providers.ts) | ~3 lines/provider |
-| Error monitoring | Sentry via `instrumentation.ts` | Datadog / Rollbar / nothing | [`src/instrumentation.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/instrumentation.ts) | ~5 lines |
-| OTP daily / cooldown limits | `5 / day`, `60 s` between sends | Higher / lower | [`src/lib/auth/otp.constants.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/lib/auth/otp.constants.ts) | 1 line each |
-| Invite daily / expiry limits | `100 / day per inviter`, `3 days` TTL | Higher / lower | [`src/api-client/organizations/constants.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/organizations/constants.ts) | 1 line each |
-| Session retention window | `90 days` | Higher / lower | [`src/lib/time.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/lib/time.ts) | 1 line |
+| Layer                        | Default                               | Swap to                                         | File                                                                                                                                                       | Size              |
+| ---------------------------- | ------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| Postgres adapter             | `@prisma/adapter-neon`                | Any Postgres via `@prisma/adapter-pg`           | [`src/server/db/client.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/db/client.ts)                                     | ~5 lines          |
+| Email transport              | Gmail SMTP via Nodemailer             | SendGrid / Resend / Postmark / your SMTP        | [`src/server/mailer.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/mailer.ts)                                           | ~10 lines         |
+| Cron runner                  | Vercel cron via `vercel.json`         | Any external scheduler hitting the endpoint     | [`vercel.json`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/vercel.json) (delete) + your cron                                        | 0 code lines      |
+| Auth providers               | Google + GitHub + email OTP + Passkey | Add Discord / Apple / Microsoft / Twitch / etc. | [`src/server/auth/providers.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/server/auth/providers.ts)                           | ~3 lines/provider |
+| Error monitoring             | Sentry via `instrumentation.ts`       | Datadog / Rollbar / nothing                     | [`src/instrumentation.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/instrumentation.ts)                                       | ~5 lines          |
+| OTP daily / cooldown limits  | `5 / day`, `60 s` between sends       | Higher / lower                                  | [`src/lib/auth/otp.constants.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/lib/auth/otp.constants.ts)                         | 1 line each       |
+| Invite daily / expiry limits | `100 / day per inviter`, `3 days` TTL | Higher / lower                                  | [`src/api-client/organizations/constants.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/organizations/constants.ts) | 1 line each       |
+| Session retention window     | `90 days`                             | Higher / lower                                  | [`src/lib/time.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/lib/time.ts)                                                     | 1 line            |
 
 The pattern: defaults are deliberately a single working choice — not a runtime switch — to keep the core code path linear. If you need a substitution, it's a small edit, not a config flag.
 

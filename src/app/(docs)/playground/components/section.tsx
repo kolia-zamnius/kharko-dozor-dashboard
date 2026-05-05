@@ -11,7 +11,7 @@ export function Section({ heading, description, children }: SectionProps) {
     <section className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold">{heading}</h2>
-        {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="text-muted-foreground mt-1 text-sm">{description}</p>}
       </div>
       {children}
     </section>
