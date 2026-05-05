@@ -315,7 +315,7 @@ model Slice {
   /// 0-based, strictly monotonic per session — primary URL identifier in
   /// the slice-events API routes.
   index          Int
-  /// `init` | `idle` (gap > 30s) | `navigation` (SPA route change). Drives the slice-picker icon.
+  /// `init` | `idle` (gap > 60s) | `navigation` (SPA route change). Drives the slice-picker icon.
   reason         String
   pathname       String
   url            String

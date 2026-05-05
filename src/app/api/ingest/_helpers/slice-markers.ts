@@ -4,25 +4,19 @@ import { prisma } from "@/server/db/client";
 import type { IngestMetadata, IngestSliceMarker } from "./parse-body";
 
 /**
- * One-tx close-then-upsert. URLs sliced to 2048 chars (overflow is almost
- * always tracking params).
+ * Upsert each marker; URLs sliced to 2048 chars (overflow is almost always
+ * tracking params).
+ *
+ * Previous slices are intentionally NOT closed here. `endedAt` is owned by
+ * `insertEventsAndUpdateAggregates`, which sets it from the slice's last
+ * event timestamp. Closing on the next marker's `startedAt` would absorb
+ * the idle gap into the previous slice's duration.
  */
 export async function upsertSliceMarkers(sessionId: string, markers: readonly IngestSliceMarker[]): Promise<void> {
-  const firstMarker = markers[0];
-  if (!firstMarker) return;
-  const prevIndices = [...new Set(markers.filter((m) => m.index > 0).map((m) => m.index - 1))];
-  const firstMarkerTs = firstMarker.startedAt;
+  if (markers.length === 0) return;
 
-  await prisma.$transaction([
-    ...(prevIndices.length > 0
-      ? [
-          prisma.slice.updateMany({
-            where: { sessionId, index: { in: prevIndices }, endedAt: null },
-            data: { endedAt: new Date(firstMarkerTs) },
-          }),
-        ]
-      : []),
-    ...markers.map((marker) =>
+  await prisma.$transaction(
+    markers.map((marker) =>
       prisma.slice.upsert({
         where: { sessionId_index: { sessionId, index: marker.index } },
         create: {
@@ -38,7 +32,7 @@ export async function upsertSliceMarkers(sessionId: string, markers: readonly In
         update: {},
       }),
     ),
-  ]);
+  );
 }
 
 /** Back-compat — pre-marker SDK builds. Events without `sliceIndex` default to 0 during insert. */
