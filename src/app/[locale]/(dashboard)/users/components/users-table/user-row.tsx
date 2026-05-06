@@ -5,6 +5,7 @@ import { TableCell, TableRow } from "@/components/ui/data-display/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/overlays/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
 import { Badge } from "@/components/ui/primitives/badge";
+import { cn } from "@/lib/cn";
 import { trackedUserAvatarUrl } from "@/lib/avatar";
 import type { TrackedUserListItem } from "@/api-client/tracked-users/types";
 import { useFormatters } from "@/lib/use-formatters";
@@ -43,7 +44,14 @@ export function UserRow({ user }: { user: TrackedUserListItem }) {
             <AvatarFallback>{user.externalId.slice(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium group-hover:underline">{user.displayName}</p>
+            <p
+              className={cn(
+                "text-primary truncate text-sm font-medium group-hover:underline",
+                user.displayName === user.externalId && "font-mono",
+              )}
+            >
+              {user.displayName}
+            </p>
             {showExternalId && <p className="text-muted-foreground truncate font-mono text-xs">{user.externalId}</p>}
             {showEmail && <p className="text-muted-foreground truncate text-xs">{email}</p>}
           </div>
