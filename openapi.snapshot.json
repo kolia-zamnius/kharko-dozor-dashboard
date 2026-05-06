@@ -54,11 +54,6 @@
                         "data": {},
                         "timestamp": {
                           "type": "number"
-                        },
-                        "sliceIndex": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 9007199254740991
                         }
                       },
                       "required": [
@@ -128,47 +123,7 @@
                   },
                   "sliceMarkers": {
                     "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "index": {
-                          "type": "integer",
-                          "minimum": 0,
-                          "maximum": 9007199254740991
-                        },
-                        "reason": {
-                          "type": "string",
-                          "enum": [
-                            "init",
-                            "idle",
-                            "navigation"
-                          ]
-                        },
-                        "startedAt": {
-                          "type": "number"
-                        },
-                        "url": {
-                          "type": "string"
-                        },
-                        "pathname": {
-                          "type": "string"
-                        },
-                        "viewportWidth": {
-                          "type": "number"
-                        },
-                        "viewportHeight": {
-                          "type": "number"
-                        }
-                      },
-                      "required": [
-                        "index",
-                        "reason",
-                        "startedAt",
-                        "url",
-                        "pathname"
-                      ],
-                      "additionalProperties": false
-                    }
+                    "items": {}
                   }
                 },
                 "required": [
@@ -1879,11 +1834,6 @@
                                 "type": "null"
                               }
                             ]
-                          },
-                          "sliceCount": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 9007199254740991
                           }
                         },
                         "required": [
@@ -1898,8 +1848,7 @@
                           "trackedUserId",
                           "userId",
                           "userDisplayName",
-                          "userTraits",
-                          "sliceCount"
+                          "userTraits"
                         ],
                         "additionalProperties": false
                       }
@@ -1938,8 +1887,7 @@
                       "userTraits": {
                         "plan": "pro",
                         "email": "alex@your-app.com"
-                      },
-                      "sliceCount": 3
+                      }
                     }
                   ],
                   "nextCursor": "eyJjcmVhdGVkQXQiOiIyMDI2LTA0LTI2VDEwOjMwOjAwLjAwMFoifQ=="
@@ -1962,7 +1910,7 @@
     "/api/sessions/{sessionId}": {
       "get": {
         "summary": "Full session detail for the replay page",
-        "description": "VIEWER+ of the owning org. Returns metadata + slice list. Events are loaded per-slice via the `/slices/{sliceIndex}/events` sibling endpoint. Legacy pre-slice sessions inline their full event stream so old recordings still play.",
+        "description": "VIEWER+ of the owning org. Returns metadata + the full marker list (timeline anchors). Event stream is loaded separately via the `/events` sibling endpoint as gzip-compressed batches.",
         "tags": [
           "Sessions"
         ],
@@ -2111,115 +2059,23 @@
                         }
                       ]
                     },
-                    "events": {
+                    "markers": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "properties": {
-                          "type": {
-                            "type": "integer",
-                            "minimum": -9007199254740991,
-                            "maximum": 9007199254740991
-                          },
                           "timestamp": {
                             "type": "number"
+                          },
+                          "kind": {
+                            "type": "string"
                           },
                           "data": {}
                         },
                         "required": [
-                          "type",
                           "timestamp",
+                          "kind",
                           "data"
-                        ],
-                        "additionalProperties": false
-                      }
-                    },
-                    "slices": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "id": {
-                            "type": "string"
-                          },
-                          "index": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 9007199254740991
-                          },
-                          "reason": {
-                            "type": "string",
-                            "enum": [
-                              "init",
-                              "idle",
-                              "navigation"
-                            ]
-                          },
-                          "pathname": {
-                            "type": "string"
-                          },
-                          "url": {
-                            "type": "string"
-                          },
-                          "viewportWidth": {
-                            "anyOf": [
-                              {
-                                "type": "integer",
-                                "exclusiveMinimum": 0,
-                                "maximum": 9007199254740991
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "viewportHeight": {
-                            "anyOf": [
-                              {
-                                "type": "integer",
-                                "exclusiveMinimum": 0,
-                                "maximum": 9007199254740991
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "startedAt": {
-                            "type": "string"
-                          },
-                          "endedAt": {
-                            "anyOf": [
-                              {
-                                "type": "string"
-                              },
-                              {
-                                "type": "null"
-                              }
-                            ]
-                          },
-                          "duration": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "eventCount": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 9007199254740991
-                          }
-                        },
-                        "required": [
-                          "id",
-                          "index",
-                          "reason",
-                          "pathname",
-                          "url",
-                          "viewportWidth",
-                          "viewportHeight",
-                          "startedAt",
-                          "endedAt",
-                          "duration",
-                          "eventCount"
                         ],
                         "additionalProperties": false
                       }
@@ -2243,8 +2099,7 @@
                     "trackedUserId",
                     "userId",
                     "userTraits",
-                    "events",
-                    "slices"
+                    "markers"
                   ],
                   "additionalProperties": false
                 },
@@ -2269,33 +2124,22 @@
                     "plan": "pro",
                     "email": "alex@your-app.com"
                   },
-                  "events": [],
-                  "slices": [
+                  "markers": [
                     {
-                      "id": "sli_111",
-                      "index": 0,
-                      "reason": "init",
-                      "pathname": "/checkout",
-                      "url": "https://your-app.com/checkout",
-                      "viewportWidth": 1440,
-                      "viewportHeight": 900,
-                      "startedAt": "2026-04-26T10:30:00.000Z",
-                      "endedAt": "2026-04-26T10:31:18.420Z",
-                      "duration": 78420,
-                      "eventCount": 612
+                      "timestamp": 1761480000000,
+                      "kind": "url",
+                      "data": {
+                        "url": "https://your-app.com/checkout",
+                        "pathname": "/checkout"
+                      }
                     },
                     {
-                      "id": "sli_222",
-                      "index": 1,
-                      "reason": "navigation",
-                      "pathname": "/checkout/payment",
-                      "url": "https://your-app.com/checkout/payment",
-                      "viewportWidth": 1440,
-                      "viewportHeight": 900,
-                      "startedAt": "2026-04-26T10:31:18.420Z",
-                      "endedAt": "2026-04-26T10:33:04.320Z",
-                      "duration": 105900,
-                      "eventCount": 635
+                      "timestamp": 1761480078420,
+                      "kind": "url",
+                      "data": {
+                        "url": "https://your-app.com/checkout/payment",
+                        "pathname": "/checkout/payment"
+                      }
                     }
                   ]
                 }
@@ -2315,7 +2159,7 @@
       },
       "delete": {
         "summary": "Hard-delete a session",
-        "description": "ADMIN+ (not OWNER) — QA / staging cleanup loops stay unblocked without an owner on call. Cascades slices and events.",
+        "description": "ADMIN+ (not OWNER) — QA / staging cleanup loops stay unblocked without an owner on call. Cascades event batches and markers.",
         "tags": [
           "Sessions"
         ],
@@ -2346,10 +2190,10 @@
         }
       }
     },
-    "/api/sessions/{sessionId}/slices/{sliceIndex}/events": {
+    "/api/sessions/{sessionId}/events": {
       "get": {
-        "summary": "Stream rrweb events for a single slice",
-        "description": "VIEWER+. Loaded on demand by the replay viewer as the user scrubs into a slice — avoids shipping the full event log upfront for long multi-slice sessions. Events are timestamp-ascending so the rrweb Replayer consumes them as a stream.",
+        "summary": "Stream rrweb events as gzip-compressed batches",
+        "description": "VIEWER+. Returns every `EventBatch` row for the session, ordered by `firstTimestamp`. The client decompresses each `data` (base64 + gzip), concatenates the events, and feeds them to rrweb.Replayer.",
         "tags": [
           "Sessions"
         ],
@@ -2362,92 +2206,81 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "in": "path",
-            "name": "sliceIndex",
-            "required": true,
-            "description": "0-based slice index within the session",
-            "schema": {
-              "type": "integer"
-            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Event stream for the slice",
+            "description": "Event-batch list",
             "content": {
               "application/json": {
                 "schema": {
                   "$schema": "https://json-schema.org/draft/2020-12/schema",
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "type": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "timestamp": {
-                        "type": "number"
-                      },
-                      "data": {}
-                    },
-                    "required": [
-                      "type",
-                      "timestamp",
-                      "data"
-                    ],
-                    "additionalProperties": false
-                  }
-                },
-                "example": [
-                  {
-                    "type": 4,
-                    "timestamp": 1761480000000,
-                    "data": {
-                      "href": "https://your-app.com/checkout",
-                      "width": 1440,
-                      "height": 900
-                    }
-                  },
-                  {
-                    "type": 2,
-                    "timestamp": 1761480000050,
-                    "data": {
-                      "node": {
-                        "type": 0,
-                        "childNodes": [],
-                        "id": 1
-                      },
-                      "initialOffset": {
-                        "left": 0,
-                        "top": 0
+                  "type": "object",
+                  "properties": {
+                    "batches": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "firstTimestamp": {
+                            "type": "number"
+                          },
+                          "lastTimestamp": {
+                            "type": "number"
+                          },
+                          "eventCount": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "data": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "firstTimestamp",
+                          "lastTimestamp",
+                          "eventCount",
+                          "data"
+                        ],
+                        "additionalProperties": false
                       }
-                    }
-                  },
-                  {
-                    "type": 3,
-                    "timestamp": 1761480001234,
-                    "data": {
-                      "source": 1,
-                      "positions": [
+                    },
+                    "nextCursor": {
+                      "anyOf": [
                         {
-                          "x": 412,
-                          "y": 318,
-                          "id": 17,
-                          "timeOffset": 0
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
                         }
                       ]
                     }
-                  }
-                ]
+                  },
+                  "required": [
+                    "batches",
+                    "nextCursor"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "batches": [
+                    {
+                      "id": "ebt_111",
+                      "firstTimestamp": 1761480000000,
+                      "lastTimestamp": 1761480060000,
+                      "eventCount": 250,
+                      "data": "<base64-gzip>"
+                    }
+                  ],
+                  "nextCursor": null
+                }
               }
             }
-          },
-          "400": {
-            "description": "Invalid `sliceIndex` (not a non-negative integer)"
           },
           "401": {
             "description": "Not authenticated"
@@ -2456,7 +2289,88 @@
             "description": "Caller is not a VIEWER+ of the owning organisation"
           },
           "404": {
-            "description": "Session or slice not found"
+            "description": "Session not found"
+          }
+        }
+      }
+    },
+    "/api/sessions/{sessionId}/markers": {
+      "get": {
+        "summary": "Typed timeline markers extracted from the event stream",
+        "description": "VIEWER+. Returns marker rows ordered by timestamp. Optional `?kind=` filter (e.g. `url`, `identity`).",
+        "tags": [
+          "Sessions"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "description": "Session id (cuid)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Marker list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "markers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "timestamp": {
+                            "type": "number"
+                          },
+                          "kind": {
+                            "type": "string"
+                          },
+                          "data": {}
+                        },
+                        "required": [
+                          "timestamp",
+                          "kind",
+                          "data"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "markers"
+                  ],
+                  "additionalProperties": false
+                },
+                "example": {
+                  "markers": [
+                    {
+                      "timestamp": 1761480000000,
+                      "kind": "url",
+                      "data": {
+                        "url": "https://your-app.com/checkout",
+                        "pathname": "/checkout"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "403": {
+            "description": "Caller is not a VIEWER+ of the owning organisation"
+          },
+          "404": {
+            "description": "Session not found"
           }
         }
       }
@@ -3504,11 +3418,6 @@
                                 "type": "null"
                               }
                             ]
-                          },
-                          "sliceCount": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 9007199254740991
                           }
                         },
                         "required": [
@@ -3523,8 +3432,7 @@
                           "trackedUserId",
                           "userId",
                           "userDisplayName",
-                          "userTraits",
-                          "sliceCount"
+                          "userTraits"
                         ],
                         "additionalProperties": false
                       }
@@ -3560,8 +3468,7 @@
                       "trackedUserId": "tu_t5u6v7w8",
                       "userId": "usr_abc123",
                       "userDisplayName": null,
-                      "userTraits": null,
-                      "sliceCount": 3
+                      "userTraits": null
                     }
                   ],
                   "nextCursor": null
@@ -3739,7 +3646,7 @@
                               }
                             ]
                           },
-                          "slices": {
+                          "periods": {
                             "type": "array",
                             "items": {
                               "type": "object",
@@ -3748,9 +3655,6 @@
                                   "type": "string"
                                 },
                                 "pathname": {
-                                  "type": "string"
-                                },
-                                "reason": {
                                   "type": "string"
                                 },
                                 "startedAt": {
@@ -3774,7 +3678,6 @@
                               "required": [
                                 "url",
                                 "pathname",
-                                "reason",
                                 "startedAt",
                                 "endedAt",
                                 "duration"
@@ -3790,7 +3693,7 @@
                           "endedAt",
                           "duration",
                           "url",
-                          "slices"
+                          "periods"
                         ],
                         "additionalProperties": false
                       }
@@ -3823,11 +3726,10 @@
                       "endedAt": "2026-04-26T10:33:04.320Z",
                       "duration": 184320,
                       "url": "https://your-app.com/checkout",
-                      "slices": [
+                      "periods": [
                         {
                           "url": "https://your-app.com/checkout",
                           "pathname": "/checkout",
-                          "reason": "init",
                           "startedAt": "2026-04-26T10:30:00.000Z",
                           "endedAt": "2026-04-26T10:31:18.420Z",
                           "duration": 78420
@@ -3835,7 +3737,6 @@
                         {
                           "url": "https://your-app.com/checkout/payment",
                           "pathname": "/checkout/payment",
-                          "reason": "navigation",
                           "startedAt": "2026-04-26T10:31:18.420Z",
                           "endedAt": "2026-04-26T10:33:04.320Z",
                           "duration": 105900

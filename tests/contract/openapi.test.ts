@@ -43,7 +43,8 @@ import {
 import {
   paginatedSessionsSchema,
   sessionDetailSchema,
-  sessionEventListSchema,
+  sessionEventsResponseSchema,
+  sessionMarkersResponseSchema,
   sessionsSummarySchema,
 } from "@/api-client/sessions/response-schemas";
 import { sessionListParamsSchema } from "@/api-client/sessions/validators";
@@ -887,7 +888,6 @@ const manifest: OperationManifest[] = [
               userId: "usr_abc123",
               userDisplayName: "alex@your-app.com",
               userTraits: { plan: "pro", email: "alex@your-app.com" },
-              sliceCount: 3,
             },
           ],
           nextCursor: "eyJjcmVhdGVkQXQiOiIyMDI2LTA0LTI2VDEwOjMwOjAwLjAwMFoifQ==",
@@ -903,7 +903,7 @@ const manifest: OperationManifest[] = [
     method: "get",
     summary: "Full session detail for the replay page",
     description:
-      "VIEWER+ of the owning org. Returns metadata + slice list. Events are loaded per-slice via the `/slices/{sliceIndex}/events` sibling endpoint. Legacy pre-slice sessions inline their full event stream so old recordings still play.",
+      "VIEWER+ of the owning org. Returns metadata + the full marker list (timeline anchors). Event stream is loaded separately via the `/events` sibling endpoint as gzip-compressed batches.",
     auth: "session",
     pathParams: [{ name: "sessionId", description: "Session id (cuid)" }],
     tags: ["Sessions"],
@@ -930,34 +930,16 @@ const manifest: OperationManifest[] = [
           trackedUserId: "tu_t5u6v7w8",
           userId: "usr_abc123",
           userTraits: { plan: "pro", email: "alex@your-app.com" },
-          // Empty for modern recordings — slice events ship via the per-slice endpoint.
-          events: [],
-          slices: [
+          markers: [
             {
-              id: "sli_111",
-              index: 0,
-              reason: "init",
-              pathname: "/checkout",
-              url: "https://your-app.com/checkout",
-              viewportWidth: 1440,
-              viewportHeight: 900,
-              startedAt: "2026-04-26T10:30:00.000Z",
-              endedAt: "2026-04-26T10:31:18.420Z",
-              duration: 78_420,
-              eventCount: 612,
+              timestamp: 1761480000000,
+              kind: "url",
+              data: { url: "https://your-app.com/checkout", pathname: "/checkout" },
             },
             {
-              id: "sli_222",
-              index: 1,
-              reason: "navigation",
-              pathname: "/checkout/payment",
-              url: "https://your-app.com/checkout/payment",
-              viewportWidth: 1440,
-              viewportHeight: 900,
-              startedAt: "2026-04-26T10:31:18.420Z",
-              endedAt: "2026-04-26T10:33:04.320Z",
-              duration: 105_900,
-              eventCount: 635,
+              timestamp: 1761480078420,
+              kind: "url",
+              data: { url: "https://your-app.com/checkout/payment", pathname: "/checkout/payment" },
             },
           ],
         },
@@ -972,7 +954,7 @@ const manifest: OperationManifest[] = [
     method: "delete",
     summary: "Hard-delete a session",
     description:
-      "ADMIN+ (not OWNER) — QA / staging cleanup loops stay unblocked without an owner on call. Cascades slices and events.",
+      "ADMIN+ (not OWNER) — QA / staging cleanup loops stay unblocked without an owner on call. Cascades event batches and markers.",
     auth: "session",
     pathParams: [{ name: "sessionId", description: "Session id (cuid)" }],
     tags: ["Sessions"],
@@ -984,43 +966,62 @@ const manifest: OperationManifest[] = [
     },
   },
   {
-    path: "/api/sessions/[sessionId]/slices/[sliceIndex]/events",
+    path: "/api/sessions/[sessionId]/events",
     method: "get",
-    summary: "Stream rrweb events for a single slice",
+    summary: "Stream rrweb events as gzip-compressed batches",
     description:
-      "VIEWER+. Loaded on demand by the replay viewer as the user scrubs into a slice — avoids shipping the full event log upfront for long multi-slice sessions. Events are timestamp-ascending so the rrweb Replayer consumes them as a stream.",
+      "VIEWER+. Returns every `EventBatch` row for the session, ordered by `firstTimestamp`. The client decompresses each `data` (base64 + gzip), concatenates the events, and feeds them to rrweb.Replayer.",
     auth: "session",
-    pathParams: [
-      { name: "sessionId", description: "Session id (cuid)" },
-      { name: "sliceIndex", description: "0-based slice index within the session", schema: { type: "integer" } },
-    ],
+    pathParams: [{ name: "sessionId", description: "Session id (cuid)" }],
     tags: ["Sessions"],
     responses: {
       "200": {
-        description: "Event stream for the slice",
-        schema: sessionEventListSchema,
-        example: [
-          {
-            type: 4,
-            timestamp: 1761480000000,
-            data: { href: "https://your-app.com/checkout", width: 1440, height: 900 },
-          },
-          {
-            type: 2,
-            timestamp: 1761480000050,
-            data: { node: { type: 0, childNodes: [], id: 1 }, initialOffset: { left: 0, top: 0 } },
-          },
-          {
-            type: 3,
-            timestamp: 1761480001234,
-            data: { source: 1, positions: [{ x: 412, y: 318, id: 17, timeOffset: 0 }] },
-          },
-        ],
+        description: "Event-batch list",
+        schema: sessionEventsResponseSchema,
+        example: {
+          batches: [
+            {
+              id: "ebt_111",
+              firstTimestamp: 1761480000000,
+              lastTimestamp: 1761480060000,
+              eventCount: 250,
+              data: "<base64-gzip>",
+            },
+          ],
+          nextCursor: null,
+        },
       },
-      "400": { description: "Invalid `sliceIndex` (not a non-negative integer)" },
       "401": { description: "Not authenticated" },
       "403": { description: "Caller is not a VIEWER+ of the owning organisation" },
-      "404": { description: "Session or slice not found" },
+      "404": { description: "Session not found" },
+    },
+  },
+  {
+    path: "/api/sessions/[sessionId]/markers",
+    method: "get",
+    summary: "Typed timeline markers extracted from the event stream",
+    description:
+      "VIEWER+. Returns marker rows ordered by timestamp. Optional `?kind=` filter (e.g. `url`, `identity`).",
+    auth: "session",
+    pathParams: [{ name: "sessionId", description: "Session id (cuid)" }],
+    tags: ["Sessions"],
+    responses: {
+      "200": {
+        description: "Marker list",
+        schema: sessionMarkersResponseSchema,
+        example: {
+          markers: [
+            {
+              timestamp: 1761480000000,
+              kind: "url",
+              data: { url: "https://your-app.com/checkout", pathname: "/checkout" },
+            },
+          ],
+        },
+      },
+      "401": { description: "Not authenticated" },
+      "403": { description: "Caller is not a VIEWER+ of the owning organisation" },
+      "404": { description: "Session not found" },
     },
   },
   {
@@ -1257,7 +1258,6 @@ const manifest: OperationManifest[] = [
               userId: "usr_abc123",
               userDisplayName: null,
               userTraits: null,
-              sliceCount: 3,
             },
           ],
           nextCursor: null,
@@ -1314,11 +1314,10 @@ const manifest: OperationManifest[] = [
               endedAt: "2026-04-26T10:33:04.320Z",
               duration: 184_320,
               url: "https://your-app.com/checkout",
-              slices: [
+              periods: [
                 {
                   url: "https://your-app.com/checkout",
                   pathname: "/checkout",
-                  reason: "init",
                   startedAt: "2026-04-26T10:30:00.000Z",
                   endedAt: "2026-04-26T10:31:18.420Z",
                   duration: 78_420,
@@ -1326,7 +1325,6 @@ const manifest: OperationManifest[] = [
                 {
                   url: "https://your-app.com/checkout/payment",
                   pathname: "/checkout/payment",
-                  reason: "navigation",
                   startedAt: "2026-04-26T10:31:18.420Z",
                   endedAt: "2026-04-26T10:33:04.320Z",
                   duration: 105_900,

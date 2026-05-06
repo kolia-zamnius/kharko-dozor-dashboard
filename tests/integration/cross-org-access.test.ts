@@ -14,7 +14,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { PrismaClient } from "@/generated/prisma/client";
 
 import * as sessionRoute from "@/app/api/sessions/[sessionId]/route";
-import * as sliceEventsRoute from "@/app/api/sessions/[sessionId]/slices/[sliceIndex]/events/route";
+import * as sessionEventsRoute from "@/app/api/sessions/[sessionId]/events/route";
 import * as trackedUserRoute from "@/app/api/tracked-users/[userId]/route";
 import * as trackedUserActivityRoute from "@/app/api/tracked-users/[userId]/activity/route";
 import * as trackedUserSessionsRoute from "@/app/api/tracked-users/[userId]/sessions/route";
@@ -61,20 +61,10 @@ describe("cross-org access guard", () => {
     const projectB = await createProject({ organization: orgB });
     const trackedUser = await createTrackedUser({ project: projectB });
     const session = await createSession({ project: projectB, trackedUser });
-    const slice = await prisma.slice.create({
-      data: {
-        sessionId: session.id,
-        index: 0,
-        reason: "init",
-        pathname: "/",
-        url: "https://example.com/",
-        startedAt: new Date(),
-      },
-    });
 
     mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: actor.id, activeOrganizationId: orgA.id })));
 
-    return { actor, orgA, orgB, projectB, trackedUser, session, slice };
+    return { actor, orgA, orgB, projectB, trackedUser, session };
   }
 
   it("GET /api/sessions/[id] returns 404 for a foreign-org session", async () => {
@@ -98,11 +88,11 @@ describe("cross-org access guard", () => {
     expect(await prisma.session.findUnique({ where: { id: session.id } })).not.toBeNull();
   });
 
-  it("GET /api/sessions/[id]/slices/[i]/events returns 404 for a foreign-org session", async () => {
+  it("GET /api/sessions/[id]/events returns 404 for a foreign-org session", async () => {
     const { session } = await seedActorWithForeignResource();
-    const { status } = await invokeRouteWithParams(sliceEventsRoute.GET, {
+    const { status } = await invokeRouteWithParams(sessionEventsRoute.GET, {
       method: "GET",
-      params: { sessionId: session.id, sliceIndex: "0" },
+      params: { sessionId: session.id },
     });
     expect(status).toBe(404);
   });

@@ -81,7 +81,7 @@ describe("POST /api/ingest", () => {
     await prisma.$disconnect();
   });
 
-  it("creates a Session + Slice + Events for a valid batch", async () => {
+  it("creates a Session + EventBatch + initial url Marker for a valid batch", async () => {
     const alice = await createUser();
     const team = await createOrganization({ owner: alice });
     const project = await createProject({ organization: team });
@@ -105,12 +105,14 @@ describe("POST /api/ingest", () => {
     });
     expect(session).not.toBeNull();
 
-    const slices = await prisma.slice.findMany({ where: { sessionId: session!.id } });
-    expect(slices).toHaveLength(1);
-    expect(slices[0]?.index).toBe(0);
+    const batches = await prisma.eventBatch.findMany({ where: { sessionId: session!.id } });
+    expect(batches).toHaveLength(1);
+    expect(batches[0]?.eventCount).toBe(3);
 
-    const eventCount = await prisma.event.count({ where: { sessionId: session!.id } });
-    expect(eventCount).toBe(3);
+    const markers = await prisma.marker.findMany({
+      where: { sessionId: session!.id, kind: "url" },
+    });
+    expect(markers.length).toBeGreaterThanOrEqual(1);
   });
 
   it("decompresses a gzip batch transparently", async () => {
