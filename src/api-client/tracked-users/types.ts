@@ -6,8 +6,8 @@ import type {
   activitySummarySchema,
   pageDistributionSchema,
   paginatedTrackedUsersSchema,
+  timelinePeriodSchema,
   timelineSessionSchema,
-  timelineSliceSchema,
   trackedUserDetailSchema,
   trackedUserListItemSchema,
   trackedUsersSummarySchema,
@@ -29,7 +29,7 @@ export type PageDistribution = z.infer<typeof pageDistributionSchema>;
 export type ActivitySummary = z.infer<typeof activitySummarySchema>;
 export type UserActivity = z.infer<typeof userActivitySchema>;
 
-export type TimelineSlice = z.infer<typeof timelineSliceSchema>;
+export type TimelinePeriod = z.infer<typeof timelinePeriodSchema>;
 export type TimelineSession = z.infer<typeof timelineSessionSchema>;
 export type UserTimeline = z.infer<typeof userTimelineSchema>;
 

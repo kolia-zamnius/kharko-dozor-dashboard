@@ -1,34 +1,35 @@
 import { z } from "zod";
 
 /**
- * Output DTOs. `Slice.reason` narrowed to a closed enum (`init` / `idle` /
- * `navigation`) so ingest + replay can't drift on new values silently.
- * `userTraits` and `SessionEvent.data` stay `z.unknown()` — traits come from
- * customer SDK code (any shape), rrweb event payloads are discriminated by
- * `rrweb.Replayer` and we don't duplicate that contract.
+ * Output DTOs. `userTraits`, `Marker.data`, and `EventBatch` payloads stay
+ * `z.unknown()` — traits come from customer SDK code (any shape), event blobs
+ * are gzip-compressed JSON consumed by rrweb.Replayer client-side, marker
+ * payloads are typed per `kind` outside this schema.
  */
 
-export const sliceInfoSchema = z.object({
-  id: z.string(),
-  index: z.number().int().nonnegative(),
-  reason: z.enum(["init", "idle", "navigation"]),
-  pathname: z.string(),
-  url: z.string(),
-  viewportWidth: z.number().int().positive().nullable(),
-  viewportHeight: z.number().int().positive().nullable(),
-  startedAt: z.string(),
-  endedAt: z.string().nullable(),
-  duration: z.number().nonnegative(),
-  eventCount: z.number().int().nonnegative(),
-});
-
-export const sessionEventSchema = z.object({
-  type: z.number().int(),
+export const markerSchema = z.object({
   timestamp: z.number(),
+  kind: z.string(),
   data: z.unknown(),
 });
 
-export const sessionEventListSchema = z.array(sessionEventSchema);
+export const eventBatchEnvelopeSchema = z.object({
+  id: z.string(),
+  firstTimestamp: z.number(),
+  lastTimestamp: z.number(),
+  eventCount: z.number().int().nonnegative(),
+  /** Base64-encoded gzip blob — client decompresses via `DecompressionStream`. */
+  data: z.string(),
+});
+
+export const sessionEventsResponseSchema = z.object({
+  batches: z.array(eventBatchEnvelopeSchema),
+  nextCursor: z.string().nullable(),
+});
+
+export const sessionMarkersResponseSchema = z.object({
+  markers: z.array(markerSchema),
+});
 
 export const sessionListItemSchema = z.object({
   id: z.string(),
@@ -43,7 +44,6 @@ export const sessionListItemSchema = z.object({
   userId: z.string().nullable(),
   userDisplayName: z.string().nullable(),
   userTraits: z.record(z.string(), z.unknown()).nullable(),
-  sliceCount: z.number().int().nonnegative(),
 });
 
 export const sessionDetailSchema = z.object({
@@ -64,8 +64,7 @@ export const sessionDetailSchema = z.object({
   trackedUserId: z.string().nullable(),
   userId: z.string().nullable(),
   userTraits: z.record(z.string(), z.unknown()).nullable(),
-  events: z.array(sessionEventSchema),
-  slices: z.array(sliceInfoSchema),
+  markers: z.array(markerSchema),
 });
 
 export const paginatedSessionsSchema = z.object({

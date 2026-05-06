@@ -1,11 +1,7 @@
 import type { SessionListParams } from "./types";
 
-/**
- * Extra `"list"` level isolates list invalidation — `lists()` nukes every
- * filter / sort combo without touching `details()` or slice-event caches.
- * `SessionListParams` is imported from `./types` so the same shape feeds the
- * `queryFn` in `queries.ts` and the cache key here.
- */
+// Extra `"list"` level isolates list invalidation — `lists()` nukes every
+// filter / sort combo without touching `details()` or events caches.
 export const sessionKeys = {
   all: () => ["sessions"] as const,
 
@@ -17,8 +13,6 @@ export const sessionKeys = {
   details: () => [...sessionKeys.all(), "detail"] as const,
   detail: (sessionId: string) => [...sessionKeys.details(), sessionId] as const,
 
-  /** Invalidate across all slice indices for one session — e.g. after a snapshot bump. */
-  sliceEventsBySession: (sessionId: string) => [...sessionKeys.all(), "sliceEvents", sessionId] as const,
-  sliceEvents: (sessionId: string, sliceIndex: number) =>
-    [...sessionKeys.sliceEventsBySession(sessionId), sliceIndex] as const,
+  events: (sessionId: string) => [...sessionKeys.all(), "events", sessionId] as const,
+  markers: (sessionId: string) => [...sessionKeys.all(), "markers", sessionId] as const,
 };

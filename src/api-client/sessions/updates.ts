@@ -5,24 +5,16 @@ import { assertNever } from "@/lib/assert-never";
 import type { SessionDetail } from "./types";
 
 /** Discriminated `type` so consumers exhaustively switch — adding a variant flags every site. */
-export type SessionUpdate =
-  | { type: "new-slices"; count: number }
-  | { type: "new-events"; count: number }
-  | { type: "ended" };
+export type SessionUpdate = { type: "new-events"; count: number } | { type: "ended" };
 
 /**
  * Compares the admin's on-screen snapshot against the latest server state.
- * Order matches the tooltip template: slices → events → ended. Shallow on
- * purpose — server only appends, never mutates historical slices. Empty array
- * = no updates (callers can use `length > 0` as the has-updates flag).
+ * Order matches the tooltip template: events → ended. Server only appends, so
+ * shallow comparison is enough. Empty array = no updates (callers use
+ * `length > 0` as the has-updates flag).
  */
 export function detectSessionUpdates(snapshot: SessionDetail, latest: SessionDetail): SessionUpdate[] {
   const updates: SessionUpdate[] = [];
-
-  const newSliceCount = latest.slices.length - snapshot.slices.length;
-  if (newSliceCount > 0) {
-    updates.push({ type: "new-slices", count: newSliceCount });
-  }
 
   const newEventCount = latest.eventCount - snapshot.eventCount;
   if (newEventCount > 0) {
@@ -49,9 +41,6 @@ export function formatUpdateTooltip(updates: SessionUpdate[], t: UpdateTooltipTr
   const parts: string[] = [];
   for (const update of updates) {
     switch (update.type) {
-      case "new-slices":
-        parts.push(t("newSlices", { count: update.count }));
-        break;
       case "new-events":
         parts.push(t("newEvents", { count: update.count }));
         break;

@@ -3,7 +3,14 @@ import { pollingOptions } from "@/api-client/polling";
 import { routes } from "@/api-client/routes";
 import { keepPreviousData, queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { sessionKeys } from "./keys";
-import type { PaginatedSessions, SessionDetail, SessionEvent, SessionListParams, SessionsSummary } from "./types";
+import type {
+  PaginatedSessions,
+  SessionDetail,
+  SessionEventsResponse,
+  SessionListParams,
+  SessionMarkersResponse,
+  SessionsSummary,
+} from "./types";
 import { DEFAULT_SESSION_DATE_RANGE, SESSION_DETAIL_POLL_MS, SESSIONS_LIST_POLL_MS } from "./domain";
 
 function buildSessionsUrl(params: SessionListParams): string {
@@ -25,8 +32,6 @@ export const sessionQueries = {
       queryKey: sessionKeys.list(params),
       queryFn: ({ signal }) => apiFetch<PaginatedSessions>(buildSessionsUrl(params), { signal }),
       ...pollingOptions(SESSIONS_LIST_POLL_MS),
-      // Filter / sort / cursor changes create new keys — keep previous data visible
-      // so the table never flashes empty during the next-page fetch.
       placeholderData: keepPreviousData,
     }),
   summary: () =>
@@ -39,17 +44,23 @@ export const sessionQueries = {
     queryOptions({
       queryKey: sessionKeys.detail(sessionId),
       queryFn: ({ signal }) => apiFetch<SessionDetail>(routes.sessions.detail(sessionId), { signal }),
-      // `staleTime: 0` so the interval tick reaches the server — the player freezes
+      // `staleTime: 0` lets the interval tick reach the server — the player freezes
       // on its own snapshot, the poll only refreshes the "latest" reference for the
-      // refresh-button diff. `background: true` because admins commonly pop DevTools
-      // into a separate window (tab blur) and still expect the orange dot to light up.
+      // refresh-button diff. `background: true` so DevTools-in-side-window admins
+      // still see the orange dot light up.
       ...pollingOptions(SESSION_DETAIL_POLL_MS, { staleTime: 0, background: true }),
     }),
-  sliceEvents: (sessionId: string, sliceIndex: number) =>
+  events: (sessionId: string) =>
     queryOptions({
-      queryKey: sessionKeys.sliceEvents(sessionId, sliceIndex),
-      queryFn: ({ signal }) => apiFetch<SessionEvent[]>(routes.sessions.sliceEvents(sessionId, sliceIndex), { signal }),
-      // Slice events are immutable once captured — no polling, no expiry.
+      queryKey: sessionKeys.events(sessionId),
+      queryFn: ({ signal }) => apiFetch<SessionEventsResponse>(routes.sessions.events(sessionId), { signal }),
+      // Events are immutable once captured.
+      staleTime: Infinity,
+    }),
+  markers: (sessionId: string) =>
+    queryOptions({
+      queryKey: sessionKeys.markers(sessionId),
+      queryFn: ({ signal }) => apiFetch<SessionMarkersResponse>(routes.sessions.markers(sessionId), { signal }),
       staleTime: Infinity,
     }),
 };
@@ -73,6 +84,10 @@ export function useSessionQuery(sessionId: string) {
   return useQuery(sessionQueries.detail(sessionId));
 }
 
-export function useSliceEventsQuery(sessionId: string, sliceIndex: number) {
-  return useQuery(sessionQueries.sliceEvents(sessionId, sliceIndex));
+export function useSessionEventsQuery(sessionId: string) {
+  return useQuery(sessionQueries.events(sessionId));
+}
+
+export function useSessionMarkersQuery(sessionId: string) {
+  return useQuery(sessionQueries.markers(sessionId));
 }

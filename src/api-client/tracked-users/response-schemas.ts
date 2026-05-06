@@ -93,10 +93,9 @@ export const userActivitySchema = z.object({
   summary: activitySummarySchema,
 });
 
-export const timelineSliceSchema = z.object({
+export const timelinePeriodSchema = z.object({
   url: z.string(),
   pathname: z.string(),
-  reason: z.string(),
   startedAt: z.string(),
   endedAt: z.string().nullable(),
   duration: z.number().nonnegative(),
@@ -109,7 +108,7 @@ export const timelineSessionSchema = z.object({
   endedAt: z.string().nullable(),
   duration: z.number().nonnegative(),
   url: z.string().nullable(),
-  slices: z.array(timelineSliceSchema),
+  periods: z.array(timelinePeriodSchema),
 });
 
 export const userTimelineSchema = z.object({
