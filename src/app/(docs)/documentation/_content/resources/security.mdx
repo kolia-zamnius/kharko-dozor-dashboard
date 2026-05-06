@@ -132,9 +132,9 @@ the daily cleanup cron at 03:30 UTC. The retention period is a single
 constant in `src/lib/time.ts` — change it once, redeploy, the cron
 honours the new value.
 
-When a session is deleted, its slices and events are cascade-deleted
-too (Prisma `onDelete: Cascade`). The session is **gone** — no soft
-delete tombstone.
+When a session is deleted, its event batches and markers are
+cascade-deleted too (Prisma `onDelete: Cascade`). The session is
+**gone** — no soft delete tombstone.
 
 ### Tracked users
 

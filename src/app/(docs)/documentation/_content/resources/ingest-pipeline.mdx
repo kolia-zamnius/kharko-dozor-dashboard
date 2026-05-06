@@ -60,22 +60,22 @@ one of these triggers:
 | Page unload           | `beforeunload` / `pagehide`                      |
 | Manual `release()`    | When transport was held                          |
 
-### Slice marker emission
+### In-stream marker events
 
-The SDK emits a slice marker on:
+The SDK emits rrweb custom events (`type=5`) inline in the event
+stream — no separate channel. Two tags are reserved:
 
-- **Init** — first slice on session start (`reason: "init"`)
-- **Idle gap >60s** — extended period with no DOM mutations
-  (`reason: "idle"`)
-- **Navigation** — pathname change via `popstate`, `pushState`, or
-  `replaceState`, or a hard navigation (`reason: "navigation"`).
-  Hash-only changes (`#anchor`) and query-only rewrites (`?utm=…`)
-  deliberately do **not** fire a marker — they're not real
-  navigations.
+- **`dozor:url`** — fires on SPA navigation (`popstate`, `pushState`,
+  `replaceState`). Payload: `{ url, pathname }`. Hash-only and
+  query-only changes deliberately don't fire — they're not real
+  navigations. Each url marker is followed by an rrweb FullSnapshot
+  (`type=2`) so replay can render the new DOM.
+- **`dozor:identity`** — fires when `dozor.identify(userId, traits)`
+  is called mid-session. Payload: `{ userId, traits? }`. Pre-start
+  identify rides on the first batch's `metadata.userIdentity`
+  instead.
 
-A marker carries `{ index, reason, startedAt, url, pathname,
-viewportWidth, viewportHeight }`. The next batch ships markers
-alongside events.
+The server extracts these tags into typed `Marker` rows on ingest.
 
 ## Stage 2 — Transport (browser → server)
 
@@ -114,16 +114,16 @@ The body is the `IngestPayload` shape:
 ```ts
 {
   sessionId: string;          // UUID, stable per browser session
-  events: rrwebEvent[];       // ≤ 500 per batch
-  metadata?: SessionMetadata; // sent once per session, in the first batch
-  sliceMarkers?: SliceMarker[];
+  events: rrwebEvent[];       // ≤ 500 per batch (incl. `dozor:*` markers)
+  metadata?: SessionMetadata; // first batch + after `identify()`
 }
 ```
 
-`metadata` lands in the first batch only — it carries `url`, `referrer`,
-`userAgent`, `screenWidth`, `screenHeight`, `language`, plus the
-optional `userIdentity: { userId, traits }` from `dozor.identify()`.
-Subsequent batches omit it.
+`metadata` lands in the first batch and is re-shipped after a
+mid-session `identify()` so the server learns the updated identity.
+It carries `url`, `referrer`, `userAgent`, `screenWidth`,
+`screenHeight`, `language`, plus the optional
+`userIdentity: { userId, traits }`.
 
 ### Retry semantics
 
@@ -216,117 +216,76 @@ Key invariants:
   user, batches without `userIdentity` don't unlink. Re-identifying
   with a different `userId` does relink.
 
-### Step 2 — Slice markers
+### Step 2 — EventBatch insert
 
-If the batch ships `sliceMarkers[]`, upsert each one keyed on
-`(sessionId, index)`. Plus a sweep that closes any previous open
-slice (`endedAt: null`) whose index is one less than a new marker:
+The events array is gzip-compressed as a JSON blob and stored in a
+single `EventBatch` row:
 
-```ts title="src/app/api/ingest/_helpers/slice-markers.ts"
-// Close prev slices whose index = (newIndex - 1)
-prisma.slice.updateMany({
-  where: { sessionId, index: { in: prevIndices }, endedAt: null },
-  data: { endedAt: firstMarkerTs },
-});
+```ts title="src/app/api/ingest/_helpers/event-batch.ts"
+const json = JSON.stringify(events);
+const stream = new Blob([json]).stream().pipeThrough(new CompressionStream("gzip"));
+const data = Buffer.from(await new Response(stream).arrayBuffer());
 
-// Upsert new markers
-markers.map((marker) =>
-  prisma.slice.upsert({
-    where: { sessionId_index: { sessionId, index: marker.index } },
-    create: { sessionId, index, reason, url, pathname, ..., startedAt },
-    update: {},
-  }),
-);
-```
-
-Wrapped in `prisma.$transaction([...])` so the close-prev + upsert-new
-either both succeed or both roll back.
-
-### Step 2 (alt) — Backward-compat default slice
-
-Older SDK builds that pre-date the slice-marker protocol don't ship
-markers. Fallback: create a default `index: 0` slice once per
-session. Events without a `sliceIndex` default to slice 0.
-
-```ts title="src/app/api/ingest/_helpers/slice-markers.ts"
-prisma.slice.upsert({
-  where: { sessionId_index: { sessionId, index: 0 } },
-  create: { sessionId, index: 0, reason: "init", url, pathname, ..., startedAt: minTimestamp },
-  update: {},
-});
-```
-
-### Step 3 — Slice map for events
-
-Event rows carry both `sliceId` (FK) and `sliceIndex` (denormalised).
-To resolve `sliceId` per event, the route loads the relevant slices
-in one query:
-
-```ts title="src/app/api/ingest/_helpers/events.ts"
-const indices = [...new Set(events.map((e) => e.sliceIndex ?? 0))];
-const rows = await prisma.slice.findMany({
-  where: { sessionId, index: { in: indices } },
-  select: { id: true, index: true, startedAt: true },
-});
-const sliceMap = new Map(rows.map((r) => [r.index, { id: r.id, startedAt: r.startedAt }]));
-```
-
-One round-trip with `IN (...)`, not per-event lookups. The map is
-reused for both event linkage AND aggregate recomputation in step 4.
-
-### Step 4 — Bulk insert events + per-slice aggregates
-
-Single `createMany` for all events:
-
-```ts title="src/app/api/ingest/_helpers/events.ts"
-prisma.event.createMany({
-  data: events.map((e) => ({
+await prisma.eventBatch.create({
+  data: {
     sessionId,
-    sliceId: sliceMap.get(e.sliceIndex ?? 0)?.id ?? null,
-    sliceIndex: e.sliceIndex ?? 0,
-    type: e.type,
-    timestamp: BigInt(e.timestamp),
-    data: e.data as object,
-  })),
+    firstTimestamp: BigInt(min(events.map(e => e.timestamp))),
+    lastTimestamp: BigInt(max(events.map(e => e.timestamp))),
+    eventCount: events.length,
+    data,
+  },
 });
 ```
 
-Then per-slice aggregate updates — counted in JS in one pass over the
-events:
+One INSERT per ingest POST. No row-per-event, no slice aggregates.
+Out-of-order or concurrent batches are non-issues — each lands as
+its own row. Read paths sort by `(sessionId, firstTimestamp ASC, id
+ASC)` to produce a stable replay timeline.
 
-```ts title="src/app/api/ingest/_helpers/events.ts"
-// Fold into Map<sliceIndex, { count, maxTimestamp }>
-const aggregates = new Map();
-for (const e of events) {
-  const idx = e.sliceIndex ?? 0;
-  const agg = aggregates.get(idx);
-  if (agg) {
-    agg.count += 1;
-    if (e.timestamp > agg.maxTimestamp) agg.maxTimestamp = e.timestamp;
-  } else {
-    aggregates.set(idx, { count: 1, maxTimestamp: e.timestamp });
-  }
-}
+### Step 3 — Marker extraction
+
+Scan the batch for rrweb custom events (`type=5`) whose `data.tag`
+starts with `dozor:`. Each match produces a typed `Marker` row:
+
+```ts title="src/app/api/ingest/_helpers/markers.ts"
+const rows = events
+  .filter((e) => e.type === 5 && e.data?.tag?.startsWith("dozor:"))
+  .map((e) => ({
+    sessionId,
+    timestamp: BigInt(e.timestamp),
+    kind: e.data.tag.slice("dozor:".length),  // "url" | "identity"
+    data: e.data.payload,
+  }));
+
+if (rows.length > 0) await prisma.marker.createMany({ data: rows });
 ```
 
-Then update each slice's `eventCount` (increment) + `endedAt` + `duration`:
+Stats queries (page distribution, activity histogram, timeline
+periods) read this table directly — no decompression of event blobs
+needed.
 
-```ts title="src/app/api/ingest/_helpers/events.ts"
-prisma.$transaction(
-  [...aggregates].map(([index, agg]) => {
-    const slice = sliceMap.get(index);
-    return prisma.slice.update({
-      where: { id: slice.id },
-      data: { eventCount: { increment: agg.count }, endedAt, duration },
-    });
-  }),
-);
+### Step 3 (alt) — Initial url marker on session creation
+
+When `upsertSessionAndLinkTrackedUser` reports `wasCreated: true`
+(first batch of a brand-new session), the route synthesises an
+initial `Marker(kind="url")` from `metadata.url`:
+
+```ts title="src/app/api/ingest/_helpers/markers.ts"
+await prisma.marker.create({
+  data: {
+    sessionId,
+    timestamp: BigInt(session.startedAt.getTime()),
+    kind: "url",
+    data: { url: metadata.url, pathname: derivedPathname },
+  },
+});
 ```
 
-Aggregates never desync from event rows mid-batch — they're updated
-in the same `$transaction`.
+This guarantees every session has at least one URL anchor. Stats
+queries can assume "first url-marker = session start" without
+special-casing single-page sessions.
 
-### Step 5 — Fire-and-forget `lastUsedAt`
+### Step 4 — Fire-and-forget `lastUsedAt`
 
 ```ts title="src/app/api/ingest/route.ts"
 prisma.project.update({ where: { id: project.id }, data: { lastUsedAt: new Date() } }).catch(() => {});
@@ -398,9 +357,9 @@ for concrete numbers on when this matters.
 | [`src/app/api/_lib/cors.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/_lib/cors.ts)                                           | OPTIONS preflight + CORS headers                              |
 | [`src/app/api/ingest/_helpers/parse-body.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/parse-body.ts)         | gzip-aware body read + Zod schema                             |
 | [`src/app/api/ingest/_helpers/session-upsert.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/session-upsert.ts) | Step 1 — session upsert + identity link                       |
-| [`src/app/api/ingest/_helpers/slice-markers.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/slice-markers.ts)   | Step 2 — slice marker upsert + default slice fallback         |
-| [`src/app/api/ingest/_helpers/events.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/events.ts)                 | Steps 3 + 4 — slice map + bulk insert + aggregates            |
-| [`prisma/schema.prisma`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/prisma/schema.prisma)                                                   | Tables: `Session`, `Slice`, `Event`, `TrackedUser`, `Project` |
+| [`src/app/api/ingest/_helpers/event-batch.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/event-batch.ts) | Step 2 — gzip + INSERT EventBatch                                       |
+| [`src/app/api/ingest/_helpers/markers.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/api/ingest/_helpers/markers.ts)         | Step 3 — `dozor:*` marker extraction + initial url-marker on first batch |
+| [`prisma/schema.prisma`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/prisma/schema.prisma)                                             | Tables: `Session`, `EventBatch`, `Marker`, `TrackedUser`, `Project`     |
 
 ## See also
 

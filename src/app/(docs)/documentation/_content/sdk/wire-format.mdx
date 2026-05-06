@@ -39,16 +39,16 @@ JSON object, Zod-validated server-side:
 {
   sessionId: string;            // UUID v4, stable per browser session
   events: Event[];              // rrweb events, max 500 per batch
-  metadata?: SessionMetadata;   // sent ONCE in the first batch only
-  sliceMarkers?: SliceMarker[];
-  pageViews?: unknown[];        // legacy field, ignored — kept tolerated for old SDKs
+  metadata?: SessionMetadata;   // first batch + after `identify()`
+  // Legacy fields tolerated for back-compat with @kharko/dozor 1.x clients:
+  sliceMarkers?: unknown[];
+  pageViews?: unknown[];
 }
 
 type Event = {
-  type: number;                 // rrweb event-type discriminator
+  type: number;                 // rrweb event-type discriminator (0–5)
   data: unknown;                // type-specific payload (rrweb's contract)
   timestamp: number;            // ms since epoch
-  sliceIndex?: number;          // 0-based, set on slice creation
 };
 
 type SessionMetadata = {
@@ -63,16 +63,6 @@ type SessionMetadata = {
     traits?: Record<string, unknown>;
   };
 };
-
-type SliceMarker = {
-  index: number;                // 0-based, monotonic per session
-  reason: "init" | "idle" | "navigation";
-  startedAt: number;            // ms since epoch
-  url: string;                  // full URL at slice start
-  pathname: string;             // pathname only
-  viewportWidth?: number;
-  viewportHeight?: number;
-};
 ```
 
 A few things worth knowing:
@@ -81,19 +71,23 @@ A few things worth knowing:
   `sessionStorage` so it survives reloads in the same tab. The
   validator also accepts the reserved `00000000-…` (nil) and
   `ffffffff-…` (max) UUIDs for synthetic / test sessions.
-- **`metadata` is first-batch-only**. Subsequent batches omit it; the
-  server merges it into the `Session` row and writes a `TrackedUser`
-  if `userIdentity` is set.
+- **`metadata`** ships on the first batch, and again on the next
+  batch after `identify()` is called so the updated `userIdentity`
+  reaches the server. Other batches omit it.
 - **`events[].data`** is opaque to the dashboard — it's rrweb's
   format. The dashboard stores events verbatim; the replay player
   reads them back through rrweb's `Replayer`.
-- **Slices and events**: the SDK ships one `SliceMarker` on session
-  start, then one on each pathname change (hash-only and query-only
-  URL changes are ignored) and one after every >60s idle gap. Events
-  between markers carry the matching `sliceIndex` so the server can
-  group them on persist.
-- **`pageViews`** was an older protocol field — the dashboard accepts
-  but ignores it, so older `@kharko/dozor` builds keep working.
+- **In-stream markers**: instead of a separate `sliceMarkers` channel,
+  the SDK emits rrweb custom events (`type: 5`) inline in the event
+  stream. Two tags are reserved — `dozor:url` (carries `{ url, pathname }`
+  on SPA navigation) and `dozor:identity` (carries the latest
+  `UserIdentity` on `identify()` calls). A `dozor:url` marker is
+  always followed by a fresh rrweb FullSnapshot (`type: 2`) so replay
+  can render the new DOM. Hash-only and query-only URL changes are
+  ignored.
+- **`sliceMarkers` / `pageViews`** are legacy protocol fields kept
+  tolerated by the validator so older `@kharko/dozor` 1.x builds keep
+  working. The current SDK does not send them.
 
 ## Response codes
 
@@ -109,7 +103,6 @@ A few things worth knowing:
 - `sessionId` is not a valid UUID v4
 - `events` array exceeds 500 items
 - An event is missing `type` / `data` / `timestamp`
-- A slice marker has an unknown `reason`
 - The body isn't valid JSON, or gzip decompression failed
 
 `401` fix: copy the current key from **Avatar → Manage organizations

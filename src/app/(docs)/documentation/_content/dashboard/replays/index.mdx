@@ -35,7 +35,7 @@ queries.
 | **Session**  | The SDK-side `externalId` (a UUID), linked to the player at `/replays/[id]`                                                          |
 | **User**     | Display name resolved via the [4-step chain](/documentation/dashboard/tracked-users/display-name); empty dash for anonymous sessions |
 | **Project**  | Badge with the project's label                                                                                                       |
-| **Pages**    | Number of slices in the session (one per SPA navigation / idle gap)                                                                  |
+| **Events**   | rrweb event count denormalised on `Session` for fast list rendering                                                                  |
 | **Duration** | `MM:SS` recording length. Sortable — click the header to toggle desc/asc                                                             |
 | **Date**     | Relative timestamp (e.g. "3 minutes ago"); hover for the full timestamp. Sortable                                                    |
 
@@ -60,7 +60,7 @@ into a teammate's browser gives them the same view, subject to RBAC
 **Cursor-based** by `id` (not offset), so list position stays stable
 as new sessions land — page 2 doesn't shift down when someone records
 on page 1. The cursor is the last row's id passed back via `?cursor=`;
-the server resolves the next slice with `cursor: { id }, skip: 1`.
+the server resolves the next page with `cursor: { id }, skip: 1`.
 
 `keepPreviousData` on the TanStack query keeps the previous page on
 screen while the next page loads — no flicker on filter / sort /
@@ -70,8 +70,8 @@ pagination change.
 
 OWNER + ADMIN. Click the kebab icon (`⋮`) at the end of the row →
 **Delete** → confirmation dialog → **Delete**. The session row, its
-slices, and its events are removed from the database. No soft-delete.
-The session is gone.
+event batches, and its markers are removed from the database. No
+soft-delete. The session is gone.
 
 The capability is double-validated — UI hides the kebab menu for
 VIEWERs, and `DELETE /api/sessions/[id]` checks `requireMember(...,
@@ -80,4 +80,4 @@ VIEWERs, and `DELETE /api/sessions/[id]` checks `requireMember(...,
 ## See also
 
 - [Replay player](/documentation/dashboard/replays/player) — what the player surface looks like once you click into a session.
-- [Resources → Data model](/documentation/resources/data-model) — the `Session` / `Slice` / `Event` schema underneath.
+- [Resources → Data model](/documentation/resources/data-model) — the `Session` / `EventBatch` / `Marker` schema underneath.

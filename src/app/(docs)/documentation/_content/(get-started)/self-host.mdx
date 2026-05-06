@@ -157,7 +157,7 @@ With `.env.local` filled in, apply the committed schema to your DB:
 npx prisma migrate deploy
 ```
 
-What this does: replays every file under `prisma/migrations/` against the DB pointed at by `DATABASE_URL_UNPOOLED` (Neon) or `DATABASE_URL` (any other host). For a fresh DB that's a single init migration creating 14 tables (User / Organization / Project / Session / Slice / Event / Invite / …), 3 enums, all indexes. Idempotent — running it twice on the same DB is a no-op.
+What this does: replays every file under `prisma/migrations/` against the DB pointed at by `DATABASE_URL_UNPOOLED` (Neon) or `DATABASE_URL` (any other host). For a fresh DB that's a single init migration creating 14 tables (User / Organization / Project / Session / EventBatch / Marker / Invite / …), 3 enums, all indexes. Idempotent — running it twice on the same DB is a no-op.
 
 You only run this **once per environment** (your remote DB, then later production if separate). After this, the schema is live and the dashboard can connect.
 
@@ -198,7 +198,7 @@ When the build finishes, Vercel gives you a URL like `your-fork.vercel.app`. Ope
 In order, it deletes:
 
 1. **Expired invites** — `Invite` rows past `INVITE_EXPIRY_DAYS` (default 3) that nobody accepted.
-2. **Old sessions** — `Session` rows older than `SESSION_RETENTION_DAYS` (default 90). Cascades to `Slice` + `Event` rows, which is the bulk of database volume — events for one busy session can be tens of MB.
+2. **Old sessions** — `Session` rows older than `SESSION_RETENTION_DAYS` (default 90). Cascades to `EventBatch` + `Marker` rows, which is the bulk of database volume — gzipped event blobs for one busy session can be tens of MB.
 3. **Orphaned tracked-users** — `TrackedUser` rows whose every session was just deleted in step 2.
 4. **Empty organizations** — `Organization` rows with zero memberships left (after the last member leaves an invite-only org). Nullifies any `User.activeOrganizationId` pointing at them first.
 

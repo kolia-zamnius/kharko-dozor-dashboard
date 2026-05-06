@@ -28,53 +28,49 @@ session metadata via an icon + value:
 - **Date** — when the session was created.
 
 A separate **Reload** button (orange, pulsing) appears in the header
-when background polling detects new slices, events, or that the
-session has just ended. Clicking it remounts the player against the
-fresh snapshot — playback resets to `t=0`. The button stays hidden
-when there's nothing to act on, so the orange signal carries weight
-when it appears.
+when background polling detects new events or that the session has
+just ended. Clicking it remounts the player against the fresh
+snapshot — playback resets to `t=0`. The button stays hidden when
+there's nothing to act on, so the orange signal carries weight when
+it appears.
 
-## Slices
+## Slices — derived in the browser
 
-Long sessions are split into slices automatically. The reason for
-each split is one of:
+Slicing happens at read time on the client. The server hands the
+player one continuous event stream; a pure slicer module
+(`src/lib/slicer/`) folds it into slices based on criteria. Two
+reasons can split a slice:
 
-- **`init`** — first slice on session start.
-- **`navigation`** — pathname change via SPA route or hard
-  navigation. Hash-only and query-only changes don't open a new
-  slice (`?utm=…` rewrites and anchor jumps stay in the current
-  one).
-- **`idle`** — gap >60s with no DOM mutations. The first event after
-  the gap opens the new slice.
+- **`url`** — a `dozor:url` rrweb custom event (type=5) lands when
+  the SDK detects an SPA pathname change. Hash-only and query-only
+  changes don't fire (`?utm=…` rewrites and anchor jumps stay in the
+  current slice).
+- **`idle`** — gap >60s with no events at all. The first event after
+  the gap opens the next slice.
 
-The slice picker renders one button per slice with an icon for the
-reason, a truncated pathname, and the slice's duration. Hover for the
-full breakdown (reason / pathname / duration / event count). Clicking
-a slice swaps the player to that slice's events and resets `t=0`
-within it.
+The first slice always carries the `init` reason. The slice picker
+renders one button per slice with an icon, a truncated pathname, and
+the duration. Hover for the breakdown (reason / pathname / duration /
+event count). Clicking a slice resets `t=0` within it.
 
-This makes long sessions tractable: a 30-minute session split into 5
-slices means each slice is a standalone replay — no scrub from the
-beginning to find a moment.
+Because slicing is pure derived state, changing the criteria reslices
+instantly without a server round-trip — no per-slice cache, no
+flicker, no extra fetch.
 
-## Lazy event loading
+## Event loading
 
-The session-detail endpoint
-(`GET /api/sessions/{sessionId}`) returns metadata + the slice list
-**without events**. When a slice becomes active, the player fires
-`GET /api/sessions/{sessionId}/slices/{sliceIndex}/events` and feeds
-the result to rrweb's `Replayer`.
+The session-detail endpoint (`GET /api/sessions/{sessionId}`) returns
+metadata + a marker list (timeline anchors). The events themselves
+load via `GET /api/sessions/{sessionId}/events` — a list of
+`EventBatch` rows, each with a base64-gzip blob the browser
+decompresses with `DecompressionStream`. The decompressed batches are
+concatenated, sorted by timestamp, and fed to the slicer + rrweb
+`Replayer`.
 
-Two reasons:
-
-- **Long sessions don't bloat the initial load** — events for slices
-  you never click are never fetched.
-- **Cache friendliness** — each slice's event stream is its own
-  TanStack query key; revisiting a slice is a no-op fetch.
-
-Legacy pre-slice sessions (recordings from older SDK builds) inline
-their full event stream in the detail response, so old recordings
-still play. The player branches on slice presence at render time.
+The events query is `staleTime: Infinity` — recordings are immutable
+once captured. A polled session-detail update (new markers / `endedAt`
+flip) lights the orange Reload button; the user clicks it to re-fetch
+the (now-larger) event stream.
 
 ## Control bar
 
@@ -125,4 +121,4 @@ via the row's kebab menu (OWNER / ADMIN).
 ## See also
 
 - [Resources → Replay player](/documentation/resources/replay-player) — sandbox internals + rrweb event reconstruction.
-- [Resources → Data model](/documentation/resources/data-model) — the `Session` / `Slice` / `Event` schema.
+- [Resources → Data model](/documentation/resources/data-model) — the `Session` / `EventBatch` / `Marker` schema.

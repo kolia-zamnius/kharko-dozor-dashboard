@@ -34,7 +34,7 @@ rrweb events come in three families:
 
 | Type                     | What it carries                                   |
 | ------------------------ | ------------------------------------------------- |
-| `2` Full snapshot        | Complete DOM tree at session/slice start          |
+| `2` Full snapshot        | Complete DOM tree at session start / post URL change |
 | `3` Incremental snapshot | DOM mutation, mouse position, scroll, input event |
 | `4` Meta                 | Page metadata (URL, viewport dimensions)          |
 
@@ -52,41 +52,42 @@ Scrubbing is "skip ahead by N ms": the player fast-forwards through
 events without rendering intermediate states, then resumes normal
 playback at the target timestamp.
 
-## Lazy slice loading
+## Event stream + read-time slicer
 
-The session detail endpoint (`GET /api/sessions/{id}`) returns
-metadata + slice list **without events**. Events are loaded per-slice:
+The session-detail endpoint (`GET /api/sessions/{id}`) returns
+metadata + a marker list — typed timeline anchors. Events themselves
+load via a sibling endpoint:
 
 ```
 User opens session
   ↓
-GET /api/sessions/{id}                    → metadata + slice list
+GET /api/sessions/{id}              → metadata + markers (typed anchors)
   ↓
-User clicks slice 0
+GET /api/sessions/{id}/events       → list of EventBatch rows (gzip blobs)
   ↓
-GET /api/sessions/{id}/slices/0/events   → 612 events for slice 0
+Browser decompresses each blob (DecompressionStream),
+concatenates, sorts by timestamp
   ↓
-Player consumes the stream
+Slicer (pure module, src/lib/slicer/) folds the stream into slices
+based on criteria { byUrl, idleGapMs }
+  ↓
+rrweb Replayer consumes the active slice's events
 ```
 
-When the user clicks slice 1, the dashboard fires the same query
-with a different `sliceIndex` — TanStack Query caches by slice key,
-so revisiting slice 0 later is a no-op fetch.
+`useSessionEventsQuery` is `staleTime: Infinity` — recordings are
+immutable once captured. The `EventBatch` rows are sorted by
+`firstTimestamp ASC` server-side; out-of-order arrival from the SDK
+is sorted out at read time.
 
-This matters for **long sessions**. A multi-hour session split into
-many slices means each slice fetch covers only the events the user is
-about to watch — initial page load isn't blocked on the entire
-recording.
-
-Legacy pre-slice sessions (recordings from older SDK builds) inline
-their full event stream in the detail response — the replay still
-works, just without the lazy benefit.
+Slicing is **derived state**. Changing the criteria (e.g. flipping
+"split on idle gaps" off) reslices instantly — no extra fetch, no
+remount churn beyond the active-slice change.
 
 ## Slice picker
 
 ```
 [init]  /checkout              0:00–1:18
-[nav]   /checkout/payment      1:18–3:04   ← active
+[url]   /checkout/payment      1:18–3:04   ← active
 [idle]  /checkout/payment      3:04–3:42
 ```
 
@@ -94,10 +95,9 @@ Each row shows a reason icon + pathname + duration. Clicking a row:
 
 1. Updates the player's `activeSliceIndex` in the Zustand store and
    resets `currentTime` to 0
-2. Triggers a fresh slice-events query if not already cached
-3. Remounts the rrweb Replayer with the new event stream (the
-   viewport is keyed by `activeSliceIndex`)
-4. Player lands in `idle` — user clicks **Play** when ready (no
+2. Remounts the rrweb Replayer keyed by `slice.id` (so swapping
+   slices replays cleanly without state bleed)
+3. Player lands in `paused` — user clicks **Play** when ready (no
    auto-play across slice changes; that's what the **Auto play next**
    toggle is for, end-of-slice → next slice)
 
@@ -154,7 +154,7 @@ The bar below the viewport carries:
 - **Seek bar** — scrubbable progress within the active slice
 
 There are no keyboard shortcuts. Slice navigation is via the slice
-picker above the viewport, not via the control bar.
+picker above the viewport.
 
 ## Privacy contract preserved
 
@@ -182,11 +182,12 @@ All paths are relative to the repo root. Player files live under
 | [`components/player/index.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/index.tsx>)                               | Composition root — mounts viewport + controls + slice picker      |
 | [`components/player/viewport/index.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/viewport/index.tsx>)             | Shadow DOM host + rrweb Replayer instantiation + ResizeObservers  |
 | [`components/player/viewport/replayer-css.ts`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/viewport/replayer-css.ts>) | The CSS string injected into the shadow root (rrweb requirements) |
-| [`components/player/store.ts`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/store.ts>)                                 | Zustand store — `activeSliceIndex`, `events`, `replayer`, ...     |
+| [`components/player/store.ts`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/store.ts>)                                 | Zustand store — `slices`, `activeSliceIndex`, `events`, ...       |
 | [`components/player/control-bar/`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/tree/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/control-bar>)                          | Play/pause/scrub/speed controls                                   |
 | [`components/player/slice-picker.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/slice-picker.tsx>)                 | Slice list + click-to-seek                                        |
 | [`components/player/console-panel.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/console-panel.tsx>)               | Console event rendering                                           |
-| [`api-client/sessions/queries.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/sessions/queries.ts)                                                                                | `useSliceEventsQuery` — TanStack lazy-load                        |
+| [`api-client/sessions/queries.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/sessions/queries.ts)                                                                                | `useSessionEventsQuery` + `useSessionMarkersQuery`                |
+| [`lib/slicer/`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/lib/slicer/index.ts)                                                                                                              | Pure read-time slicer — `slice(events, criteria) → Slice[]`       |
 
 ## See also
 
