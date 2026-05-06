@@ -36,7 +36,6 @@ export const GET = withAuth<Params>(async (req, user, { userId }) => {
       eventCount: true,
       createdAt: true,
       trackedUserId: true,
-      _count: { select: { slices: true } },
     },
     orderBy: { createdAt: "desc" },
     take: limit + 1,
@@ -58,7 +57,6 @@ export const GET = withAuth<Params>(async (req, user, { userId }) => {
     userId: null,
     userDisplayName: null,
     userTraits: null,
-    sliceCount: s._count.slices,
   }));
 
   return NextResponse.json(paginatedSessionsSchema.parse(buildCursorResponse(enriched, limit, "id")));

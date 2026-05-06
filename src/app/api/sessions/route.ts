@@ -75,7 +75,6 @@ export const GET = withAuth(async (req, user) => {
       trackedUser: {
         select: { externalId: true, traits: true, customName: true, displayNameTraitKey: true },
       },
-      _count: { select: { slices: true } },
     },
     orderBy,
     take: limit + 1,
@@ -108,7 +107,6 @@ export const GET = withAuth(async (req, user) => {
       userId: s.trackedUser?.externalId ?? null,
       userDisplayName,
       userTraits: traits,
-      sliceCount: s._count.slices,
     };
   });
 
