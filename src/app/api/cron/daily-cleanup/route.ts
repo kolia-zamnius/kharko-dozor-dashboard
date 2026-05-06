@@ -19,7 +19,7 @@ const cronCleanupSummarySchema = z.object({
 /**
  * Ordered steps — each frees records for the next:
  *   1. Invites past TTL (PENDING/EXPIRED).
- *   2. Sessions older than `SESSION_RETENTION_DAYS` (cascades Slices + Events).
+ *   2. Sessions older than `SESSION_RETENTION_DAYS` (cascades EventBatches + Markers).
  *   3. TrackedUsers with zero sessions (orphans after step 2).
  *   4. Memberless orgs. Active-org pointers MUST be nulled FIRST — schema
  *      doesn't declare `onDelete: SetNull` for `User.activeOrganizationId`,

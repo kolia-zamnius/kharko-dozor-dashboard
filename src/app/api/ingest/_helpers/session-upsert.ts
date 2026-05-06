@@ -4,11 +4,12 @@ import { prisma } from "@/server/db/client";
 import { log } from "@/server/logger";
 import type { IngestEvent, IngestMetadata } from "./parse-body";
 
-/** Narrow — keeps downstream helpers honest about what they depend on. */
 export type UpsertedSession = {
   readonly id: string;
   readonly startedAt: Date;
   readonly trackedUserId: string | null;
+  /** True only on the call that inserted the row — caller uses this to seed the initial url-marker. */
+  readonly wasCreated: boolean;
 };
 
 /**
@@ -26,6 +27,12 @@ export async function upsertSessionAndLinkTrackedUser(
   const timestamps = hasEvents ? events.map((e) => e.timestamp) : [];
   const minTimestamp = hasEvents ? Math.min(...timestamps) : Date.now();
   const maxTimestamp = hasEvents ? Math.max(...timestamps) : Date.now();
+
+  const existing = await prisma.session.findUnique({
+    where: { projectId_externalId: { projectId, externalId } },
+    select: { id: true },
+  });
+  const wasCreated = existing === null;
 
   const session = await prisma.session.upsert({
     where: { projectId_externalId: { projectId, externalId } },
@@ -73,5 +80,6 @@ export async function upsertSessionAndLinkTrackedUser(
     id: session.id,
     startedAt: session.startedAt,
     trackedUserId: sessionUpdate.trackedUserId ?? session.trackedUserId,
+    wasCreated,
   };
 }
