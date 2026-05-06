@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/primitives/badge";
 import { TableCell, TableRow } from "@/components/ui/data-display/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/overlays/tooltip";
 import type { SessionListItem } from "@/api-client/sessions/types";
+import { cn } from "@/lib/cn";
 import { useFormatters } from "@/lib/use-formatters";
 import { SessionRowMenu } from "../session-row-menu";
 
@@ -19,7 +20,7 @@ export function SessionRow({ session, canManage }: SessionRowProps) {
   return (
     <TableRow className="group">
       <TableCell>
-        <Link href={`/replays/${session.id}`} className="text-foreground font-mono text-sm group-hover:underline">
+        <Link href={`/replays/${session.id}`} className="text-primary font-mono text-sm group-hover:underline">
           {session.externalId}
         </Link>
       </TableCell>
@@ -27,9 +28,14 @@ export function SessionRow({ session, canManage }: SessionRowProps) {
       <TableCell>
         {session.trackedUserId && session.userDisplayName ? (
           <Link href={`/users/${session.trackedUserId}`} className="min-w-0 hover:underline">
-            <p className="truncate text-sm">{session.userDisplayName}</p>
-            {/* Show externalId subtitle only when displayName was resolved
-                from a real source (customName / trait), not the externalId fallback. */}
+            <p
+              className={cn(
+                "text-primary truncate text-sm",
+                session.userId && session.userDisplayName === session.userId && "font-mono",
+              )}
+            >
+              {session.userDisplayName}
+            </p>
             {session.userId && session.userDisplayName !== session.userId && (
               <p className="text-muted-foreground truncate font-mono text-xs">{session.userId}</p>
             )}
@@ -44,7 +50,7 @@ export function SessionRow({ session, canManage }: SessionRowProps) {
       </TableCell>
 
       <TableCell>
-        <span className="text-muted-foreground text-sm tabular-nums">{session.sliceCount}</span>
+        <span className="text-muted-foreground text-sm tabular-nums">{session.eventCount}</span>
       </TableCell>
 
       <TableCell>

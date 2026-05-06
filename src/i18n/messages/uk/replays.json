@@ -82,7 +82,6 @@
       "ariaReload": "Оновити сесію"
     },
     "updateTooltip": {
-      "newSlices": "{count, plural, one {# новий сегмент} few {# нові сегменти} many {# нових сегментів} other {# нових сегментів}}",
       "newEvents": "{count, plural, one {# нова подія} few {# нові події} many {# нових подій} other {# нових подій}}",
       "ended": "сесія завершилася",
       "suffix": "Клікніть, щоб оновити"
@@ -108,7 +107,7 @@
       "slicePicker": {
         "reasonInit": "Початок",
         "reasonIdle": "Після паузи",
-        "reasonNavigation": "Навігація",
+        "reasonUrl": "Зміна URL",
         "tooltip": "{reason} · {pathname} · {duration} · {events} подій"
       }
     }

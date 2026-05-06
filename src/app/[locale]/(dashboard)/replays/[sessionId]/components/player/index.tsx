@@ -1,28 +1,65 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { useSliceEventsQuery } from "@/api-client/sessions/queries";
+import { useSessionEventsQuery } from "@/api-client/sessions/queries";
 import type { SessionDetail } from "@/api-client/sessions/types";
 import { Spinner } from "@/components/ui/feedback/spinner";
+import { slice as runSlicer } from "@/lib/slicer";
+import type { DozorEvent, Slice, SlicingCriteria } from "@/lib/slicer/types";
 import { ConsolePanel } from "./console-panel";
 import { ControlBar } from "./control-bar";
 import { SlicePicker } from "./slice-picker";
 import { usePlayerStore } from "./store";
-import { ensureMetaEvent } from "./utils";
+import { decompressBatch, ensureMetaEvent } from "./utils";
 import { Viewport } from "./viewport";
 
 type PlayerProps = {
   session: SessionDetail;
 };
 
-/** Owns slice-events subscription, syncs into Zustand. Children read from the store — zero prop drilling. */
+const DEFAULT_CRITERIA: SlicingCriteria = { byUrl: true, idleGapMs: 60_000 };
+
+// Owns the events-stream subscription, decompresses batches, derives slices via
+// the slicer module, syncs into Zustand. Children read from the store — zero
+// prop drilling. Slicing happens fully in the browser; the server just hands
+// over the gzipped event blobs ordered by `firstTimestamp`.
 export function Player({ session }: PlayerProps) {
-  const { setSlices, setEvents, setSliceLoading } = usePlayerStore();
-  const selectSlice = usePlayerStore((s) => s.selectSlice);
+  const { setSlices, setActiveSliceEvents, selectSlice } = usePlayerStore();
+  const [allEvents, setAllEvents] = useState<DozorEvent[]>([]);
+  const [decompressing, setDecompressing] = useState(true);
 
-  const slices = session.slices;
-  useEffect(() => setSlices(slices ?? []), [slices, setSlices]);
+  const { data: eventsResponse } = useSessionEventsQuery(session.id);
 
-  // Store outlives the route — without this reset, a slice index from a prior session 404s on a session with fewer slices.
+  // Decompress + concat batches whenever the response changes.
+  useEffect(() => {
+    if (!eventsResponse) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- response identity is the trigger; refetch must visibly reset to "decompressing".
+    setDecompressing(true);
+    (async () => {
+      const decoded = await Promise.all(eventsResponse.batches.map((b) => decompressBatch(b.data)));
+      if (cancelled) return;
+      const flat = decoded.flat().sort((a, b) => a.timestamp - b.timestamp);
+      setAllEvents(flat);
+      setDecompressing(false);
+    })().catch((err) => {
+      if (!cancelled) {
+        console.error("Player: failed to decompress event batches", err);
+        setDecompressing(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [eventsResponse]);
+
+  const slices: Slice[] = useMemo(
+    () => (allEvents.length > 0 ? runSlicer(allEvents, DEFAULT_CRITERIA) : []),
+    [allEvents],
+  );
+
+  useEffect(() => setSlices(slices), [slices, setSlices]);
+
+  // Reset to slice 0 whenever the route's session changes — store outlives the route.
   useEffect(() => {
     selectSlice(0);
   }, [session.id, selectSlice]);
@@ -30,23 +67,17 @@ export function Player({ session }: PlayerProps) {
   const activeSliceIndex = usePlayerStore((s) => s.activeSliceIndex);
   const consoleOpen = usePlayerStore((s) => s.consoleOpen);
 
-  const hasSlices = slices.length > 0;
-  const activeSlice = slices.find((s) => s.index === activeSliceIndex) ?? null;
-  const { data: sliceEvents, isLoading: isSliceLoading } = useSliceEventsQuery(session.id, activeSliceIndex);
+  const activeSlice = slices[activeSliceIndex] ?? null;
 
   const playerEvents = useMemo(() => {
-    if (hasSlices && sliceEvents && activeSlice) {
-      return ensureMetaEvent(sliceEvents, activeSlice);
-    }
-    if (!hasSlices) return session.events;
-    return [];
-  }, [session, hasSlices, sliceEvents, activeSlice]);
+    if (!activeSlice) return [];
+    return ensureMetaEvent(activeSlice.events, activeSlice);
+  }, [activeSlice]);
 
-  useEffect(() => setEvents(playerEvents), [playerEvents, setEvents]);
-  useEffect(() => setSliceLoading(hasSlices && isSliceLoading), [hasSlices, isSliceLoading, setSliceLoading]);
+  useEffect(() => setActiveSliceEvents(playerEvents), [playerEvents, setActiveSliceEvents]);
 
-  const showSlicePicker = hasSlices && slices.length > 1;
-  const showLoading = hasSlices && isSliceLoading;
+  const showSlicePicker = slices.length > 1;
+  const showLoading = decompressing || allEvents.length === 0;
 
   return (
     <div>
@@ -68,7 +99,7 @@ export function Player({ session }: PlayerProps) {
             <Spinner />
           </div>
         ) : (
-          <Viewport key={activeSliceIndex} />
+          <Viewport key={activeSlice?.id ?? activeSliceIndex} />
         )}
         {consoleOpen && <ConsolePanel />}
       </div>

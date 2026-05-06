@@ -59,9 +59,9 @@ export function useSessionUpdateIndicator(sessionId: string): SessionUpdateIndic
     startTransition(() => {
       setSnapshot(nextSnapshot);
       setRefreshTick((tick) => tick + 1);
-      // Slice events are `staleTime: Infinity` keyed on `(sessionId, sliceIndex)`.
-      // Invalidate the whole session-tree so the next slice-load is fresh — cheap vs the rrweb remount.
-      void queryClient.invalidateQueries({ queryKey: sessionKeys.sliceEventsBySession(sessionId) });
+      // Events + markers are `staleTime: Infinity` — invalidate so the next load is fresh.
+      void queryClient.invalidateQueries({ queryKey: sessionKeys.events(sessionId) });
+      void queryClient.invalidateQueries({ queryKey: sessionKeys.markers(sessionId) });
     });
   }
 

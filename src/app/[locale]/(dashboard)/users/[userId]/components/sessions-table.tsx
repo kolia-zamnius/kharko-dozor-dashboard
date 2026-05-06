@@ -59,7 +59,6 @@ export function SessionsTable({ userId, initialPage }: SessionsTableProps) {
                   <TableHead>{t("colStarted")}</TableHead>
                   <TableHead className="text-right">{t("colDuration")}</TableHead>
                   <TableHead className="text-right">{t("colEvents")}</TableHead>
-                  <TableHead className="text-right">{t("colSlices")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -86,9 +85,6 @@ export function SessionsTable({ userId, initialPage }: SessionsTableProps) {
                     </TableCell>
                     <TableCell className="text-muted-foreground text-right text-sm tabular-nums">
                       {formatCount(session.eventCount)}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-right text-sm tabular-nums">
-                      {formatCount(session.sliceCount)}
                     </TableCell>
                   </TableRow>
                 ))}

@@ -1,4 +1,4 @@
-import type { SessionEvent, SliceInfo } from "@/api-client/sessions/types";
+import type { Slice } from "@/lib/slicer/types";
 
 /** `idle` = no replayer (initial/post-reset); `paused` = either user-paused or just-ready. */
 export type PlayerState = "idle" | "playing" | "paused" | "finished";
@@ -21,4 +21,10 @@ export type ConsoleLogEntry = {
   trace: string[];
 };
 
-export type { SessionEvent, SliceInfo };
+export type PlayerEvent = {
+  type: number;
+  timestamp: number;
+  data: unknown;
+};
+
+export type { Slice };

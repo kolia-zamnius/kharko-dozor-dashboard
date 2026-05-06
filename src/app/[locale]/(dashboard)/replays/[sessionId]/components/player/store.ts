@@ -1,6 +1,7 @@
-import type { SessionEvent, SliceInfo } from "@/api-client/sessions/types";
 import { create } from "zustand";
-import type { PlayerState, ReplayerHandle } from "./types";
+
+import type { Slice } from "@/lib/slicer/types";
+import type { PlayerEvent, PlayerState, ReplayerHandle } from "./types";
 
 /**
  * Zustand (not Context+`useReducer`) for precise subscription boundaries —
@@ -13,17 +14,16 @@ import type { PlayerState, ReplayerHandle } from "./types";
  * lifecycle is driven by Viewport's effect. React shouldn't own it.
  */
 
-/**
- * 10s — rrweb emits ≥1 event every few seconds during active use, so a 10s
- * gap is an unambiguous "stopped interacting" signal. 3-5s is noisy during
- * normal reading; 30s+ hides genuine drop-offs from the timeline.
- */
+// 10s — rrweb emits ≥1 event every few seconds during active use, so a 10s
+// gap is an unambiguous "stopped interacting" signal. 3-5s is noisy during
+// normal reading; 30s+ hides genuine drop-offs from the timeline.
 const IDLE_THRESHOLD_MS = 10_000;
 
 export type IdlePeriod = { start: number; end: number };
 
-/** Times are offsets from the first event (matches rrweb's internal timeline so `handle.getCurrentTime()` shares the reference). */
-function computeIdlePeriods(events: SessionEvent[]): IdlePeriod[] {
+// Times are offsets from the first event (matches rrweb's internal timeline so
+// `handle.getCurrentTime()` shares the reference).
+function computeIdlePeriods(events: readonly PlayerEvent[]): IdlePeriod[] {
   const first = events[0];
   if (!first || events.length < 2) return [];
   const origin = first.timestamp;
@@ -43,21 +43,12 @@ function computeIdlePeriods(events: SessionEvent[]): IdlePeriod[] {
   return periods;
 }
 
-/**
- * Live object refs whose identity should never enter React rendering.
- * Stale `handle` after Viewport unmount is safe — every action guards `if
- * (!handle) return` or catches the "Replayer destroyed" throw in the RAF tick.
- */
+// Live object refs whose identity should never enter React rendering.
+// Stale `handle` after Viewport unmount is safe — every action guards `if
+// (!handle) return` or catches the "Replayer destroyed" throw in the RAF tick.
 let handle: ReplayerHandle | null = null;
 let rafId = 0;
 
-/**
- * Store is driven FROM the replayer, not vice versa — rrweb applies timing
- * internally; setting `currentTime` from React would fight its clock. The
- * try/catch swallows rrweb's "Replayer destroyed" throw mid-frame (slice
- * switch teardown race).
- * render loop.
- */
 function startPolling(set: (partial: Partial<PlayerStoreState>) => void, get: () => PlayerStoreState) {
   cancelAnimationFrame(rafId);
   const tick = () => {
@@ -65,7 +56,6 @@ function startPolling(set: (partial: Partial<PlayerStoreState>) => void, get: ()
     try {
       let time = Math.max(0, handle.getCurrentTime());
 
-      // Custom skip idle: if currentTime lands in an idle zone, jump past it.
       const { skipInactive, idlePeriods } = get();
       if (skipInactive) {
         for (const period of idlePeriods) {
@@ -96,16 +86,15 @@ type PlayerStoreState = {
   currentTime: number;
   totalTime: number;
 
-  // Slices
+  // Slices (derived client-side via the slicer module)
   activeSliceIndex: number;
   totalSlices: number;
-  slices: SliceInfo[];
+  slices: Slice[];
 
-  // Data (synced from TanStack Query by Player)
-  events: SessionEvent[];
-  isSliceLoading: boolean;
+  // Data — Player passes the raw event stream + derived slices in
+  events: PlayerEvent[];
 
-  // Idle detection (computed from events)
+  // Idle detection (computed from events of the active slice)
   idlePeriods: IdlePeriod[];
   /** Timestamp of the first event (Unix ms) — used for real-time display. */
   sessionStartTimestamp: number;
@@ -132,9 +121,8 @@ type PlayerStoreActions = {
   toggleAutoContinue: () => void;
   toggleConsole: () => void;
   selectSlice: (index: number) => void;
-  setSlices: (slices: SliceInfo[]) => void;
-  setEvents: (events: SessionEvent[]) => void;
-  setSliceLoading: (loading: boolean) => void;
+  setSlices: (slices: Slice[]) => void;
+  setActiveSliceEvents: (events: PlayerEvent[]) => void;
 };
 
 export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((set, get) => ({
@@ -145,7 +133,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
   totalSlices: 0,
   slices: [],
   events: [],
-  isSliceLoading: false,
   idlePeriods: [],
   sessionStartTimestamp: 0,
   speed: 1,
@@ -178,8 +165,6 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
 
       if (autoContinue && totalSlices > 0 && activeSliceIndex < totalSlices - 1) {
         set({ currentTime: tt });
-        // Delay so the "completed" frame paints before Viewport teardown —
-        // without it the playhead snaps back to 0 and the finish reads as skipped.
         setTimeout(() => {
           stopPolling();
           handle = null;
@@ -245,15 +230,13 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
 
   setSlices: (slices) => set({ slices, totalSlices: slices.length }),
 
-  setEvents: (events) =>
+  setActiveSliceEvents: (events) =>
     set({
       events,
       idlePeriods: computeIdlePeriods(events),
       sessionStartTimestamp: events[0]?.timestamp ?? 0,
     }),
-
-  setSliceLoading: (isSliceLoading) => set({ isSliceLoading }),
 }));
 
-/** Single source of truth for the disabled-gate — adjusting it (e.g. during refresh transitions) is a one-line edit. */
-export const selectIsPlayerDisabled = (s: PlayerStoreState) => s.state === "idle" || s.isSliceLoading;
+/** Single source of truth for the disabled-gate. */
+export const selectIsPlayerDisabled = (s: PlayerStoreState) => s.state === "idle" || s.events.length === 0;

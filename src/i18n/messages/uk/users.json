@@ -146,7 +146,7 @@
       "ongoing": "триває",
       "lessThanSecond": "<1с",
       "clickToReplay": "Клікніть, щоб переглянути",
-      "sliceCount": "{count, plural, one {# сегмент} few {# сегменти} many {# сегментів} other {# сегментів}}"
+      "pageCount": "{count, plural, one {# сторінка} few {# сторінки} many {# сторінок} other {# сторінок}}"
     },
     "sessions": {
       "title": "Сесії",
@@ -155,7 +155,6 @@
       "colStarted": "Початок",
       "colDuration": "Тривалість",
       "colEvents": "Події",
-      "colSlices": "Сегменти",
       "loadMore": "Завантажити ще",
       "loading": "Завантаження…"
     },

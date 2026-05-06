@@ -82,7 +82,6 @@
       "ariaReload": "Recarregar sessão"
     },
     "updateTooltip": {
-      "newSlices": "{count, plural, one {# novo segmento} other {# novos segmentos}}",
       "newEvents": "{count, plural, one {# novo evento} other {# novos eventos}}",
       "ended": "a sessão terminou",
       "suffix": "Clique para recarregar"
@@ -108,7 +107,7 @@
       "slicePicker": {
         "reasonInit": "Início",
         "reasonIdle": "Após inatividade",
-        "reasonNavigation": "Navegação",
+        "reasonUrl": "Mudança de URL",
         "tooltip": "{reason} · {pathname} · {duration} · {events} eventos"
       }
     }

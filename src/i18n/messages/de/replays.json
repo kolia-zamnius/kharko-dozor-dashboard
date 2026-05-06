@@ -82,7 +82,6 @@
       "ariaReload": "Sitzung neu laden"
     },
     "updateTooltip": {
-      "newSlices": "{count, plural, one {# neues Segment} other {# neue Segmente}}",
       "newEvents": "{count, plural, one {# neues Ereignis} other {# neue Ereignisse}}",
       "ended": "Sitzung beendet",
       "suffix": "Klicken zum Neuladen"
@@ -108,7 +107,7 @@
       "slicePicker": {
         "reasonInit": "Start",
         "reasonIdle": "Nach Leerlauf",
-        "reasonNavigation": "Navigation",
+        "reasonUrl": "URL-Wechsel",
         "tooltip": "{reason} · {pathname} · {duration} · {events} Ereignisse"
       }
     }

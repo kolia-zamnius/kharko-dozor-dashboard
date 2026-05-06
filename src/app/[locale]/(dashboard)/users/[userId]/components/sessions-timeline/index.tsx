@@ -129,7 +129,7 @@ export function SessionsTimeline({ data, range }: SessionsTimelineProps) {
                             {session.endedAt ? ` — ${formatAbsolute(session.endedAt, locale)}` : ` — ${t("ongoing")}`}
                           </p>
                           <p className="text-background/70">
-                            {durationStr} · {t("sliceCount", { count: session.slices.length })}
+                            {durationStr} · {t("pageCount", { count: session.periods.length })}
                           </p>
                           <p className="text-background/50 pt-1">{t("clickToReplay")}</p>
                         </div>
