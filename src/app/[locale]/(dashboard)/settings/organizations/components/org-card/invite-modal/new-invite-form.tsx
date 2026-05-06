@@ -19,10 +19,9 @@ export function NewInviteForm({ org }: { org: Organization }) {
 
   const {
     control,
-    register,
     handleSubmit,
     reset,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<InviteInput>({
     resolver: zodResolver(inviteSchema),
     defaultValues: { email: "", role: "VIEWER" },
@@ -33,11 +32,7 @@ export function NewInviteForm({ org }: { org: Organization }) {
     inviteMember.mutate(
       { orgId: org.id, email: data.email, role: data.role },
       {
-        // Keep the modal open so the admin can see the new row appear in
-        // the table below, and can send another invite without having to
-        // reopen. Resetting back to defaults signals the form is ready
-        // for the next email.
-        onSuccess: () => reset({ email: "", role: "VIEWER" }),
+        onSuccess: () => reset({ email: "", role: data.role }),
       },
     );
   }
@@ -51,12 +46,22 @@ export function NewInviteForm({ org }: { org: Organization }) {
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
         <div className="space-y-1.5">
           <Label htmlFor="invite-email">{t("emailLabel")}</Label>
-          <Input
-            id="invite-email"
-            placeholder={t("emailPlaceholder")}
-            type="email"
-            aria-invalid={!!errors.email}
-            {...register("email")}
+          <Controller
+            control={control}
+            name="email"
+            render={({ field }) => (
+              <Input
+                id="invite-email"
+                placeholder={t("emailPlaceholder")}
+                type="email"
+                aria-invalid={!!errors.email}
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
+            )}
           />
         </div>
 
@@ -83,7 +88,7 @@ export function NewInviteForm({ org }: { org: Organization }) {
         </div>
 
         <div className="flex items-end">
-          <Button type="submit" disabled={!isValid || inviteMember.isPending}>
+          <Button type="submit" disabled={inviteMember.isPending}>
             {t("submit")}
           </Button>
         </div>
