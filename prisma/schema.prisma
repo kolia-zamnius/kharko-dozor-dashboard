@@ -295,10 +295,10 @@ model Session {
   eventCount    Int       @default(0)
   createdAt     DateTime  @default(now())
 
-  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  trackedUser TrackedUser? @relation(fields: [trackedUserId], references: [id], onDelete: SetNull)
-  events      Event[]
-  slices      Slice[]
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  trackedUser  TrackedUser? @relation(fields: [trackedUserId], references: [id], onDelete: SetNull)
+  eventBatches EventBatch[]
+  markers      Marker[]
 
   @@unique([projectId, externalId])
   @@index([projectId])
@@ -307,53 +307,36 @@ model Session {
   @@index([projectId, createdAt(sort: Desc)])
 }
 
-/// Sliced on page navigation or idle gap > 30s. Each slice carries its own
-/// rrweb Full Snapshot so the viewer can jump in without replaying earlier slices.
-model Slice {
-  id             String    @id @default(cuid())
+/// One row per ingest POST. `data` holds the gzip-compressed JSON array of rrweb events
+/// from that batch — replay loads batches by `(sessionId, firstTimestamp ASC)`, decompresses
+/// client-side, concats, sorts, feeds rrweb. Out-of-order arrival sorts itself out at read.
+model EventBatch {
+  id             String   @id @default(cuid())
   sessionId      String
-  /// 0-based, strictly monotonic per session — primary URL identifier in
-  /// the slice-events API routes.
-  index          Int
-  /// `init` | `idle` (gap > 60s) | `navigation` (SPA route change). Drives the slice-picker icon.
-  reason         String
-  pathname       String
-  url            String
-  viewportWidth  Int?
-  viewportHeight Int?
-  startedAt      DateTime
-  /// Null while this is the most recent slice being recorded.
-  endedAt        DateTime?
-  duration       Int       @default(0)
-  eventCount     Int       @default(0)
-  createdAt      DateTime  @default(now())
+  firstTimestamp BigInt
+  lastTimestamp  BigInt
+  eventCount     Int
+  data           Bytes
+  receivedAt     DateTime @default(now())
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  events  Event[]
 
-  @@unique([sessionId, index])
-  @@index([sessionId])
+  @@index([sessionId, firstTimestamp])
 }
 
-/// `timestamp` is `BigInt` to tolerate microsecond precision if rrweb ever
-/// emits it (current builds emit ms — cast down to Number for client Date math).
-/// `sliceId` nullable for SDK builds pre-dating slice markers — those events
-/// fall back to `sliceIndex = 0` via `ensureDefaultSlice`.
-model Event {
-  id         String   @id @default(cuid())
-  sessionId  String
-  sliceId    String?
-  /// Denormalised copy of `slice.index` so event-batch queries filter/group
-  /// by slice without a join. Kept in sync by the ingest pipeline.
-  sliceIndex Int?
-  type       Int
-  timestamp  BigInt
-  data       Json
-  createdAt  DateTime @default(now())
+/// Typed timeline anchors extracted on ingest from rrweb custom events (`type=5`,
+/// `data.tag` starting with `dozor:`). `kind = "url"` carries `{ url, pathname }`,
+/// `kind = "identity"` carries `{ userId, traits? }`. Stats queries hit this table
+/// instead of decompressing event blobs.
+model Marker {
+  id        String   @id @default(cuid())
+  sessionId String
+  timestamp BigInt
+  kind      String
+  data      Json
 
   session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  slice   Slice?  @relation(fields: [sliceId], references: [id], onDelete: SetNull)
 
-  @@index([sessionId])
-  @@index([sliceId])
+  @@index([sessionId, kind, timestamp])
+  @@index([sessionId, timestamp])
 }
