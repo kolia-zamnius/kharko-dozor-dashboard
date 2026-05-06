@@ -40,7 +40,7 @@ export function UserHeader({ user, canManage }: UserHeaderProps) {
                   fallback chain — custom name → local trait key → project
                   trait key → externalId. The pencil button opens the editor
                   modal for all three levels. */}
-              <h1 className="truncate font-mono text-base font-semibold" title={user.displayName}>
+              <h1 className="text-primary truncate font-mono text-base font-semibold" title={user.displayName}>
                 {user.displayName}
               </h1>
               {canManage && <DisplayNameModal user={user} />}

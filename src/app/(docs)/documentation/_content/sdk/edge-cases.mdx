@@ -85,16 +85,17 @@ The package exports types for backend and tooling code that needs to
 understand SDK payloads:
 
 ```ts
+import { DOZOR_MARKER_TAG } from "@kharko/dozor";
 import type {
+  DozorMarkerTag,
   DozorOptions,
   DozorState,
+  DozorUrlMarker,
   IngestPayload,
-  SessionMetadata,
   Logger,
+  SessionMetadata,
   UserIdentity,
   UserTraits,
-  SliceMarker,
-  SliceReason,
 } from "@kharko/dozor";
 ```
 

@@ -47,6 +47,7 @@ export const routes = {
     list: () => "/api/sessions",
     summary: () => "/api/sessions/summary",
     detail: (sessionId: string) => `/api/sessions/${sessionId}`,
-    sliceEvents: (sessionId: string, sliceIndex: number) => `/api/sessions/${sessionId}/slices/${sliceIndex}/events`,
+    events: (sessionId: string) => `/api/sessions/${sessionId}/events`,
+    markers: (sessionId: string) => `/api/sessions/${sessionId}/markers`,
   },
 } as const;

@@ -23,7 +23,7 @@ export const PATCH = withAuth<Params>(async (req, user, { projectId }) => {
 });
 
 /**
- * OWNER-only. Cascades sessions → slices → events → tracked users. ADMIN can
+ * OWNER-only. Cascades sessions → event batches + markers → tracked users. ADMIN can
  * replace a leaked key (regen) but never wipe history — dataset destruction
  * stays governance-tier.
  */

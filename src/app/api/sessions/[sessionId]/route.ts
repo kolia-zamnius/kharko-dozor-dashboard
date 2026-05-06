@@ -8,32 +8,17 @@ import { NextResponse } from "next/server";
 
 type Params = { sessionId: string };
 
-/**
- * Modern sessions ship `slices[]` and load events per-slice via the sibling
- * `/slices/[i]/events` route. Legacy pre-slice sessions inline their events
- * so old recordings still play.
- */
+// Detail ships markers inline so the player can render the timeline picker
+// before fetching the (large, paginated) event-batch stream from `/events`.
 export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
   const session = await prisma.session.findUnique({
     where: { id: sessionId },
     include: {
       project: { select: { name: true, organizationId: true } },
       trackedUser: { select: { id: true, externalId: true, traits: true } },
-      slices: {
-        select: {
-          id: true,
-          index: true,
-          reason: true,
-          pathname: true,
-          url: true,
-          viewportWidth: true,
-          viewportHeight: true,
-          startedAt: true,
-          endedAt: true,
-          duration: true,
-          eventCount: true,
-        },
-        orderBy: { index: "asc" },
+      markers: {
+        select: { timestamp: true, kind: true, data: true },
+        orderBy: { timestamp: "asc" },
       },
     },
   });
@@ -43,17 +28,6 @@ export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
   }
 
   await requireResourceAccess(user.id, user.activeOrganizationId, session.project.organizationId, "VIEWER");
-
-  const isLegacy = session.slices.length === 0;
-  let events: { type: number; timestamp: number; data: unknown }[] = [];
-  if (isLegacy) {
-    const rawEvents = await prisma.event.findMany({
-      where: { sessionId },
-      select: { type: true, timestamp: true, data: true },
-      orderBy: { timestamp: "asc" },
-    });
-    events = rawEvents.map((e) => ({ type: e.type, timestamp: Number(e.timestamp), data: e.data }));
-  }
 
   return NextResponse.json(
     sessionDetailSchema.parse({
@@ -74,28 +48,17 @@ export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
       trackedUserId: session.trackedUser?.id ?? null,
       userId: session.trackedUser?.externalId ?? null,
       userTraits: (session.trackedUser?.traits as SessionTraits | null) ?? null,
-      events,
-      slices: session.slices.map((s) => ({
-        id: s.id,
-        index: s.index,
-        reason: s.reason,
-        pathname: s.pathname,
-        url: s.url,
-        viewportWidth: s.viewportWidth,
-        viewportHeight: s.viewportHeight,
-        startedAt: s.startedAt.toISOString(),
-        endedAt: s.endedAt?.toISOString() ?? null,
-        duration: s.duration,
-        eventCount: s.eventCount,
+      markers: session.markers.map((m) => ({
+        timestamp: Number(m.timestamp),
+        kind: m.kind,
+        data: m.data,
       })),
     }),
   );
 });
 
-/**
- * ADMIN+ on purpose — QA/staging cleanup loops stay unblocked without an
- * OWNER on call. Sessions are per-project, not governance-tier.
- */
+// ADMIN+ on purpose — QA/staging cleanup loops stay unblocked without an OWNER on call.
+// Sessions are per-project, not governance-tier.
 export const DELETE = withAuth<Params>(async (req, user, { sessionId }) => {
   const session = await prisma.session.findUnique({
     where: { id: sessionId },

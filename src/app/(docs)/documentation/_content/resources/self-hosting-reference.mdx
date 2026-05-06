@@ -221,17 +221,17 @@ migrator needs). On any other host the migrator falls back to
 
 ### Replay player loads forever
 
-1. **Check the slice events query** — open DevTools → Network → look
-   for `/api/sessions/{id}/slices/{N}/events`. Did it 200?
-2. **Check the slice list in the metadata** — `GET
-/api/sessions/{id}` should return `slices: [...]` non-empty.
-   Empty means the ingest pipeline didn't write a default slice (very
-   old SDK builds) — the player should fall back to inline events
-   from the detail response.
+1. **Check the events query** — open DevTools → Network → look for
+   `/api/sessions/{id}/events`. Did it 200? Response is JSON
+   `{ batches: [...], nextCursor }` where each batch's `data` is a
+   base64-gzip blob the client decompresses with `DecompressionStream`.
+2. **Check the marker list** — `GET /api/sessions/{id}/markers` should
+   return at least one `kind: "url"` row (synthesised by the ingest
+   pipeline from `metadata.url` on session creation).
 3. **Check the browser console** — rrweb errors surface here. The
    most common is "Snapshot doesn't have meta event" → recording
    started without a meta event, the dashboard's `ensureMetaEvent`
-   helper should fix this.
+   helper synthesises one from the active slice's URL.
 
 ## Cleanup cron — full reference
 
@@ -254,7 +254,7 @@ next:
    cheap and unrelated to the rest.
 2. **Old sessions** — `Session` rows older than
    `SESSION_RETENTION_DAYS = 90`. Cascades through Prisma's
-   `onDelete: Cascade` to delete `Slice` and `Event` children.
+   `onDelete: Cascade` to delete `EventBatch` and `Marker` children.
 3. **Orphaned tracked users** — `TrackedUser` rows whose `sessions`
    relation is empty. Often becomes non-empty post-step-2: a tracked
    user whose only sessions just got hard-deleted now has zero, so

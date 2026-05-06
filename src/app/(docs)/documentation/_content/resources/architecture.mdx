@@ -104,7 +104,7 @@ forwards them to Sentry from there.
   `with-public-key`, `localize-zod-error`, `pagination`, `cors`,
   `invite-lifecycle`, `constants`).
 - **`src/app/api/<feature>/_helpers/`** — single-feature decomposition.
-  E.g. `ingest/_helpers/{parse-body,session-upsert,slice-markers,events}`
+  E.g. `ingest/_helpers/{parse-body,session-upsert,event-batch,markers}`
   — heavy routes split into focused units; the route handler is a
   thin composition.
 

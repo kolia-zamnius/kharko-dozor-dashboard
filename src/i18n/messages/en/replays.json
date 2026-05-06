@@ -47,7 +47,7 @@
       "colSession": "Session",
       "colUser": "User",
       "colProject": "Project",
-      "colPages": "Pages",
+      "colEvents": "Events",
       "colDuration": "Duration",
       "colDate": "Date",
       "emptyDash": "—"
@@ -82,13 +82,13 @@
       "ariaReload": "Reload session"
     },
     "updateTooltip": {
-      "newSlices": "{count, plural, one {# new slice} other {# new slices}}",
       "newEvents": "{count, plural, one {# new event} other {# new events}}",
       "ended": "session has ended",
       "suffix": "Click to reload"
     },
     "player": {
       "empty": "No events recorded in this session.",
+      "decompressError": "Failed to load session events.",
       "control": {
         "play": "Play",
         "pause": "Pause",
@@ -108,7 +108,7 @@
       "slicePicker": {
         "reasonInit": "Start",
         "reasonIdle": "After idle",
-        "reasonNavigation": "Navigation",
+        "reasonUrl": "URL change",
         "tooltip": "{reason} · {pathname} · {duration} · {events} events"
       }
     }

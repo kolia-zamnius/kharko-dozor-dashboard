@@ -4,49 +4,57 @@ import { prisma } from "@/server/db/client";
 import { isHttpError } from "@/server/http-error";
 import { log } from "@/server/logger";
 
-import { insertEventsAndUpdateAggregates, loadSliceMapForEvents } from "./_helpers/events";
+import { insertEventBatch } from "./_helpers/event-batch";
+import { extractAndInsertMarkers, insertInitialUrlMarker } from "./_helpers/markers";
 import { ingestSchema, parseIngestBody } from "./_helpers/parse-body";
 import { upsertSessionAndLinkTrackedUser } from "./_helpers/session-upsert";
-import { ensureDefaultSlice, upsertSliceMarkers } from "./_helpers/slice-markers";
 
 export const OPTIONS = corsPreflightResponse;
+
+// Generous over Prisma's 5s default — gzipping a max-sized 500-event batch +
+// the four serial DB writes can easily clear that on cold Neon connections.
+const INGEST_TX_TIMEOUT_MS = 15_000;
 
 /**
  * Always 204 — clients don't need an echo and smaller bodies win on mobile.
  *
- * Sequential pipeline (each step reads rows the previous wrote): parse →
- * session upsert → slice markers (or `ensureDefaultSlice` fallback for
- * pre-marker SDK builds) → bulk events with per-slice aggregates → f-and-f
- * `Project.lastUsedAt`. Steps are data-dependent so parallelisation wouldn't help.
+ * Single transaction so a failure in markers extraction never leaves an
+ * EventBatch row without its corresponding `dozor:*` markers (or vice versa).
+ * Pipeline: parse → session upsert (race-safe `GREATEST`/`LEAST` on retries)
+ * → seed initial url-marker on first creation → INSERT EventBatch (gzip
+ * blob) → extract custom-event markers. Fire-and-forget `Project.lastUsedAt`
+ * lives outside the tx so a slow project-meta write can't break ingestion.
  */
 export const POST = withPublicKey(async ({ project, req }) => {
   const payload = ingestSchema.parse(
     await parseIngestBody(req).catch((err) => {
-      // Bubble size-cap 413s; collapse only malformed-body to null so Zod surfaces per-field 422.
       if (isHttpError(err)) throw err;
       return null;
     }),
   );
-  const { sessionId: externalId, events, metadata, sliceMarkers } = payload;
+  const { sessionId: externalId, events, metadata } = payload;
 
-  const session = await upsertSessionAndLinkTrackedUser(project.id, externalId, events, metadata);
+  const session = await prisma.$transaction(
+    async (tx) => {
+      const upserted = await upsertSessionAndLinkTrackedUser(tx, project.id, externalId, events, metadata);
 
-  if (sliceMarkers && sliceMarkers.length > 0) {
-    await upsertSliceMarkers(session.id, sliceMarkers);
-  } else {
-    const minTimestamp = events.length > 0 ? Math.min(...events.map((e) => e.timestamp)) : Date.now();
-    await ensureDefaultSlice(session.id, metadata, minTimestamp);
-  }
+      if (upserted.wasCreated) {
+        await insertInitialUrlMarker(tx, upserted.id, upserted.startedAt, metadata);
+      }
 
-  const sliceMap = await loadSliceMapForEvents(session.id, events);
-  await insertEventsAndUpdateAggregates(session.id, events, sliceMap);
+      await insertEventBatch(tx, upserted.id, events);
+      await extractAndInsertMarkers(tx, upserted.id, events);
+
+      return upserted;
+    },
+    { timeout: INGEST_TX_TIMEOUT_MS },
+  );
 
   log.info("ingest:batch:received", {
     projectId: project.id,
     sessionId: session.id,
     externalId,
     eventCount: events.length,
-    sliceCount: sliceMarkers?.length ?? 1,
     hasIdentity: Boolean(metadata?.userIdentity),
   });
 

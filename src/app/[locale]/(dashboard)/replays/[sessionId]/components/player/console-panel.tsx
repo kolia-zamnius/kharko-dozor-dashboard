@@ -31,7 +31,7 @@ export function ConsolePanel() {
   const t = useTranslations("replays.detail.player.console");
   const events = usePlayerStore((s) => s.events);
   const currentTime = usePlayerStore((s) => s.currentTime);
-  const isLoading = usePlayerStore((s) => s.isSliceLoading);
+  const isLoading = events.length === 0;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const wasAtBottomRef = useRef(true);

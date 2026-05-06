@@ -37,8 +37,8 @@ export const PATCH = withAuth<Params>(async (req, user, { orgId }) => {
 /**
  * OWNER-only. Personal Space protected — deleting it orphans the account with
  * no default context. Tx: rebase active-org pointers (schema lacks `SetNull`),
- * wipe invites, delete org (cascades projects → sessions → slices → events →
- * tracked users).
+ * wipe invites, delete org (cascades projects → sessions → event batches +
+ * markers → tracked users).
  */
 export const DELETE = withAuth<Params>(async (req, user, { orgId }) => {
   await requireMember(user.id, orgId, "OWNER");

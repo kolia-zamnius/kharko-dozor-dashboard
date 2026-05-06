@@ -19,10 +19,9 @@ export function NewInviteForm({ org }: { org: Organization }) {
 
   const {
     control,
-    register,
     handleSubmit,
     reset,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<InviteInput>({
     resolver: zodResolver(inviteSchema),
     defaultValues: { email: "", role: "VIEWER" },
@@ -33,30 +32,32 @@ export function NewInviteForm({ org }: { org: Organization }) {
     inviteMember.mutate(
       { orgId: org.id, email: data.email, role: data.role },
       {
-        // Keep the modal open so the admin can see the new row appear in
-        // the table below, and can send another invite without having to
-        // reopen. Resetting back to defaults signals the form is ready
-        // for the next email.
-        onSuccess: () => reset({ email: "", role: "VIEWER" }),
+        onSuccess: () => reset({ email: "", role: data.role }),
       },
     );
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-      {/*
-       * Three-column grid: each field its own Label+control wrapper,
-       * Send button in its own column bottom-aligned via flex.
-       */}
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
         <div className="space-y-1.5">
           <Label htmlFor="invite-email">{t("emailLabel")}</Label>
-          <Input
-            id="invite-email"
-            placeholder={t("emailPlaceholder")}
-            type="email"
-            aria-invalid={!!errors.email}
-            {...register("email")}
+          <Controller
+            control={control}
+            name="email"
+            render={({ field }) => (
+              <Input
+                id="invite-email"
+                placeholder={t("emailPlaceholder")}
+                type="email"
+                aria-invalid={!!errors.email}
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                ref={field.ref}
+              />
+            )}
           />
         </div>
 
@@ -83,7 +84,7 @@ export function NewInviteForm({ org }: { org: Organization }) {
         </div>
 
         <div className="flex items-end">
-          <Button type="submit" disabled={!isValid || inviteMember.isPending}>
+          <Button type="submit" disabled={inviteMember.isPending}>
             {t("submit")}
           </Button>
         </div>
@@ -91,12 +92,7 @@ export function NewInviteForm({ org }: { org: Organization }) {
 
       {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
 
-      {/*
-       * Helper line explains the idempotent-resend semantic: the same
-       * email can be submitted again to refresh an existing invite, no
-       * manual revoke needed. Wording uses `INVITE_EXPIRY_DAYS` so copy
-       * and server-side math can never drift.
-       */}
+      {/* Wording threads `INVITE_EXPIRY_DAYS` so the copy can never drift from the server-side cap. */}
       <p className="text-muted-foreground text-xs">{t("expiryNote", { days: INVITE_EXPIRY_DAYS })}</p>
     </form>
   );

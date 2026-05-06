@@ -79,7 +79,7 @@ describe("GET /api/cron/daily-cleanup", () => {
     expect(await prisma.invite.findUnique({ where: { id: expired.id } })).toBeNull();
   });
 
-  it("deletes sessions older than SESSION_RETENTION_DAYS (cascades slices + events)", async () => {
+  it("deletes sessions older than SESSION_RETENTION_DAYS (cascades event-batches + markers)", async () => {
     const alice = await createUser();
     const team = await createOrganization({ owner: alice });
     const project = await createProject({ organization: team });

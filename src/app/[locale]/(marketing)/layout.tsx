@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { getTranslations } from "next-intl/server";
 
+import { DotGridBackground } from "./components/dot-grid-background";
 import { MarketingFooter } from "./components/marketing-footer";
 import { MarketingHeader } from "./components/marketing-header";
 
@@ -15,6 +16,7 @@ export default async function MarketingLayout({ children }: { children: ReactNod
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <DotGridBackground />
       <a
         href="#main-content"
         className="bg-background text-foreground ring-ring sr-only z-50 rounded-md px-4 py-2 text-sm font-medium focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:ring-2 focus:outline-none"

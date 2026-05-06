@@ -47,7 +47,7 @@
       "colSession": "Sessione",
       "colUser": "Utente",
       "colProject": "Progetto",
-      "colPages": "Pagine",
+      "colEvents": "Eventi",
       "colDuration": "Durata",
       "colDate": "Data",
       "emptyDash": "—"
@@ -82,13 +82,13 @@
       "ariaReload": "Ricarica sessione"
     },
     "updateTooltip": {
-      "newSlices": "{count, plural, one {# nuovo segmento} other {# nuovi segmenti}}",
       "newEvents": "{count, plural, one {# nuovo evento} other {# nuovi eventi}}",
       "ended": "la sessione è terminata",
       "suffix": "Clic per ricaricare"
     },
     "player": {
       "empty": "Nessun evento registrato in questa sessione.",
+      "decompressError": "Impossibile caricare gli eventi della sessione.",
       "control": {
         "play": "Riproduci",
         "pause": "Pausa",
@@ -108,7 +108,7 @@
       "slicePicker": {
         "reasonInit": "Inizio",
         "reasonIdle": "Dopo inattività",
-        "reasonNavigation": "Navigazione",
+        "reasonUrl": "Cambio URL",
         "tooltip": "{reason} · {pathname} · {duration} · {events} eventi"
       }
     }

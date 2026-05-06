@@ -91,7 +91,7 @@ Destructive. The endpoint runs everything inside one `$transaction`:
 
 1. **Solo-member orgs** (you're the only member) get **deleted
    outright** — Prisma cascades remove invites, projects, sessions,
-   slices, events, tracked users.
+   event batches, markers, tracked users.
 2. **Shared orgs** get **ownership transfer** so an ownerless org is
    impossible afterwards. Successor priority: oldest remaining ADMIN
    → oldest remaining member of any role. Then the membership row

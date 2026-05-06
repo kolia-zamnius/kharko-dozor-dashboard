@@ -13,7 +13,6 @@ type EventAggRow = {
   last_event_ms: bigint | null;
 };
 
-/** KPI summary row for the activity page. */
 export type ActivityAggregates = {
   readonly sessionCount: number;
   readonly totalActiveTime: number;
@@ -42,14 +41,14 @@ export async function computeActivityAggregates(
     `,
     prisma.$queryRaw<EventAggRow[]>`
       SELECT
-        COUNT(*)::bigint AS total_events,
-        MIN(e.timestamp)::bigint AS first_event_ms,
-        MAX(e.timestamp)::bigint AS last_event_ms
-      FROM "Event" e
-      JOIN "Session" s ON s.id = e."sessionId"
+        COALESCE(SUM(eb."eventCount"), 0)::bigint AS total_events,
+        MIN(eb."firstTimestamp")::bigint          AS first_event_ms,
+        MAX(eb."lastTimestamp")::bigint           AS last_event_ms
+      FROM "EventBatch" eb
+      JOIN "Session" s ON s.id = eb."sessionId"
       WHERE s."trackedUserId" = ${trackedUserId}
-        AND e.timestamp >= ${fromMs}
-        AND e.timestamp <  ${toMs}
+        AND eb."firstTimestamp" >= ${fromMs}
+        AND eb."firstTimestamp" <  ${toMs}
     `,
   ]);
 

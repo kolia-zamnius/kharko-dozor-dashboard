@@ -11,7 +11,7 @@ const cancelSchema = z.object({
 export const OPTIONS = corsPreflightResponse;
 
 /**
- * Hard-delete (cascades slices + events). 204 no-op on miss — cancel can race
+ * Hard-delete (cascades event-batches + markers). 204 no-op on miss — cancel can race
  * with the first ingest batch arriving (treating it as 404 would spam Sentry).
  * `(projectId, externalId)` scoping prevents a key for project A from deleting
  * project B's session.

@@ -31,10 +31,11 @@ When you call `Dozor.init({ apiKey, endpoint })` in your app:
    input events.
 2. **Events accumulate in a buffer** — in-memory array, capped at
    10,000 events.
-3. **Slice markers track navigation** — every pathname change (SPA
-   route or hard navigation; hash-only and query-only changes are
-   ignored) and every >60s gap without activity create a "slice"
-   boundary so long sessions can be replayed in chunks.
+3. **Inline markers track navigation + identity** — every SPA
+   pathname change emits a `dozor:url` rrweb custom event into the
+   stream (hash-only and query-only changes ignored). `dozor.identify()`
+   emits a `dozor:identity` marker. The dashboard slices the stream
+   client-side at read time using these anchors.
 4. **Privacy filters apply at source** — fields with `data-dozor-mask`
    have their text replaced with asterisks **before** the event is
    buffered. Masked content never enters the network.
@@ -56,11 +57,17 @@ A batch arrives at `POST /api/ingest`:
    batch → 400.
 3. **Upsert the session row** — keyed on `(projectId, externalId)`.
    The same `sessionId` from the SDK upserts to the same row, so
-   batches for one session converge.
-4. **Upsert slice markers** — keyed on `(sessionId, index)`.
-5. **Bulk-insert events** — single `prisma.event.createMany`. Events
-   are written with their `sliceIndex` so the replay player can scope
-   queries per slice.
+   batches for one session converge. On the call that creates the row,
+   the pipeline also synthesises an initial `Marker(kind="url")` from
+   `metadata.url` — every session gets at least one timeline anchor.
+4. **Insert the EventBatch** — one row per ingest POST. Events are
+   gzipped as a JSON blob and stored verbatim. No row-per-event,
+   no slice aggregates.
+5. **Extract `dozor:*` markers** — scan the batch's events for rrweb
+   custom events (`type=5`) whose `data.tag` starts with `dozor:` and
+   write a typed `Marker` row per match (`kind="url"` or
+   `kind="identity"`). Stats queries hit Marker rather than
+   decompressing event blobs.
 6. **204 No Content** — empty response, the SDK proceeds to the next
    batch.
 
@@ -73,14 +80,21 @@ queue (Inngest, Trigger.dev) plus a worker that batches rows.
 
 Open the dashboard, click a session row:
 
-1. **`GET /api/sessions/{id}`** — metadata + slice list. Events are
-   **not** in this response.
-2. **Click a slice** → `GET /api/sessions/{id}/slices/{idx}/events`
-   fetches just that slice's event stream.
-3. **rrweb's player** consumes the event stream inside a sandboxed
-   iframe — DOM mutations are re-applied to a fresh document, mouse
-   moves and scrolls are replayed, the visual state of the user's
-   browser at any point in time is reconstructed pixel-for-pixel.
+1. **`GET /api/sessions/{id}`** — metadata + the marker list. Event
+   batches are **not** in this response.
+2. **`GET /api/sessions/{id}/events`** — returns
+   `{ batches: [{ data: "<base64-gzip>", … }] }` ordered by
+   `firstTimestamp`. The browser decompresses each blob via
+   `DecompressionStream`, concatenates, sorts by timestamp.
+3. **Slicer runs in the browser** — pure function from the events
+   array + slicing criteria (split on URL change, split on idle gap,
+   or both). Slices are derived state; changing the criteria reslices
+   instantly without a server round-trip.
+4. **rrweb's player** consumes the active slice's event stream inside
+   a sandboxed iframe — DOM mutations are re-applied to a fresh
+   document, mouse moves and scrolls are replayed, the visual state
+   of the user's browser at any point in time is reconstructed
+   pixel-for-pixel.
 
 The sandbox is load-bearing for security: the recorded page's scripts
 can't execute in the dashboard's chrome. See

@@ -64,7 +64,7 @@ the membership. An ownerless org is impossible after the flow.
 OWNER-only, TEAM orgs only. **Delete org** requires typed
 confirmation, then Prisma cascades take care of everything underneath
 — Memberships, Invites, Projects, and through Projects: Sessions,
-Slices, Events, TrackedUsers.
+EventBatches, Markers, TrackedUsers.
 
 One explicit pre-step before the delete fires: every
 `User.activeOrganizationId` pointing at the org gets nullified. The

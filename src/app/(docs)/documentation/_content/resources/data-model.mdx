@@ -8,7 +8,7 @@ The dashboard owns 14 tables, organised into two domains:
   `Authenticator`, `OtpRateLimit`, `InviteSendRateLimit` (six tables,
   Auth.js territory + rate-limit support).
 - **Business side** — `Organization`, `Membership`, `Invite`,
-  `Project`, `TrackedUser`, `Session`, `Slice`, `Event` (eight
+  `Project`, `TrackedUser`, `Session`, `EventBatch`, `Marker` (eight
   tables, the actual product).
 
 Schema source: [`prisma/schema.prisma`][schema]. This page exists
@@ -38,9 +38,9 @@ cold.
 | `Project`      | `id`, `name`, `key` (unique), `organizationId` (FK → Org, Cascade), `defaultDisplayNameTraitKey`                                                                     | Owns: TrackedUser (Cascade), Session (Cascade)                  | The recording target — one project = one regeneratable API key |
 | `Invite`       | `email`, `role`, `status` (enum), `expiresAt`, `organizationId` (FK → Org, Cascade), `invitedById` (FK → User)                                                       | Belongs to Org + inviter                                        | Pending invitation to join an org                              |
 | `TrackedUser`  | `externalId`, `projectId` (FK → Project, Cascade), `customName`, `displayNameTraitKey`, `traits` (Json)                                                              | Belongs to Project, owns Sessions (via SetNull on delete)       | A visitor identified via `dozor.identify()`                    |
-| `Session`      | `externalId`, `projectId` (FK → Project, Cascade), `trackedUserId` (FK → TrackedUser, SetNull), `url`, `userAgent`, `duration`, `eventCount`, `startedAt`, `endedAt` | Owns: Slice (Cascade), Event (Cascade)                          | One browser session as captured by the SDK                     |
-| `Slice`        | `index`, `reason` (`init \| idle \| navigation`), `url`, `pathname`, `duration`, `startedAt`, (`sessionId`, `index`) unique                                          | Belongs to Session, owns Events (SetNull on delete)             | Replayable segment within a session                            |
-| `Event`        | `type`, `timestamp`, `data` (Json), `sessionId` (FK → Session, Cascade), `sliceId` (FK → Slice, SetNull), `sliceIndex`                                               | Belongs to Session + Slice                                      | Raw rrweb event                                                |
+| `Session`      | `externalId`, `projectId` (FK → Project, Cascade), `trackedUserId` (FK → TrackedUser, SetNull), `url`, `userAgent`, `duration`, `eventCount`, `startedAt`, `endedAt` | Owns: EventBatch (Cascade), Marker (Cascade)                    | One browser session as captured by the SDK                     |
+| `EventBatch`   | `firstTimestamp`, `lastTimestamp`, `eventCount`, `data` (Bytes — gzip-compressed JSON array), `sessionId` (FK → Session, Cascade)                                    | Belongs to Session                                              | One row per ingest POST — stored verbatim for replay           |
+| `Marker`       | `timestamp`, `kind` (`url \| identity`), `data` (Json), `sessionId` (FK → Session, Cascade)                                                                          | Belongs to Session                                              | Typed timeline anchors extracted from rrweb custom events      |
 
 ## Cascade rules — the destructive map
 
@@ -63,7 +63,7 @@ When you delete an entity, this is what comes with it:
 
 **`Session` delete**
 
-- **Cascades:** `Slice`, `Event`.
+- **Cascades:** `EventBatch`, `Marker`.
 - **FK SetNull:** the `TrackedUser` row stays — the user keeps their other sessions; only this session's `trackedUserId` was the linkage.
 
 **`TrackedUser` delete**
@@ -84,8 +84,8 @@ Hot read paths:
 | Sessions list (per project, newest first)      | `[projectId, createdAt(sort: Desc)]` on `Session`             |
 | Tracked users list (per project, recent first) | `[projectId, updatedAt(sort: Desc)]` on `TrackedUser`         |
 | Ingest upsert (per project, by external id)    | `[projectId, externalId]` unique on `Session` + `TrackedUser` |
-| Slice events (one slice's events)              | `sliceId` on `Event`                                          |
-| Session events fallback (legacy pre-slice)     | `sessionId` on `Event`                                        |
+| Session events stream (player load)            | `[sessionId, firstTimestamp]` on `EventBatch`                 |
+| Marker timeline (stats / slicer hints)         | `[sessionId, kind, timestamp]` on `Marker`                    |
 | Member's orgs                                  | `userId` on `Membership`                                      |
 | Org's members                                  | `organizationId` on `Membership`                              |
 | OAuth account lookup                           | `[provider, providerAccountId]` unique on `Account`           |
@@ -107,8 +107,8 @@ profile shifts them.
 | `Project`      |               250               | A few per org (10s–100s total)                  |
 | `TrackedUser`  |        300 + traits JSON        | One per `(project, externalId)` (1000s–100000s) |
 | `Session`      |               300               | One per browser session (10000s–1000000s)       |
-| `Slice`        |               250               | ~3× session count (init + idle + navigation)    |
-| `Event`        | 100 + data JSON (avg 200 bytes) | rrweb-volume — **dominant table by 10–100×**    |
+| `EventBatch`   |   50 + ~50 KB gzipped blob      | One per ingest POST (~1/min while recording) — **dominant table by storage** |
+| `Marker`       |        100 + data JSON          | A few per session (per URL change + identify)   |
 | `Invite`       |               200               | Low cardinality, swept daily                    |
 | `OtpRateLimit` |               80                | Bucket-resets at UTC midnight                   |
 

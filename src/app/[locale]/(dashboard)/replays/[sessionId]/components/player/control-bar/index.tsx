@@ -17,6 +17,8 @@ import { selectIsPlayerDisabled, usePlayerStore } from "../store";
 import { SeekBar } from "./seek-bar";
 
 const SPEED_OPTIONS = [0.5, 1, 2] as const;
+const BRAND_HOVER = "hover:bg-primary/10 hover:text-primary";
+const BRAND_ACTIVE = "bg-primary/10 text-primary";
 
 /** `useShallow` over preference fields so the 60fps `currentTime` tick doesn't re-render the bar. */
 export function ControlBar() {
@@ -43,7 +45,7 @@ export function ControlBar() {
         <Button
           variant="ghost"
           size="icon"
-          className="size-8"
+          className={cn(BRAND_HOVER, "size-8")}
           onClick={isPlaying ? pause : play}
           disabled={isDisabled}
           aria-label={isPlaying ? t("pause") : t("play")}
@@ -54,7 +56,7 @@ export function ControlBar() {
         <Button
           variant="ghost"
           size="icon"
-          className="size-8"
+          className={cn(BRAND_HOVER, "size-8")}
           onClick={() => {
             const { currentTime } = usePlayerStore.getState();
             seek(Math.max(0, currentTime - 5000));
@@ -68,7 +70,7 @@ export function ControlBar() {
         <Button
           variant="ghost"
           size="icon"
-          className="size-8"
+          className={cn(BRAND_HOVER, "size-8")}
           onClick={() => {
             const { currentTime, totalTime } = usePlayerStore.getState();
             seek(Math.min(totalTime, currentTime + 5000));
@@ -81,7 +83,7 @@ export function ControlBar() {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="font-mono text-xs" disabled={isDisabled}>
+            <Button variant="ghost" size="sm" className={cn(BRAND_HOVER, "font-mono text-xs")} disabled={isDisabled}>
               {speed}x
             </Button>
           </PopoverTrigger>
@@ -92,8 +94,9 @@ export function ControlBar() {
                 type="button"
                 onClick={() => setSpeed(s)}
                 className={cn(
-                  "hover:bg-muted flex w-full items-center justify-center rounded-md px-2 py-1 font-mono text-sm transition-colors",
-                  speed === s && "bg-muted font-medium",
+                  BRAND_HOVER,
+                  "flex w-full items-center justify-center rounded-md px-2 py-1 font-mono text-sm transition-colors",
+                  speed === s && cn(BRAND_ACTIVE, "font-medium"),
                 )}
               >
                 {s}x
@@ -103,9 +106,9 @@ export function ControlBar() {
         </Popover>
 
         <Button
-          variant={skipInactive ? "secondary" : "ghost"}
+          variant="ghost"
           size="sm"
-          className="gap-1"
+          className={cn(BRAND_HOVER, "gap-1", skipInactive && BRAND_ACTIVE)}
           onClick={toggleSkipInactive}
           disabled={isDisabled}
           aria-label={t("skipIdleAria")}
@@ -116,9 +119,9 @@ export function ControlBar() {
         </Button>
 
         <Button
-          variant={autoContinue ? "secondary" : "ghost"}
+          variant="ghost"
           size="sm"
-          className="gap-1"
+          className={cn(BRAND_HOVER, "gap-1", autoContinue && BRAND_ACTIVE)}
           onClick={toggleAutoContinue}
           disabled={isDisabled}
           aria-label={t("autoPlayAria")}
@@ -131,9 +134,9 @@ export function ControlBar() {
         <div className="flex-1" />
 
         <Button
-          variant={consoleOpen ? "secondary" : "ghost"}
+          variant="ghost"
           size="sm"
-          className="gap-1"
+          className={cn(BRAND_HOVER, "gap-1", consoleOpen && BRAND_ACTIVE)}
           onClick={toggleConsole}
           disabled={isDisabled}
           aria-label={t("consoleAria")}

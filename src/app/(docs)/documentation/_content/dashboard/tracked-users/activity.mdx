@@ -47,16 +47,19 @@ cache misses.
 
 ## Page distribution
 
-Top pathnames the user visited in the window, ordered by total active
-time on each page (`SUM(slice.duration) DESC`):
+Top pathnames the user visited in the window, ordered by total time
+spent on each page. Computed from `Marker(kind="url")` timestamps:
+each url-marker opens a period that spans until the next marker (or
+the session's `endedAt` for the last one). Periods are summed per
+pathname across every session in the window.
 
 - **Pathname** — the URL path (without origin / search).
-- **Duration** — sum of slice durations on that path.
-- **Share** — fraction of total active time across all pages (`0..1`).
-- **Visits** — distinct slice count for the path.
+- **Duration** — sum of period durations on that path.
+- **Share** — fraction of total time across all pages (`0..1`).
+- **Visits** — number of times the user landed on that path.
 
 `share` is computed against the **full distribution total**, not the
-displayed slice — so "Show more" / "Show less" doesn't shift
+trimmed `pageLimit` — so "Show more" / "Show less" doesn't shift
 percentages.
 
 ## Sessions timeline
@@ -66,7 +69,7 @@ sessions stack into parallel rows via greedy interval scheduling, so
 the chart uses the minimum number of lanes vertically.
 
 - Each bar is a `<Link>` to `/replays/{sessionId}` — clicking opens
-  the player at the session's first slice.
+  the player at the session's first slice (derived in the browser).
 - **Still-open sessions** (`endedAt: null`) extend to the right edge
   and render in **emerald**, the only colour signal in the chart so
   "this user is live right now" jumps out.

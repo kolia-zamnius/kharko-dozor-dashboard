@@ -11,7 +11,7 @@ import { HttpError } from "@/server/http-error";
  */
 export const MAX_DECOMPRESSED_INGEST_BYTES = 10 * 1024 * 1024;
 
-/** Errors the pipe with 413 the moment cumulative output exceeds `maxBytes` — no chunk ever buffered fully in memory. */
+// Errors the pipe with 413 the moment cumulative output exceeds `maxBytes` — no chunk ever buffered fully in memory.
 function createByteCapStream(maxBytes: number) {
   let bytes = 0;
   return new TransformStream<Uint8Array, Uint8Array>({
@@ -30,17 +30,6 @@ const eventSchema = z.object({
   type: z.number(),
   data: z.unknown(),
   timestamp: z.number(),
-  sliceIndex: z.number().int().min(0).optional(),
-});
-
-const sliceMarkerSchema = z.object({
-  index: z.number().int().min(0),
-  reason: z.enum(["init", "idle", "navigation"]),
-  startedAt: z.number(),
-  url: z.string(),
-  pathname: z.string(),
-  viewportWidth: z.number().optional(),
-  viewportHeight: z.number().optional(),
 });
 
 const userIdentitySchema = z.object({
@@ -48,7 +37,8 @@ const userIdentitySchema = z.object({
   traits: z.record(z.string(), z.unknown()).optional(),
 });
 
-/** `pageViews` is ignored — kept for back-compat so old SDK builds don't get bricked. */
+// `sliceMarkers` / `pageViews` accepted but ignored — kept tolerated so old SDK
+// builds don't get bricked. Current SDK does not send either.
 export const ingestSchema = z.object({
   sessionId: z.uuid(),
   events: z.array(eventSchema).max(500),
@@ -64,12 +54,11 @@ export const ingestSchema = z.object({
     })
     .optional(),
   pageViews: z.array(z.unknown()).optional(),
-  sliceMarkers: z.array(sliceMarkerSchema).optional(),
+  sliceMarkers: z.array(z.unknown()).optional(),
 });
 
 export type IngestPayload = z.infer<typeof ingestSchema>;
 export type IngestEvent = IngestPayload["events"][number];
-export type IngestSliceMarker = NonNullable<IngestPayload["sliceMarkers"]>[number];
 export type IngestMetadata = IngestPayload["metadata"];
 
 /**

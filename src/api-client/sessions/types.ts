@@ -2,18 +2,22 @@ import type { z } from "zod";
 
 import type { SessionDateRange, SessionListSortBy, SessionListSortDir } from "./domain";
 import type {
+  eventBatchEnvelopeSchema,
+  markerSchema,
   paginatedSessionsSchema,
   sessionDetailSchema,
-  sessionEventSchema,
+  sessionEventsResponseSchema,
   sessionListItemSchema,
+  sessionMarkersResponseSchema,
   sessionsSummarySchema,
-  sliceInfoSchema,
 } from "./response-schemas";
 
 export type SessionListItem = z.infer<typeof sessionListItemSchema>;
-export type SliceInfo = z.infer<typeof sliceInfoSchema>;
 export type SessionDetail = z.infer<typeof sessionDetailSchema>;
-export type SessionEvent = z.infer<typeof sessionEventSchema>;
+export type Marker = z.infer<typeof markerSchema>;
+export type EventBatchEnvelope = z.infer<typeof eventBatchEnvelopeSchema>;
+export type SessionEventsResponse = z.infer<typeof sessionEventsResponseSchema>;
+export type SessionMarkersResponse = z.infer<typeof sessionMarkersResponseSchema>;
 export type PaginatedSessions = z.infer<typeof paginatedSessionsSchema>;
 export type SessionsSummary = z.infer<typeof sessionsSummarySchema>;
 

@@ -47,7 +47,7 @@
       "colSession": "Sitzung",
       "colUser": "Benutzer",
       "colProject": "Projekt",
-      "colPages": "Seiten",
+      "colEvents": "Ereignisse",
       "colDuration": "Dauer",
       "colDate": "Datum",
       "emptyDash": "—"
@@ -82,13 +82,13 @@
       "ariaReload": "Sitzung neu laden"
     },
     "updateTooltip": {
-      "newSlices": "{count, plural, one {# neues Segment} other {# neue Segmente}}",
       "newEvents": "{count, plural, one {# neues Ereignis} other {# neue Ereignisse}}",
       "ended": "Sitzung beendet",
       "suffix": "Klicken zum Neuladen"
     },
     "player": {
       "empty": "Keine Ereignisse in dieser Sitzung aufgezeichnet.",
+      "decompressError": "Sitzungsereignisse konnten nicht geladen werden.",
       "control": {
         "play": "Abspielen",
         "pause": "Pause",
@@ -108,7 +108,7 @@
       "slicePicker": {
         "reasonInit": "Start",
         "reasonIdle": "Nach Leerlauf",
-        "reasonNavigation": "Navigation",
+        "reasonUrl": "URL-Wechsel",
         "tooltip": "{reason} · {pathname} · {duration} · {events} Ereignisse"
       }
     }

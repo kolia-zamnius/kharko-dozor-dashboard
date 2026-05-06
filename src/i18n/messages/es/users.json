@@ -146,7 +146,7 @@
       "ongoing": "en curso",
       "lessThanSecond": "<1s",
       "clickToReplay": "Clic para reproducir",
-      "sliceCount": "{count, plural, one {# segmento} other {# segmentos}}"
+      "pageCount": "{count, plural, one {# página} other {# páginas}}"
     },
     "sessions": {
       "title": "Sesiones",
@@ -155,7 +155,6 @@
       "colStarted": "Iniciada",
       "colDuration": "Duración",
       "colEvents": "Eventos",
-      "colSlices": "Segmentos",
       "loadMore": "Cargar más",
       "loading": "Cargando…"
     },

@@ -1,8 +1,13 @@
 /**
  * `/api/ingest` — the only external contract shared with the published
  * `@kharko/dozor` SDK, so behaviour must stay identical across releases. Full
- * pipeline: public-key auth → body parse (gzip-aware) → session upsert →
- * slice markers → event insert → CORS response.
+ * pipeline: public-key auth → body parse (gzip-aware) → session upsert
+ * (synthesise initial url-marker on creation) → EventBatch insert → extract
+ * `dozor:*` custom-event markers into typed Marker rows → CORS response.
+ *
+ * Legacy `sliceMarkers` / `pageViews` / `sliceIndex` payload fields are
+ * accepted but ignored, kept tolerated so 1.2.x SDK builds in the wild
+ * keep working.
  */
 
 import { gzipSync } from "node:zlib";
@@ -81,7 +86,7 @@ describe("POST /api/ingest", () => {
     await prisma.$disconnect();
   });
 
-  it("creates a Session + Slice + Events for a valid batch", async () => {
+  it("creates a Session + EventBatch + initial url Marker for a valid batch", async () => {
     const alice = await createUser();
     const team = await createOrganization({ owner: alice });
     const project = await createProject({ organization: team });
@@ -105,12 +110,67 @@ describe("POST /api/ingest", () => {
     });
     expect(session).not.toBeNull();
 
-    const slices = await prisma.slice.findMany({ where: { sessionId: session!.id } });
-    expect(slices).toHaveLength(1);
-    expect(slices[0]?.index).toBe(0);
+    const batches = await prisma.eventBatch.findMany({ where: { sessionId: session!.id } });
+    expect(batches).toHaveLength(1);
+    expect(batches[0]?.eventCount).toBe(3);
 
-    const eventCount = await prisma.event.count({ where: { sessionId: session!.id } });
-    expect(eventCount).toBe(3);
+    const markers = await prisma.marker.findMany({
+      where: { sessionId: session!.id, kind: "url" },
+    });
+    expect(markers.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("accepts a modern payload (no `sliceMarkers` / `sliceIndex` fields) and extracts `dozor:url` markers from custom events", async () => {
+    const alice = await createUser();
+    const team = await createOrganization({ owner: alice });
+    const project = await createProject({ organization: team });
+
+    const sessionId = crypto.randomUUID();
+    const now = Date.now();
+    const modernPayload = {
+      sessionId,
+      events: [
+        { type: 4, data: { href: "https://example.com" }, timestamp: now },
+        { type: 2, data: { node: {} }, timestamp: now + 50 },
+        // SPA navigation lands as an rrweb custom event (type=5) inline in the stream.
+        {
+          type: 5,
+          data: { tag: "dozor:url", payload: { url: "https://example.com/checkout", pathname: "/checkout" } },
+          timestamp: now + 100,
+        },
+        { type: 2, data: { node: {} }, timestamp: now + 150 },
+      ],
+      metadata: {
+        url: "https://example.com/",
+        referrer: "",
+        userAgent: "test-agent/1.0",
+        screenWidth: 1920,
+        screenHeight: 1080,
+        language: "en-US",
+      },
+    };
+
+    const req = new Request("http://localhost/api/ingest", {
+      method: "POST",
+      headers: { "X-Dozor-Public-Key": project.key, "content-type": "application/json" },
+      body: JSON.stringify(modernPayload),
+    });
+    const response = await ingestRoute.POST(req);
+
+    expect(response.status).toBe(204);
+
+    const session = await prisma.session.findUnique({
+      where: { projectId_externalId: { projectId: project.id, externalId: sessionId } },
+    });
+    expect(session).not.toBeNull();
+
+    const urlMarkers = await prisma.marker.findMany({
+      where: { sessionId: session!.id, kind: "url" },
+      orderBy: { timestamp: "asc" },
+    });
+    // Synthetic initial marker (from metadata.url on session creation) + 1 from the custom event.
+    expect(urlMarkers).toHaveLength(2);
+    expect((urlMarkers[1]!.data as { pathname: string }).pathname).toBe("/checkout");
   });
 
   it("decompresses a gzip batch transparently", async () => {
