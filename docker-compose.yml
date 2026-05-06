@@ -1,12 +1,12 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     ports:
       - "5432:5432"
     environment:
+      POSTGRES_DB: kharko_dozor
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: kharko_dozor
     volumes:
       - pgdata:/var/lib/postgresql/data
 
