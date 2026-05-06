@@ -7,10 +7,11 @@ import { prisma } from "@/server/db/client";
 
 type BucketRow = { bucket: Date; pathname: string | null; n: bigint };
 
-// Per-event counts come from EventBatch.eventCount distributed evenly across
-// the batch's [firstTimestamp, lastTimestamp] window — exact within sub-second
-// granularity for typical batches (60s flush interval). Pathname per bucket is
-// looked up from the most recent url-marker timestamp ≤ bucket-start.
+// Per-batch attribution — every event in a batch is assigned to the bucket
+// where the batch *started* (`firstTimestamp`). Exact per-event timestamps live
+// inside the gzip blob and would cost a JSON-parse-per-batch to honour, so the
+// histogram trades sub-batch precision (≤ 60s, our flush window) for cheap SQL.
+// Pathname per bucket = most recent url-marker timestamp ≤ batch start.
 export async function computeActivityHistogram(
   trackedUserId: string,
   from: Date,

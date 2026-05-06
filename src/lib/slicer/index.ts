@@ -12,65 +12,74 @@ function isUrlMarker(event: DozorEvent): event is DozorEvent & { data: UrlMarker
 }
 
 // Pure — caller controls memoisation. `events` may be unsorted; we copy + sort defensively.
+// Single linear pass: track running URL while collecting splits, so a session with N events
+// stays O(N) instead of the O(N²) shape that nested per-slice url lookups would produce.
 export function slice(events: readonly DozorEvent[], criteria: SlicingCriteria): Slice[] {
   if (events.length === 0) return [];
 
   const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);
-  const splits: Array<{ index: number; reason: "init" | "url" | "idle" }> = [{ index: 0, reason: "init" }];
+  type SplitMeta = { index: number; reason: "init" | "url" | "idle"; url: string | null; pathname: string | null };
+  const splits: SplitMeta[] = [];
+  // Seed from `initialUrl` so the init slice has a pathname even before the first navigation.
+  let runningUrl: string | null = criteria.initialUrl ?? null;
+  let runningPathname: string | null = derivePathname(runningUrl);
 
   for (let i = 0; i < sorted.length; i++) {
     const event = sorted[i]!;
 
-    if (criteria.byUrl && i > 0 && isUrlMarker(event)) {
-      splits.push({ index: i, reason: "url" });
+    if (isUrlMarker(event)) {
+      const payload = event.data.payload;
+      if (typeof payload.url === "string") runningUrl = payload.url;
+      if (typeof payload.pathname === "string") runningPathname = payload.pathname;
+    }
+
+    if (i === 0) {
+      splits.push({ index: 0, reason: "init", url: runningUrl, pathname: runningPathname });
       continue;
     }
 
-    if (criteria.idleGapMs !== null && i > 0) {
+    if (criteria.byUrl && isUrlMarker(event)) {
+      splits.push({ index: i, reason: "url", url: runningUrl, pathname: runningPathname });
+      continue;
+    }
+
+    if (criteria.idleGapMs !== null) {
       const prev = sorted[i - 1]!;
-      const gap = event.timestamp - prev.timestamp;
-      if (gap > criteria.idleGapMs) {
-        splits.push({ index: i, reason: "idle" });
+      if (event.timestamp - prev.timestamp > criteria.idleGapMs) {
+        splits.push({ index: i, reason: "idle", url: runningUrl, pathname: runningPathname });
       }
     }
   }
 
-  // Pre-scan url markers so each slice can advertise the pathname active at its start
-  // even when the slicer wasn't asked to split on URL.
-  const urlAt = (timestamp: number): { url: string | null; pathname: string | null } => {
-    let lastUrl: string | null = null;
-    let lastPathname: string | null = null;
-    for (const e of sorted) {
-      if (e.timestamp > timestamp) break;
-      if (isUrlMarker(e)) {
-        const payload = (e.data as UrlMarkerData).payload;
-        if (typeof payload.url === "string") lastUrl = payload.url;
-        if (typeof payload.pathname === "string") lastPathname = payload.pathname;
-      }
-    }
-    return { url: lastUrl, pathname: lastPathname };
-  };
-
   const out: Slice[] = [];
   for (let s = 0; s < splits.length; s++) {
-    const startIdx = splits[s]!.index;
+    const meta = splits[s]!;
+    const startIdx = meta.index;
     const endIdx = s + 1 < splits.length ? splits[s + 1]!.index : sorted.length;
     const sliceEvents = sorted.slice(startIdx, endIdx);
     const first = sliceEvents[0]!;
     const last = sliceEvents[sliceEvents.length - 1]!;
-    const { url, pathname } = urlAt(first.timestamp);
 
     out.push({
       id: `${first.timestamp}-${s}`,
-      pathname,
-      url,
-      reason: splits[s]!.reason,
+      pathname: meta.pathname,
+      url: meta.url,
+      reason: meta.reason,
       startedAt: first.timestamp,
       endedAt: last.timestamp,
-      duration: last.timestamp - first.timestamp,
+      duration: Math.round((last.timestamp - first.timestamp) / 1000),
       events: sliceEvents,
     });
   }
 
   return out;
+}
+
+function derivePathname(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return null;
+  }
 }

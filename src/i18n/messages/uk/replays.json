@@ -47,7 +47,7 @@
       "colSession": "Сесія",
       "colUser": "Користувач",
       "colProject": "Проект",
-      "colPages": "Сторінки",
+      "colEvents": "Події",
       "colDuration": "Тривалість",
       "colDate": "Дата",
       "emptyDash": "—"
@@ -88,6 +88,7 @@
     },
     "player": {
       "empty": "У цій сесії не записано подій.",
+      "decompressError": "Не вдалося завантажити події сесії.",
       "control": {
         "play": "Грати",
         "pause": "Пауза",

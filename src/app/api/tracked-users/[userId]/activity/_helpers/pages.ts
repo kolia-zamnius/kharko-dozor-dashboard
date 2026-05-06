@@ -11,12 +11,12 @@ export type PageDistributionSnapshot = {
 };
 
 type UrlMarkerRow = { sessionId: string; timestamp: bigint; data: { pathname?: string; url?: string } };
-type SessionRow = { id: string; endedAt: Date | null; url: string | null };
+type SessionRow = { id: string; startedAt: Date; endedAt: Date | null; url: string | null };
 
 // Pages = Marker(kind='url') periods, where each period spans from one url
 // marker to the next (or to the session's `lastEventAt` for the final marker).
-// Sessions without any url marker fall back to a single period using
-// `Session.url` (initial pathname).
+// Sessions without any url marker fall back to a single period covering the
+// session's whole [startedAt, endedAt] window, attributed to `Session.url`.
 export async function computePageDistribution(
   trackedUserId: string,
   from: Date,
@@ -28,7 +28,7 @@ export async function computePageDistribution(
       startedAt: { lte: to },
       OR: [{ endedAt: { gte: from } }, { endedAt: null }],
     },
-    select: { id: true, endedAt: true, url: true },
+    select: { id: true, startedAt: true, endedAt: true, url: true },
   });
   const idToInitialUrl = new Map(sessions.map((s) => [s.id, s.url] as const));
 
@@ -61,10 +61,11 @@ export async function computePageDistribution(
       const initialUrl = idToInitialUrl.get(session.id);
       if (initialUrl) {
         const pathname = safeDerivePathname(initialUrl);
-        // Without markers we don't know exact start — skip duration accounting,
-        // count it as a visit only.
+        const startMs = Math.max(session.startedAt.getTime(), from.getTime());
+        const endMs = Math.min(sessionEnd, to.getTime());
         const slot = totals.get(pathname) ?? { durationMs: 0, visits: 0 };
         slot.visits += 1;
+        if (endMs > startMs) slot.durationMs += endMs - startMs;
         totals.set(pathname, slot);
       }
       continue;
@@ -72,11 +73,13 @@ export async function computePageDistribution(
 
     for (let i = 0; i < sessionMarkers.length; i++) {
       const m = sessionMarkers[i]!;
-      const startMs = Math.max(Number(m.timestamp), from.getTime());
-      const endMs = Math.min(
-        i + 1 < sessionMarkers.length ? Number(sessionMarkers[i + 1]!.timestamp) : sessionEnd,
-        to.getTime(),
-      );
+      // `min(..., sessionEnd)` clamps clock-skewed markers (rrweb timestamp > server-recorded
+      // session end) so a stray future-stamped marker can't silently consume the next period.
+      const rawStart = Math.min(Number(m.timestamp), sessionEnd);
+      const rawEnd =
+        i + 1 < sessionMarkers.length ? Math.min(Number(sessionMarkers[i + 1]!.timestamp), sessionEnd) : sessionEnd;
+      const startMs = Math.max(rawStart, from.getTime());
+      const endMs = Math.min(rawEnd, to.getTime());
       if (endMs <= startMs) continue;
 
       const pathname = typeof m.data?.pathname === "string" ? m.data.pathname : safeDerivePathname(m.data?.url ?? "");

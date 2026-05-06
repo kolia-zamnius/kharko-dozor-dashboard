@@ -13,7 +13,6 @@ type EventAggRow = {
   last_event_ms: bigint | null;
 };
 
-/** KPI summary row for the activity page. */
 export type ActivityAggregates = {
   readonly sessionCount: number;
   readonly totalActiveTime: number;

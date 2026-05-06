@@ -1,4 +1,4 @@
-import type { Slice } from "@/lib/slicer/types";
+import type { DozorEvent, Slice } from "@/lib/slicer/types";
 
 /** `idle` = no replayer (initial/post-reset); `paused` = either user-paused or just-ready. */
 export type PlayerState = "idle" | "playing" | "paused" | "finished";
@@ -21,10 +21,8 @@ export type ConsoleLogEntry = {
   trace: string[];
 };
 
-export type PlayerEvent = {
-  type: number;
-  timestamp: number;
-  data: unknown;
-};
+// Player-side alias for the slicer's `DozorEvent` — same shape, kept under a player-flavoured name
+// so grep'ing for `PlayerEvent` lands you in the player tree, not the read-time slicer module.
+export type PlayerEvent = DozorEvent;
 
 export type { Slice };

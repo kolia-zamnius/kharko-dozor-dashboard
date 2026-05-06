@@ -63,7 +63,7 @@ User opens session
   ↓
 GET /api/sessions/{id}              → metadata + markers (typed anchors)
   ↓
-GET /api/sessions/{id}/events       → list of EventBatch rows (gzip blobs)
+GET /api/sessions/{id}/events       → { batches: [{ data: "<base64-gzip>", … }] }
   ↓
 Browser decompresses each blob (DecompressionStream),
 concatenates, sorts by timestamp
@@ -82,6 +82,65 @@ is sorted out at read time.
 Slicing is **derived state**. Changing the criteria (e.g. flipping
 "split on idle gaps" off) reslices instantly — no extra fetch, no
 remount churn beyond the active-slice change.
+
+### Why a `dozor:url` marker is a hard cut
+
+The SDK pairs every `dozor:url` custom event with an immediate
+`record.takeFullSnapshot()` — the next event in the stream after the
+marker is a fresh `type: 2` (FullSnapshot) for the new pathname. The
+slicer treats the marker as a hard split because resuming an
+incremental-mutation stream (`type: 3`) across a navigation would
+apply DOM mutations against the wrong document and corrupt the
+replay. The full-snapshot reset gives every URL slice a clean DOM to
+diff forward from.
+
+## Read endpoints
+
+Both endpoints are session-cookie-authenticated (VIEWER+) and
+respond with `Cache-Control: no-store` so polling-driven reloads
+always reach the server.
+
+### `GET /api/sessions/{sessionId}/events`
+
+```ts
+{
+  batches: Array<{
+    id: string;
+    firstTimestamp: number;          // Unix ms
+    lastTimestamp: number;           // Unix ms
+    eventCount: number;
+    data: string;                    // base64-encoded gzip of `eventWithTime[]`
+  }>;
+  nextCursor: string | null;         // forward-compat — currently always null
+}
+```
+
+The browser decodes each `data` field with
+`atob(...) → Uint8Array → DecompressionStream("gzip") → JSON.parse`.
+`nextCursor` is in the schema for the eventual day a single session
+hits a row count we want to page; today every session fits in one
+response.
+
+### `GET /api/sessions/{sessionId}/markers`
+
+```ts
+{
+  markers: Array<{
+    timestamp: number;               // Unix ms
+    kind: "url" | "identity";        // tag suffix (after "dozor:")
+    data: unknown;                   // shape per kind:
+                                     //   url       → { url, pathname }
+                                     //   identity  → { userId, traits? }
+  }>;
+}
+```
+
+Optional `?kind=url` / `?kind=identity` filters server-side. Anything
+else returns `400` — silent empty-result rebounded into a typed
+rejection.
+
+The wire contract for `POST /api/ingest` (the SDK-facing side) lives
+in [SDK → Wire format](/documentation/sdk/wire-format).
 
 ## Slice picker
 

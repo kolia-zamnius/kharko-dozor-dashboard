@@ -61,8 +61,8 @@ flicker, no extra fetch.
 
 The session-detail endpoint (`GET /api/sessions/{sessionId}`) returns
 metadata + a marker list (timeline anchors). The events themselves
-load via `GET /api/sessions/{sessionId}/events` — a list of
-`EventBatch` rows, each with a base64-gzip blob the browser
+load via `GET /api/sessions/{sessionId}/events` — `{ batches: [...] }`
+where each batch's `data` is a base64-encoded gzip blob the browser
 decompresses with `DecompressionStream`. The decompressed batches are
 concatenated, sorted by timestamp, and fed to the slicer + rrweb
 `Replayer`.

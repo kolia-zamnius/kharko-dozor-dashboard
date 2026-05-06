@@ -27,7 +27,7 @@ export function SlicePicker() {
   return (
     <div className="flex items-center gap-1.5 overflow-x-auto py-1">
       {slices.map((slice, index) => {
-        const Icon = REASON_ICONS[slice.reason] ?? PlayIcon;
+        const Icon = REASON_ICONS[slice.reason];
         const isActive = index === activeIndex;
         const label = t(REASON_KEYS[slice.reason]);
 

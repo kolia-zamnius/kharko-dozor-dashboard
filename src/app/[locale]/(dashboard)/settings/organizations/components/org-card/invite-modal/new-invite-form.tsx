@@ -39,10 +39,6 @@ export function NewInviteForm({ org }: { org: Organization }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-      {/*
-       * Three-column grid: each field its own Label+control wrapper,
-       * Send button in its own column bottom-aligned via flex.
-       */}
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
         <div className="space-y-1.5">
           <Label htmlFor="invite-email">{t("emailLabel")}</Label>
@@ -96,12 +92,7 @@ export function NewInviteForm({ org }: { org: Organization }) {
 
       {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
 
-      {/*
-       * Helper line explains the idempotent-resend semantic: the same
-       * email can be submitted again to refresh an existing invite, no
-       * manual revoke needed. Wording uses `INVITE_EXPIRY_DAYS` so copy
-       * and server-side math can never drift.
-       */}
+      {/* Wording threads `INVITE_EXPIRY_DAYS` so the copy can never drift from the server-side cap. */}
       <p className="text-muted-foreground text-xs">{t("expiryNote", { days: INVITE_EXPIRY_DAYS })}</p>
     </form>
   );

@@ -43,6 +43,24 @@ describe("slicer", () => {
     expect(slices[1]!.events).toHaveLength(2);
   });
 
+  it("converts duration to seconds (matches Session.duration unit)", () => {
+    const events = [event(0), event(5_000)];
+    const slices = slice(events, { byUrl: false, idleGapMs: null });
+    expect(slices[0]!.duration).toBe(5);
+  });
+
+  it("seeds the init slice's pathname from `initialUrl` when no url marker has fired yet", () => {
+    const events = [event(0), event(100), event(200)];
+    const slices = slice(events, {
+      byUrl: true,
+      idleGapMs: null,
+      initialUrl: "https://example.com/playground",
+    });
+    expect(slices).toHaveLength(1);
+    expect(slices[0]!.url).toBe("https://example.com/playground");
+    expect(slices[0]!.pathname).toBe("/playground");
+  });
+
   it("does not split when gap equals threshold (strict greater-than)", () => {
     const events = [event(0), event(60_000)];
     const slices = slice(events, { byUrl: false, idleGapMs: 60_000 });
@@ -64,6 +82,18 @@ describe("slicer", () => {
         const slices = slice(events, { byUrl: true, idleGapMs: 60_000 });
         const totalEvents = slices.reduce((sum, s) => sum + s.events.length, 0);
         expect(totalEvents).toBe(events.length);
+      }),
+    );
+  });
+
+  it("invariant — no slice contains zero events", () => {
+    fc.assert(
+      fc.property(fc.array(fc.integer({ min: 0, max: 1_000_000 }), { minLength: 1, maxLength: 100 }), (timestamps) => {
+        const events = timestamps.map((t) => event(t));
+        const slices = slice(events, { byUrl: true, idleGapMs: 60_000 });
+        for (const s of slices) {
+          expect(s.events.length).toBeGreaterThan(0);
+        }
       }),
     );
   });

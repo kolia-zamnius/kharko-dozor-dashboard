@@ -3,35 +3,51 @@ import type { ConsoleLogEntry, PlayerEvent } from "./types";
 
 const RRWEB_META_TYPE = 4;
 const RRWEB_FULL_SNAPSHOT_TYPE = 2;
+const RRWEB_CUSTOM_TYPE = 5;
 const EVENT_TYPE_PLUGIN = 6;
 const CONSOLE_PLUGIN_NAME = "rrweb/console@1";
+// Fallback only when the session was recorded before Dozor stamped viewport — never the active path.
+const DEFAULT_VIEWPORT = { width: 1920, height: 1080 } as const;
 
-// rrweb requires Meta(4) → FullSnapshot(2) → Mutations ordering. When a slice
-// starts at a FullSnapshot we synthesise a Meta event from the slice's url so
-// the Replayer renders the correct viewport on jump-in.
-export function ensureMetaEvent(events: PlayerEvent[], slice: Slice): PlayerEvent[] {
-  const first = events[0];
-  if (!first) return events;
-  if (first.type === RRWEB_META_TYPE) return events;
+// rrweb requires Meta(4) → FullSnapshot(2) → Mutations ordering. URL-cut slices
+// start with the `dozor:url` Custom event and the FullSnapshot lands at index
+// 1+, so we scan past leading Custom events before deciding to synthesise.
+// Without this, rrweb falls back to a default viewport and stretches mobile
+// recordings to desktop.
+export function ensureMetaEvent(
+  events: PlayerEvent[],
+  slice: Slice,
+  viewport: { width: number | null; height: number | null },
+): PlayerEvent[] {
+  if (events.length === 0) return events;
+  if (events[0]!.type === RRWEB_META_TYPE) return events;
 
-  if (first.type === RRWEB_FULL_SNAPSHOT_TYPE) {
-    const syntheticMeta: PlayerEvent = {
-      type: RRWEB_META_TYPE,
-      timestamp: first.timestamp - 1,
-      data: {
-        href: slice.url ?? "",
-        width: 1920,
-        height: 1080,
-      },
-    };
-    return [syntheticMeta, ...events];
+  let firstRenderIdx = -1;
+  for (let i = 0; i < events.length; i++) {
+    if (events[i]!.type !== RRWEB_CUSTOM_TYPE) {
+      firstRenderIdx = i;
+      break;
+    }
   }
+  if (firstRenderIdx === -1) return events;
 
-  return events;
+  const firstRender = events[firstRenderIdx]!;
+  if (firstRender.type === RRWEB_META_TYPE) return events;
+  if (firstRender.type !== RRWEB_FULL_SNAPSHOT_TYPE) return events;
+
+  const syntheticMeta: PlayerEvent = {
+    type: RRWEB_META_TYPE,
+    timestamp: firstRender.timestamp - 1,
+    data: {
+      href: slice.url ?? "",
+      width: viewport.width ?? DEFAULT_VIEWPORT.width,
+      height: viewport.height ?? DEFAULT_VIEWPORT.height,
+    },
+  };
+  return [...events.slice(0, firstRenderIdx), syntheticMeta, ...events.slice(firstRenderIdx)];
 }
 
-// Decompresses a base64-gzip envelope payload into a typed event array. Browser
-// `DecompressionStream` is a Web Streams API, available in every target browser.
+// Browser `DecompressionStream` ships in every target — no polyfill needed.
 export async function decompressBatch(base64Data: string): Promise<PlayerEvent[]> {
   if (base64Data.length === 0) return [];
 
@@ -44,7 +60,6 @@ export async function decompressBatch(base64Data: string): Promise<PlayerEvent[]
   return JSON.parse(text) as PlayerEvent[];
 }
 
-/** Format milliseconds as MM:SS */
 export function formatTime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const m = Math.floor(totalSeconds / 60);
@@ -52,7 +67,6 @@ export function formatTime(ms: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-/** Format milliseconds as MM:SS.cc (with centiseconds) */
 export function formatTimePrecise(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const m = Math.floor(totalSeconds / 60);

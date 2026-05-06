@@ -81,30 +81,24 @@ function stopPolling() {
 }
 
 type PlayerStoreState = {
-  // Playback
   state: PlayerState;
   currentTime: number;
   totalTime: number;
 
-  // Slices (derived client-side via the slicer module)
   activeSliceIndex: number;
   totalSlices: number;
   slices: Slice[];
 
-  // Data — Player passes the raw event stream + derived slices in
   events: PlayerEvent[];
 
-  // Idle detection (computed from events of the active slice)
   idlePeriods: IdlePeriod[];
-  /** Timestamp of the first event (Unix ms) — used for real-time display. */
+  /** Timestamp of the first event (Unix ms) — for real-time display, not the rrweb-internal offset clock. */
   sessionStartTimestamp: number;
 
-  // Preferences
   speed: number;
   skipInactive: boolean;
   autoContinue: boolean;
 
-  // UI
   consoleOpen: boolean;
 
   /** Cross-mount bridge — set on finish+auto-continue, read by `onReplayerReady` after the new Viewport mounts to decide auto-play vs paused. */
@@ -238,5 +232,4 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
     }),
 }));
 
-/** Single source of truth for the disabled-gate. */
 export const selectIsPlayerDisabled = (s: PlayerStoreState) => s.state === "idle" || s.events.length === 0;

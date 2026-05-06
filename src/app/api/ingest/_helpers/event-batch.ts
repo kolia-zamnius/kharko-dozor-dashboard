@@ -1,7 +1,9 @@
 import "server-only";
 
-import { prisma } from "@/server/db/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { IngestEvent } from "./parse-body";
+
+type DbClient = PrismaClient | Prisma.TransactionClient;
 
 // `CompressionStream` is a Node 18+ global — no polyfill needed in the App Router runtime.
 async function gzipJson(events: readonly IngestEvent[]): Promise<Buffer> {
@@ -11,7 +13,7 @@ async function gzipJson(events: readonly IngestEvent[]): Promise<Buffer> {
   return Buffer.from(arrayBuffer);
 }
 
-export async function insertEventBatch(sessionId: string, events: readonly IngestEvent[]): Promise<void> {
+export async function insertEventBatch(tx: DbClient, sessionId: string, events: readonly IngestEvent[]): Promise<void> {
   if (events.length === 0) return;
 
   let firstTimestamp = events[0]!.timestamp;
@@ -23,12 +25,14 @@ export async function insertEventBatch(sessionId: string, events: readonly Inges
 
   const data = await gzipJson(events);
 
-  await prisma.eventBatch.create({
+  await tx.eventBatch.create({
     data: {
       sessionId,
       firstTimestamp: BigInt(firstTimestamp),
       lastTimestamp: BigInt(lastTimestamp),
       eventCount: events.length,
+      // Prisma's `Bytes` column accepts `Buffer` directly but its generated type narrows to
+      // `Uint8Array<ArrayBuffer>` in TS strict mode — the cast is the trust-boundary marker.
       data: data as unknown as Uint8Array<ArrayBuffer>,
     },
   });

@@ -47,7 +47,7 @@
       "colSession": "Sessione",
       "colUser": "Utente",
       "colProject": "Progetto",
-      "colPages": "Pagine",
+      "colEvents": "Eventi",
       "colDuration": "Durata",
       "colDate": "Data",
       "emptyDash": "—"
@@ -88,6 +88,7 @@
     },
     "player": {
       "empty": "Nessun evento registrato in questa sessione.",
+      "decompressError": "Impossibile caricare gli eventi della sessione.",
       "control": {
         "play": "Riproduci",
         "pause": "Pausa",

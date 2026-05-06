@@ -1,7 +1,9 @@
 import "server-only";
 
-import { prisma } from "@/server/db/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { IngestEvent, IngestMetadata } from "./parse-body";
+
+type DbClient = PrismaClient | Prisma.TransactionClient;
 
 const RRWEB_CUSTOM_TYPE = 5;
 const TAG_PREFIX = "dozor:";
@@ -17,7 +19,11 @@ function isDozorMarker(event: IngestEvent): event is IngestEvent & { data: Custo
 // Pulls every `dozor:*` custom event out of the batch and persists it as a typed
 // Marker row. `kind` is the part after `dozor:` so the table evolves without a
 // schema change when new tags are added on the SDK side.
-export async function extractAndInsertMarkers(sessionId: string, events: readonly IngestEvent[]): Promise<void> {
+export async function extractAndInsertMarkers(
+  tx: DbClient,
+  sessionId: string,
+  events: readonly IngestEvent[],
+): Promise<void> {
   const rows = events.filter(isDozorMarker).map((event) => {
     const data = event.data as CustomEventData;
     return {
@@ -30,7 +36,7 @@ export async function extractAndInsertMarkers(sessionId: string, events: readonl
 
   if (rows.length === 0) return;
 
-  await prisma.marker.createMany({ data: rows });
+  await tx.marker.createMany({ data: rows });
 }
 
 // On Session creation we synthesise an initial url-marker from `metadata.url` so
@@ -38,6 +44,7 @@ export async function extractAndInsertMarkers(sessionId: string, events: readonl
 // Stats queries can then assume "first url-marker = session start" without
 // special-casing single-page sessions.
 export async function insertInitialUrlMarker(
+  tx: DbClient,
   sessionId: string,
   startedAt: Date,
   metadata: IngestMetadata,
@@ -51,7 +58,7 @@ export async function insertInitialUrlMarker(
     /* keep default */
   }
 
-  await prisma.marker.create({
+  await tx.marker.create({
     data: {
       sessionId,
       timestamp: BigInt(startedAt.getTime()),

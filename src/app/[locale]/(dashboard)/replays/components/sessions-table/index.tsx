@@ -31,7 +31,7 @@ export function SessionsTable({ sessions, sort, sortDir, onSortChange, canManage
           <TableHead>{t("colSession")}</TableHead>
           <TableHead>{t("colUser")}</TableHead>
           <TableHead>{t("colProject")}</TableHead>
-          <TableHead>{t("colPages")}</TableHead>
+          <TableHead>{t("colEvents")}</TableHead>
           <SortableHead
             label={t("colDuration")}
             sortKey="duration"

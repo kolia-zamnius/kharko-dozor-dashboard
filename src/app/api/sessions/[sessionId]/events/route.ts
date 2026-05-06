@@ -12,6 +12,9 @@ type Params = { sessionId: string };
 // (`data` is base64-gzip), concatenates the events arrays, sorts by timestamp.
 // Cursor is left in the schema for forward-compat once we hit a session that
 // genuinely needs paging.
+//
+// `Number(BigInt)` collapse on the timestamps is safe: rrweb stamps Unix-ms,
+// JS Number holds integer precision through 2^53 — that's year 287,396 AD.
 export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
   const session = await prisma.session.findUnique({
     where: { id: sessionId },
@@ -41,5 +44,9 @@ export const GET = withAuth<Params>(async (req, user, { sessionId }) => {
       })),
       nextCursor: null,
     }),
+    // Live sessions keep accepting batches until `endedAt` flips — the orange
+    // Reload button is what triggers a refetch, so any intermediate caching
+    // would mask new events between renders.
+    { headers: { "Cache-Control": "no-store" } },
   );
 });

@@ -82,9 +82,10 @@ Open the dashboard, click a session row:
 
 1. **`GET /api/sessions/{id}`** — metadata + the marker list. Event
    batches are **not** in this response.
-2. **`GET /api/sessions/{id}/events`** — fetches every gzip-compressed
-   `EventBatch` row, ordered by `firstTimestamp`. The browser
-   decompresses each blob, concatenates, sorts by timestamp.
+2. **`GET /api/sessions/{id}/events`** — returns
+   `{ batches: [{ data: "<base64-gzip>", … }] }` ordered by
+   `firstTimestamp`. The browser decompresses each blob via
+   `DecompressionStream`, concatenates, sorts by timestamp.
 3. **Slicer runs in the browser** — pure function from the events
    array + slicing criteria (split on URL change, split on idle gap,
    or both). Slices are derived state; changing the criteria reslices
