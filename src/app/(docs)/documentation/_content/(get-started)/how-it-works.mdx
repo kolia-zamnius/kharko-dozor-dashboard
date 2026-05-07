@@ -39,7 +39,10 @@ When you call `Dozor.init({ apiKey, endpoint })` in your app:
 4. **Privacy filters apply at source** — fields with `data-dozor-mask`
    have their text replaced with asterisks **before** the event is
    buffered. Masked content never enters the network.
-5. **Periodic flush** — every 60 s (or sooner: tab background, page
+5. **Eager bootstrap flush** — right after `start()`, the SDK ships
+   the initial Meta + FullSnapshot pair so the replayer-seed events
+   reach the server within ~1 s, independent of the periodic timer.
+6. **Periodic flush** — every 60 s (or sooner: tab background, page
    unload, buffer fill), the SDK gzips the buffer and POSTs to your
    ingest endpoint.
 
