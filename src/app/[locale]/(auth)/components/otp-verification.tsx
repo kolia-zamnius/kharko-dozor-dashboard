@@ -80,7 +80,8 @@ export function OTPVerification({ email, callbackUrl = "/users", onBack }: OTPVe
         <h1 className="text-2xl font-bold tracking-tight">{t("otp.title")}</h1>
         <p className="text-default-500 text-sm">
           {t.rich("otp.subtitle", {
-            email: () => <span className="text-foreground font-medium">{email}</span>,
+            email,
+            strong: (chunks) => <span className="text-foreground font-medium">{chunks}</span>,
           })}
         </p>
       </div>
