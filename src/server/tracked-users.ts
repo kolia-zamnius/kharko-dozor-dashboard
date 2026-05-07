@@ -7,6 +7,7 @@ import { resolveDisplayName } from "@/api-client/tracked-users/resolve-display-n
 import { SEVEN_DAYS_MS } from "@/lib/time";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
+import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";
 import type { TrackedUserId, UserId } from "@/types/ids";
 
 /**
@@ -36,8 +37,9 @@ export async function loadTrackedUserDetail(
           defaultDisplayNameTraitKey: true,
         },
       },
-      _count: { select: { sessions: true } },
+      _count: { select: { sessions: { where: REAL_SESSION_FILTER } } },
       sessions: {
+        where: REAL_SESSION_FILTER,
         select: { endedAt: true, duration: true, startedAt: true },
       },
     },

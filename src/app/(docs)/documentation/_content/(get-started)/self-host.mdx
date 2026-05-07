@@ -197,12 +197,13 @@ When the build finishes, Vercel gives you a URL like `your-fork.vercel.app`. Ope
 
 In order, it deletes:
 
-1. **Expired invites** — `Invite` rows past `INVITE_EXPIRY_DAYS` (default 3) that nobody accepted.
-2. **Old sessions** — `Session` rows older than `SESSION_RETENTION_DAYS` (default 90). Cascades to `EventBatch` + `Marker` rows, which is the bulk of database volume — gzipped event blobs for one busy session can be tens of MB.
-3. **Orphaned tracked-users** — `TrackedUser` rows whose every session was just deleted in step 2.
-4. **Empty organizations** — `Organization` rows with zero memberships left (after the last member leaves an invite-only org). Nullifies any `User.activeOrganizationId` pointing at them first.
+1. **Throwaway sessions** — `Session` rows below the "real interaction" floor (`MIN_REAL_SESSION_EVENTS` default 10 events, `MIN_REAL_SESSION_DURATION_SECONDS` default 1 second). These are SDK init + immediate-close artifacts that the dashboard already hides from every user-facing list, count, and aggregate; the cron sweep purges the underlying rows so the orphan-tracked-user step below catches the freed users.
+2. **Expired invites** — `Invite` rows past `INVITE_EXPIRY_DAYS` (default 3) that nobody accepted.
+3. **Old sessions** — `Session` rows older than `SESSION_RETENTION_DAYS` (default 90). Cascades to `EventBatch` + `Marker` rows, which is the bulk of database volume — gzipped event blobs for one busy session can be tens of MB.
+4. **Orphaned tracked-users** — `TrackedUser` rows whose every session was just deleted in steps 1 + 3.
+5. **Empty organizations** — `Organization` rows with zero memberships left (after the last member leaves an invite-only org). Nullifies any `User.activeOrganizationId` pointing at them first.
 
-The two retention windows are constants — bump them in `src/lib/time.ts` (`SESSION_RETENTION_DAYS`) and `src/api-client/organizations/constants.ts` (`INVITE_EXPIRY_DAYS`) if 90 days / 3 days don't fit your audit / GDPR / "I want to keep replays for a year" needs.
+Retention + floor windows are constants — bump `SESSION_RETENTION_DAYS` / `MIN_REAL_SESSION_EVENTS` / `MIN_REAL_SESSION_DURATION_SECONDS` in `src/lib/time.ts` and `INVITE_EXPIRY_DAYS` in `src/api-client/organizations/constants.ts` if the defaults don't fit your audit / GDPR / "I want every micro-session" needs.
 
 ### About `CRON_SECRET`
 

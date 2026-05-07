@@ -20,3 +20,17 @@ export const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
 export const SESSION_RETENTION_DAYS = 90;
 
 export const SESSION_RETENTION_MS = SESSION_RETENTION_DAYS * ONE_DAY_MS;
+
+/**
+ * "Real interaction" floor for a session — anything below is considered a throwaway
+ * artifact (SDK init + start + immediate close, dropped keepalive after 1 phantom
+ * console.log captured by the rrweb plugin, etc.) and excluded from every
+ * user-facing list, count, and aggregate. The nightly cron deletes them.
+ *
+ * `OR` semantics: a session must clear *both* thresholds to count as real. A
+ * 50-event burst inside 0.5 s is still throwaway; a 5-event interaction stretched
+ * across 8 s is still throwaway. Tunable per self-hoster — bumping these tightens
+ * the noise floor at the cost of dropping some genuinely tiny sessions.
+ */
+export const MIN_REAL_SESSION_EVENTS = 10;
+export const MIN_REAL_SESSION_DURATION_SECONDS = 1;

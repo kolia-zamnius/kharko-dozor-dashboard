@@ -3,6 +3,7 @@ import { ACTIVITY_CONFIG, parseActivityRange } from "@/api-client/tracked-users/
 import { userTimelineSchema } from "@/api-client/tracked-users/response-schemas";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
+import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";
 import { HttpError } from "@/server/http-error";
 import { NextResponse } from "next/server";
 
@@ -36,6 +37,7 @@ export const GET = withAuth<Params>(async (req, user, { userId }) => {
   const sessions = await prisma.session.findMany({
     where: {
       trackedUserId: trackedUser.id,
+      ...REAL_SESSION_FILTER,
       // [from, to] overlap — started before end AND (ended after start OR still open).
       startedAt: { lte: to },
       OR: [{ endedAt: { gte: from } }, { endedAt: null }],

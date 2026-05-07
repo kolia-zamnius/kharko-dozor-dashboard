@@ -86,6 +86,20 @@ describe("GET /api/sessions", () => {
     expect(json.data.map((s) => s.externalId)).toEqual(["recent"]);
   });
 
+  it("excludes throwaway sessions (eventCount < floor OR duration < floor) from the list", async () => {
+    const alice = await createUser();
+    const team = await createOrganization({ owner: alice });
+    const project = await createProject({ organization: team });
+    await createSession({ project, externalId: "real-1", eventCount: 50, duration: 60 });
+    await createSession({ project, externalId: "throwaway-too-few", eventCount: 3, duration: 60 });
+    await createSession({ project, externalId: "throwaway-too-short", eventCount: 50, duration: 0 });
+
+    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id, activeOrganizationId: team.id })));
+
+    const { json } = await invokeRoute<ListResponse>(sessionsRoute.GET, { method: "GET" });
+    expect(json.data.map((s) => s.externalId)).toEqual(["real-1"]);
+  });
+
   it("search matches externalId case-insensitively", async () => {
     const alice = await createUser();
     const team = await createOrganization({ owner: alice });

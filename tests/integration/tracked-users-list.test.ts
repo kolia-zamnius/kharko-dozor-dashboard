@@ -18,12 +18,12 @@ import * as trackedUsersRoute from "@/app/api/tracked-users/route";
 
 import { buildSession, buildSessionUser } from "../helpers/auth-mock";
 import { getTestPrisma, truncateAll } from "../helpers/db";
-import { createOrganization, createProject, createTrackedUser, createUser } from "../helpers/factories";
+import { createOrganization, createProject, createSession, createTrackedUser, createUser } from "../helpers/factories";
 import { invokeRoute } from "../helpers/invoke-route";
 import { mockAuth } from "../helpers/mocks";
 
 type ListResponse = {
-  data: Array<{ id: string; externalId: string; projectId: string }>;
+  data: Array<{ id: string; externalId: string; projectId: string; sessionCount: number }>;
   nextCursor: string | null;
 };
 
@@ -75,6 +75,25 @@ describe("GET /api/tracked-users", () => {
 
     // Stray IDs intersected away — safe fallback is "all alice's projects".
     expect(json.data.map((u) => u.externalId)).toEqual(["alice-user-1"]);
+  });
+
+  it("sessionCount excludes throwaway sessions — only real ones bump the row's stat", async () => {
+    const alice = await createUser();
+    const team = await createOrganization({ owner: alice });
+    const project = await createProject({ organization: team });
+    const tu = await createTrackedUser({ project, externalId: "user-with-mixed-sessions" });
+
+    await createSession({ project, trackedUser: tu, eventCount: 50, duration: 60 });
+    await createSession({ project, trackedUser: tu, eventCount: 50, duration: 60 });
+    // Below floor — must not bump sessionCount.
+    await createSession({ project, trackedUser: tu, eventCount: 3, duration: 60 });
+    await createSession({ project, trackedUser: tu, eventCount: 50, duration: 0 });
+
+    mockAuth.mockResolvedValue(buildSession(buildSessionUser({ id: alice.id, activeOrganizationId: team.id })));
+
+    const { json } = await invokeRoute<ListResponse>(trackedUsersRoute.GET, { method: "GET" });
+    const row = json.data.find((u) => u.externalId === "user-with-mixed-sessions");
+    expect(row?.sessionCount).toBe(2);
   });
 
   it("search matches both externalId and customName (case-insensitive)", async () => {

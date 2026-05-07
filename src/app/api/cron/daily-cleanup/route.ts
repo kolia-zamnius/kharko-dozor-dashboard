@@ -2,6 +2,7 @@ import { ONE_DAY_MS, SESSION_RETENTION_DAYS } from "@/lib/time";
 import { prisma } from "@/server/db/client";
 import { env } from "@/server/env";
 import { log } from "@/server/logger";
+import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -10,6 +11,7 @@ import { z } from "zod";
  * api-client doesn't need this. The parse still runs as a drift sentinel.
  */
 const cronCleanupSummarySchema = z.object({
+  throwawaySessions: z.number().int().nonnegative(),
   invites: z.number().int().nonnegative(),
   sessions: z.number().int().nonnegative(),
   trackedUsers: z.number().int().nonnegative(),
@@ -18,10 +20,13 @@ const cronCleanupSummarySchema = z.object({
 
 /**
  * Ordered steps — each frees records for the next:
- *   1. Invites past TTL (PENDING/EXPIRED).
- *   2. Sessions older than `SESSION_RETENTION_DAYS` (cascades EventBatches + Markers).
- *   3. TrackedUsers with zero sessions (orphans after step 2).
- *   4. Memberless orgs. Active-org pointers MUST be nulled FIRST — schema
+ *   1. Throwaway sessions (below the `MIN_REAL_SESSION_*` floor — SDK
+ *      init+immediate-close artifacts hidden from every user-facing list).
+ *      Cascades EventBatches + Markers, freeing TrackedUser rows for step 4.
+ *   2. Invites past TTL (PENDING/EXPIRED).
+ *   3. Sessions older than `SESSION_RETENTION_DAYS` (cascades EventBatches + Markers).
+ *   4. TrackedUsers with zero sessions (orphans after steps 1 + 3).
+ *   5. Memberless orgs. Active-org pointers MUST be nulled FIRST — schema
  *      doesn't declare `onDelete: SetNull` for `User.activeOrganizationId`,
  *      so Postgres would block the delete on referenced rows.
  *
@@ -49,6 +54,13 @@ export async function GET(req: Request) {
 
   const now = new Date();
   const sessionCutoff = new Date(now.getTime() - SESSION_RETENTION_DAYS * ONE_DAY_MS);
+
+  // Below-floor sessions get hidden from every user-facing surface immediately;
+  // this step purges them so they don't keep blocking the orphan-TU sweep below.
+  // `NOT REAL_SESSION_FILTER` = `eventCount < min OR duration < min`.
+  const throwawaySessions = await prisma.session.deleteMany({
+    where: { NOT: REAL_SESSION_FILTER },
+  });
 
   const invites = await prisma.invite.deleteMany({
     where: {
@@ -84,6 +96,7 @@ export async function GET(req: Request) {
   }
 
   const summary = cronCleanupSummarySchema.parse({
+    throwawaySessions: throwawaySessions.count,
     invites: invites.count,
     sessions: sessions.count,
     trackedUsers: trackedUsers.count,

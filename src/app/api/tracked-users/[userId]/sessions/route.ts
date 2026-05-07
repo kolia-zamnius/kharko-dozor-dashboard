@@ -3,6 +3,7 @@ import { withAuth } from "@/app/api/_lib/with-auth";
 import { paginatedSessionsSchema } from "@/api-client/sessions/response-schemas";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
+import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";
 import { HttpError } from "@/server/http-error";
 import { NextResponse } from "next/server";
 
@@ -26,7 +27,7 @@ export const GET = withAuth<Params>(async (req, user, { userId }) => {
   const limit = parseLimitParam(url.searchParams.get("limit"));
 
   const sessions = await prisma.session.findMany({
-    where: { trackedUserId: trackedUser.id },
+    where: { trackedUserId: trackedUser.id, ...REAL_SESSION_FILTER },
     select: {
       id: true,
       externalId: true,

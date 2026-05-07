@@ -7,6 +7,7 @@ import { sessionListParamsSchema } from "@/api-client/sessions/validators";
 import { requireMember } from "@/server/auth/permissions";
 import { resolveDisplayName } from "@/api-client/tracked-users/resolve-display-name";
 import { prisma } from "@/server/db/client";
+import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";
 import { NextResponse } from "next/server";
 
 /**
@@ -50,6 +51,7 @@ export const GET = withAuth(async (req, user) => {
 
   const where: Prisma.SessionWhereInput = {
     projectId: { in: projectFilter },
+    ...REAL_SESSION_FILTER,
     ...(params.search ? { externalId: { contains: params.search, mode: "insensitive" as const } } : {}),
   };
 

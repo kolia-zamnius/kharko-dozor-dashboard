@@ -3,6 +3,7 @@ import "server-only";
 import { MAX_TOP_PAGES_PER_BUCKET } from "@/app/api/_lib/constants";
 import { Prisma } from "@/generated/prisma/client";
 import type { ActivityBucket } from "@/api-client/tracked-users/types";
+import { MIN_REAL_SESSION_DURATION_SECONDS, MIN_REAL_SESSION_EVENTS } from "@/lib/time";
 import { prisma } from "@/server/db/client";
 
 type BucketRow = { bucket: Date; pathname: string | null; n: bigint };
@@ -38,6 +39,8 @@ export async function computeActivityHistogram(
       WHERE s."trackedUserId" = ${trackedUserId}
         AND eb."firstTimestamp" >= ${fromMs}
         AND eb."firstTimestamp" <  ${toMs}
+        AND s."eventCount" >= ${MIN_REAL_SESSION_EVENTS}
+        AND s.duration     >= ${MIN_REAL_SESSION_DURATION_SECONDS}
     ),
     last_url_per_batch AS (
       SELECT
