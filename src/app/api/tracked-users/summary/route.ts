@@ -1,7 +1,7 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { ONLINE_THRESHOLD_MS } from "@/api-client/tracked-users/domain";
 import { trackedUsersSummarySchema } from "@/api-client/tracked-users/response-schemas";
-import { ONE_DAY_MS, SEVEN_DAYS_MS } from "@/lib/time";
+import { MIN_REAL_SESSION_DURATION_SECONDS, MIN_REAL_SESSION_EVENTS, ONE_DAY_MS, SEVEN_DAYS_MS } from "@/lib/time";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { NextResponse } from "next/server";
@@ -34,6 +34,8 @@ export const GET = withAuth(async (_req, user) => {
       SELECT MAX(s."endedAt") AS last_event
       FROM "Session" s
       WHERE s."trackedUserId" = tu.id
+        AND s."eventCount" >= ${MIN_REAL_SESSION_EVENTS}
+        AND s.duration   >= ${MIN_REAL_SESSION_DURATION_SECONDS}
     ) ls ON true
     WHERE p."organizationId" = ${activeOrgId}
   `;

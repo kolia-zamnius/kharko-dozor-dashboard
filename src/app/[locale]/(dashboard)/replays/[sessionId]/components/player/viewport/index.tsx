@@ -22,7 +22,9 @@ export function Viewport() {
 
   useEffect(() => {
     const host = hostRef.current;
-    if (!host || events.length === 0) return;
+    // rrweb's `Replayer` throws "need at least 2 events" when seeded below floor —
+    // a defense-in-depth guard alongside the server-side throwaway-session filter.
+    if (!host || events.length < 2) return;
 
     let active = true;
     let iframeObserver: ResizeObserver | null = null;
@@ -119,7 +121,7 @@ export function Viewport() {
     };
   }, [events, onReplayerReady]);
 
-  if (events.length === 0) {
+  if (events.length < 2) {
     return (
       <div className="bg-muted flex h-full items-center justify-center">
         <p className="text-muted-foreground text-sm">{t("empty")}</p>

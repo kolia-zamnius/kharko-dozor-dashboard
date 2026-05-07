@@ -2,6 +2,7 @@ import "server-only";
 
 import type { PageDistribution } from "@/api-client/tracked-users/types";
 import { prisma } from "@/server/db/client";
+import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";
 
 export type PageDistributionSnapshot = {
   readonly rows: readonly { pathname: string; durationMs: number; visits: number }[];
@@ -25,6 +26,7 @@ export async function computePageDistribution(
   const sessions: SessionRow[] = await prisma.session.findMany({
     where: {
       trackedUserId,
+      ...REAL_SESSION_FILTER,
       startedAt: { lte: to },
       OR: [{ endedAt: { gte: from } }, { endedAt: null }],
     },

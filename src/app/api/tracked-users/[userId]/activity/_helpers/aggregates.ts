@@ -1,5 +1,6 @@
 import "server-only";
 
+import { MIN_REAL_SESSION_DURATION_SECONDS, MIN_REAL_SESSION_EVENTS } from "@/lib/time";
 import { prisma } from "@/server/db/client";
 
 type SessionAggRow = {
@@ -38,6 +39,8 @@ export async function computeActivityAggregates(
       WHERE "trackedUserId" = ${trackedUserId}
         AND "startedAt" >= ${from}
         AND "startedAt" <  ${to}
+        AND "eventCount" >= ${MIN_REAL_SESSION_EVENTS}
+        AND duration     >= ${MIN_REAL_SESSION_DURATION_SECONDS}
     `,
     prisma.$queryRaw<EventAggRow[]>`
       SELECT
@@ -49,6 +52,8 @@ export async function computeActivityAggregates(
       WHERE s."trackedUserId" = ${trackedUserId}
         AND eb."firstTimestamp" >= ${fromMs}
         AND eb."firstTimestamp" <  ${toMs}
+        AND s."eventCount" >= ${MIN_REAL_SESSION_EVENTS}
+        AND s.duration     >= ${MIN_REAL_SESSION_DURATION_SECONDS}
     `,
   ]);
 

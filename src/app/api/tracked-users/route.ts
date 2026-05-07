@@ -5,6 +5,7 @@ import { userListParamsSchema } from "@/api-client/tracked-users/validators";
 import { SEVEN_DAYS_MS } from "@/lib/time";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
+import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";
 import { NextResponse } from "next/server";
 import { enrichTrackedUser, type ProjectMetadata } from "./_helpers/enrich";
 import { filterEnrichedTrackedUsers } from "./_helpers/filter";
@@ -72,8 +73,8 @@ export const GET = withAuth(async (req, user) => {
       customName: true,
       displayNameTraitKey: true,
       createdAt: true,
-      _count: { select: { sessions: true } },
-      sessions: { select: { endedAt: true, duration: true, startedAt: true } },
+      _count: { select: { sessions: { where: REAL_SESSION_FILTER } } },
+      sessions: { where: REAL_SESSION_FILTER, select: { endedAt: true, duration: true, startedAt: true } },
     },
     orderBy: { updatedAt: "desc" },
     take: hasStatusFilter ? 500 : limit + 1,

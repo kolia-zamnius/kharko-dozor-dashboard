@@ -134,6 +134,10 @@ export async function createSession(args: {
   endedAt?: Date | null;
   /** Backdating hook for date-range filter and retention-cron tests — Prisma stamps `createdAt` at insert by default. */
   createdAt?: Date;
+  /** Default 50 — keeps factory rows above the throwaway-session floor. Pass `0`/small values to seed a throwaway. */
+  eventCount?: number;
+  /** Default 60s — keeps factory rows above the throwaway-session duration floor. */
+  duration?: number;
 }): Promise<Session> {
   const prisma = await getTestPrisma();
   return prisma.session.create({
@@ -143,6 +147,8 @@ export async function createSession(args: {
       trackedUserId: args.trackedUser?.id ?? null,
       startedAt: args.startedAt ?? new Date(),
       endedAt: args.endedAt ?? null,
+      eventCount: args.eventCount ?? 50,
+      duration: args.duration ?? 60,
       ...(args.createdAt ? { createdAt: args.createdAt } : {}),
     },
   });

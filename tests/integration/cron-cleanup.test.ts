@@ -153,6 +153,7 @@ describe("GET /api/cron/daily-cleanup", () => {
     });
     const response = await cronRoute.GET(req);
     const summary = (await response.json()) as {
+      throwawaySessions: number;
       invites: number;
       sessions: number;
       trackedUsers: number;
@@ -160,6 +161,35 @@ describe("GET /api/cron/daily-cleanup", () => {
     };
 
     expect(response.status).toBe(200);
-    expect(summary).toEqual({ invites: 0, sessions: 0, trackedUsers: 0, organizations: 0 });
+    expect(summary).toEqual({ throwawaySessions: 0, invites: 0, sessions: 0, trackedUsers: 0, organizations: 0 });
+  });
+
+  it("deletes throwaway sessions (eventCount < floor OR duration < floor) — keeping real ones intact", async () => {
+    const alice = await createUser();
+    const team = await createOrganization({ owner: alice });
+    const project = await createProject({ organization: team });
+
+    const real = await createSession({ project, eventCount: 50, duration: 60 });
+    const tooFewEvents = await createSession({ project, eventCount: 3, duration: 60 });
+    const tooShort = await createSession({ project, eventCount: 50, duration: 0 });
+    const both = await createSession({ project, eventCount: 1, duration: 0 });
+
+    const req = new Request("http://localhost/api/cron/daily-cleanup", {
+      method: "GET",
+      headers: { authorization: EXPECTED_BEARER },
+    });
+    const response = await cronRoute.GET(req);
+    const summary = (await response.json()) as { throwawaySessions: number };
+
+    expect(response.status).toBe(200);
+    expect(summary.throwawaySessions).toBe(3);
+
+    const remaining = await prisma.session.findMany({ where: { projectId: project.id }, select: { id: true } });
+    const remainingIds = remaining.map((r) => r.id).sort();
+    expect(remainingIds).toEqual([real.id].sort());
+    // Sanity: throwaway IDs are gone.
+    for (const dropped of [tooFewEvents, tooShort, both]) {
+      expect(remainingIds).not.toContain(dropped.id);
+    }
   });
 });
