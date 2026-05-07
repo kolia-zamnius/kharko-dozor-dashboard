@@ -52,13 +52,14 @@ redact later — masked stays masked.
 Captured events go into an in-memory array. The buffer fills until
 one of these triggers:
 
-| Trigger               | When                                             |
-| --------------------- | ------------------------------------------------ |
-| Flush interval        | Every `flushInterval` ms (default 60_000)        |
-| Buffer size cap       | When `events.length >= batchSize` (default 2000) |
-| Tab visibility change | `visibilitychange` → hidden                      |
-| Page unload           | `beforeunload` / `pagehide`                      |
-| Manual `release()`    | When transport was held                          |
+| Trigger               | When                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------- |
+| Bootstrap (eager)     | Immediately after `start()` returns — ships the initial Meta + FullSnapshot via the regular path. |
+| Flush interval        | Every `flushInterval` ms (default 60_000)                                                         |
+| Buffer size cap       | When `events.length >= batchSize` (default 2000)                                                  |
+| Tab visibility change | `visibilitychange` → hidden                                                                       |
+| Page unload           | `beforeunload` / `pagehide`                                                                       |
+| Manual `release()`    | When transport was held                                                                           |
 
 ### In-stream marker events
 
@@ -87,15 +88,27 @@ ships it.
 ```
 Buffer (array of events) → JSON.stringify → byte string
                           ↓
-                          if size > 1KB:
-                            CompressionStream("gzip") → gzipped bytes
-                                ↓
-                                set Content-Encoding: gzip
+            ┌─ regular flush ────────────────────┐   ┌─ keepalive flush (page unload) ─┐
+            │ if size > 1 KB:                    │   │ always:                          │
+            │   CompressionStream("gzip") → bytes│   │   fflate.gzipSync → bytes        │
+            │   Content-Encoding: gzip           │   │   Content-Encoding: gzip         │
+            └────────────────────────────────────┘   └──────────────────────────────────┘
 ```
 
+Two compression paths exist because they have incompatible
+constraints. **Regular flushes** (the live page) use the
+browser-native `CompressionStream` — async streaming, ratio-optimal,
+no bundle cost. **Keepalive flushes** can't await the
+`CompressionStream` drain inside `beforeunload` /
+`visibilitychange:hidden`, so the SDK ships a sync gzip via `fflate`.
+Without that, a CSS-heavy page's bootstrap (Meta + FullSnapshot,
+200–400 KB raw uncompressed) would silently overshoot the browser's
+~64 KB keepalive body cap and the request would never reach the
+server.
+
 Browsers without `CompressionStream` (older Safari, older Firefox)
-fall back to uncompressed JSON. Bandwidth higher (gzip ratios on
-rrweb event streams are typically large); everything else identical.
+fall back to uncompressed JSON for regular flushes; keepalive always
+uses `fflate` so it stays compressed regardless.
 
 ### POST request shape
 
@@ -135,9 +148,12 @@ It carries `url`, `referrer`, `userAgent`, `screenWidth`,
 | All retries exhausted        | Events re-queued to buffer, retried on the next flush cycle |
 | Buffer reaches 10,000 events | Oldest dropped first (FIFO)                                 |
 
-Page-unload flushes use `fetch({ keepalive: true })` — the browser
-ships the request even after navigation, fire-and-forget. No retry
-on these.
+Page-unload flushes use `fetch({ keepalive: true })` with a
+sync-gzipped body — the browser ships the request even after
+navigation, fire-and-forget. No retry on these. The eager bootstrap
+flush after `start()` covers the same window with a regular
+gzip + retry path, so unload-time keepalive typically carries only
+the incremental tail.
 
 ## Stage 3 — Receive (server-side)
 

@@ -38,9 +38,9 @@ before calling.
 
 | Scenario                    | Behaviour                                                                                                |
 | --------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Page unload while recording | Final events sent via `fetch()` with `keepalive: true`. Browser ships the request even after navigation. |
-| Page unload while paused    | No final flush — paused means "don't transport".                                                         |
-| Page unload while held      | Held events are **not** sent. The hold semantics apply through unload.                                   |
+| Page unload while recording | Final events sent via `fetch()` with `keepalive: true`. The body is sync-gzipped via `fflate` so a CSS-heavy page's bootstrap (Meta + FullSnapshot, often 200–400 KB raw) lands well under the browser's ~64 KB keepalive cap. The bootstrap pair has typically already shipped via the eager flush after `start()`, so keepalive carries only the incremental tail. |
+| Page unload while paused    | No final flush — paused means "don't transport".                                                                                                                                                                                                                                                                                                            |
+| Page unload while held      | Held events are **not** sent. The hold semantics apply through unload.                                                                                                                                                                                                                                                                                      |
 
 ## Storage fallbacks
 
