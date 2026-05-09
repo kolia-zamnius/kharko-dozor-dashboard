@@ -1,6 +1,6 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { maskApiKey, type ApiKeyPlaintext } from "@/lib/mask-api-key";
-import { projectSchema } from "@/api-client/projects/response-schemas";
+import { projectSchema } from "@/api-client/projects/schemas";
 import { generateApiKey } from "@/server/generate-api-key";
 import { requireProjectMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";

@@ -1,5 +1,5 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { updateDisplayNameSchema } from "@/api-client/tracked-users/validators";
+import { updateDisplayNameSchema } from "@/api-client/tracked-users/schemas";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";

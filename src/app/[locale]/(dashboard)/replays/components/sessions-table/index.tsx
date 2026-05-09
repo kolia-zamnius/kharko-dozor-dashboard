@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/data-display/table";
-import type { SessionListItem } from "@/api-client/sessions/types";
+import type { SessionListItem } from "@/api-client/sessions/schemas";
 import type { SessionListSortBy, SessionListSortDir } from "@/api-client/sessions/domain";
 import { SortableHead } from "./sortable-head";
 import { SessionRow } from "./session-row";

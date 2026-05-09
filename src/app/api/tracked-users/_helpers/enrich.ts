@@ -1,7 +1,7 @@
 import "server-only";
 
-import { deriveUserStatus, type UserActivityStatus } from "@/api-client/tracked-users/status";
-import { resolveDisplayName } from "@/api-client/tracked-users/resolve-display-name";
+import { deriveUserStatus, type UserActivityStatus } from "@/api-client/tracked-users/domain";
+import { resolveDisplayName } from "@/api-client/tracked-users/domain";
 
 /** Plain type (not `Prisma.X.GetPayload`) — keeps the helper Prisma-free at the type level + testable against plain fixtures. */
 export type RawTrackedUserRow = {

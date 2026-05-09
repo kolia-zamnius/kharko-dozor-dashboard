@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/data-display/table";
-import type { TrackedUserListItem } from "@/api-client/tracked-users/types";
+import type { TrackedUserListItem } from "@/api-client/tracked-users/schemas";
 import type { UserListSortBy, UserListSortDir } from "@/api-client/tracked-users/domain";
 import { SortableHead } from "./sortable-head";
 import { UserRow } from "./user-row";

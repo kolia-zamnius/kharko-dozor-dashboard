@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/
 import { Badge } from "@/components/ui/primitives/badge";
 import { cn } from "@/lib/cn";
 import { trackedUserAvatarUrl } from "@/lib/avatar";
-import type { TrackedUserListItem } from "@/api-client/tracked-users/types";
+import type { TrackedUserListItem } from "@/api-client/tracked-users/schemas";
 import { useFormatters } from "@/lib/use-formatters";
 import { StatusBadge } from "./status-badge";
 

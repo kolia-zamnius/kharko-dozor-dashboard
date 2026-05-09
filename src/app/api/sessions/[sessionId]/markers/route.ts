@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { sessionMarkersResponseSchema } from "@/api-client/sessions/response-schemas";
+import { sessionMarkersResponseSchema } from "@/api-client/sessions/schemas";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";

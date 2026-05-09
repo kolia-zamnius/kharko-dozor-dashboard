@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/forms/select";
 import { organizationKeys } from "@/api-client/organizations/keys";
 import { useUpdateMemberRoleMutation } from "@/api-client/organizations/mutations";
-import type { Organization, OrganizationMember } from "@/api-client/organizations/types";
+import type { Organization, OrganizationMember } from "@/api-client/organizations/schemas";
 import { useIsMutating } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { ROLE_OPTIONS } from "../../role-options";

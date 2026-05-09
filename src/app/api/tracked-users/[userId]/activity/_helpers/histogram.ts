@@ -2,7 +2,7 @@ import "server-only";
 
 import { MAX_TOP_PAGES_PER_BUCKET } from "@/app/api/_lib/constants";
 import { Prisma } from "@/generated/prisma/client";
-import type { ActivityBucket } from "@/api-client/tracked-users/types";
+import type { ActivityBucket } from "@/api-client/tracked-users/schemas";
 import { MIN_REAL_SESSION_DURATION_SECONDS, MIN_REAL_SESSION_EVENTS } from "@/lib/time";
 import { prisma } from "@/server/db/client";
 

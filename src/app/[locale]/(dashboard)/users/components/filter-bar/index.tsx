@@ -1,4 +1,4 @@
-import type { UserActivityStatus } from "@/api-client/tracked-users/status";
+import type { UserActivityStatus } from "@/api-client/tracked-users/domain";
 import { ProjectFilter } from "./project-filter";
 import { SearchInput } from "./search-input";
 import { StatusFilter } from "./status-filter";

@@ -1,8 +1,8 @@
 import { Spinner } from "@/components/ui/feedback/spinner";
 import { Separator } from "@/components/ui/primitives/separator";
-import type { Organization } from "@/api-client/organizations/types";
+import type { Organization } from "@/api-client/organizations/schemas";
 import { useOrgProjectsQuery } from "@/api-client/projects/queries";
-import type { Project } from "@/api-client/projects/types";
+import type { Project } from "@/api-client/projects/schemas";
 import { useTranslations } from "next-intl";
 import { CopyKeyButton } from "./copy-key-button";
 import { CreateKeyDialog } from "./create-key-dialog";

@@ -1,6 +1,6 @@
 import { assertInviteUsableForUser } from "@/app/api/_lib/invite-lifecycle";
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { userInviteDeclineResponseSchema } from "@/api-client/user-invites/response-schemas";
+import { userInviteDeclineResponseSchema } from "@/api-client/user-invites/schemas";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
 import { log } from "@/server/logger";

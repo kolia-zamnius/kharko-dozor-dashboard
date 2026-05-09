@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/primitives/badge";
-import type { UserActivityStatus } from "@/api-client/tracked-users/status";
+import type { UserActivityStatus } from "@/api-client/tracked-users/domain";
 import { STATUS_COLOR } from "@/app/[locale]/(dashboard)/users/lib/status-ui";
 import { cn } from "@/lib/cn";
 

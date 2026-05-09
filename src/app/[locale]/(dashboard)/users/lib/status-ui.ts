@@ -1,4 +1,4 @@
-import type { UserActivityStatus } from "@/api-client/tracked-users/status";
+import type { UserActivityStatus } from "@/api-client/tracked-users/domain";
 
 /**
  * Page-level UI tokens — labels live in `messages/{locale}/users.json`,

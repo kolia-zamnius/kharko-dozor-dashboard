@@ -3,8 +3,8 @@ import { useState, useTransition } from "react";
 
 import { sessionKeys } from "@/api-client/sessions/keys";
 import { useSessionQuery } from "@/api-client/sessions/queries";
-import type { SessionDetail } from "@/api-client/sessions/types";
-import { detectSessionUpdates, type SessionUpdate } from "@/api-client/sessions/updates";
+import type { SessionDetail } from "@/api-client/sessions/schemas";
+import { detectSessionUpdates, type SessionUpdate } from "@/api-client/sessions/domain";
 
 export type SessionUpdateIndicator =
   | { status: "loading" }

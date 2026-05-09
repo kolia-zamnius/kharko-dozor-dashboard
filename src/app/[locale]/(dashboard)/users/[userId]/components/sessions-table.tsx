@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/data-display/table";
 import { useTrackedUserSessionsQuery } from "@/api-client/tracked-users/queries";
-import type { PaginatedSessions, SessionListItem } from "@/api-client/sessions/types";
+import type { PaginatedSessions, SessionListItem } from "@/api-client/sessions/schemas";
 import { useFormatters } from "@/lib/use-formatters";
 
 type SessionsTableProps = {

@@ -2,7 +2,7 @@ import { ClockIcon, LightningIcon, PlayIcon, TimerIcon } from "@phosphor-icons/r
 import { useTranslations } from "next-intl";
 
 import { StatCard } from "@/components/ui/data-display/stat-card";
-import type { SessionsSummary } from "@/api-client/sessions/types";
+import type { SessionsSummary } from "@/api-client/sessions/schemas";
 import { useFormatters } from "@/lib/use-formatters";
 
 type StatsStripProps = {

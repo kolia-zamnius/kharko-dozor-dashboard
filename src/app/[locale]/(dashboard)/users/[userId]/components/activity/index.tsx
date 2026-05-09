@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card";
-import type { UserActivity } from "@/api-client/tracked-users/types";
+import type { UserActivity } from "@/api-client/tracked-users/schemas";
 import { type ActivityRange } from "@/api-client/tracked-users/domain";
 import { ActivityHistogram } from "./histogram";
 

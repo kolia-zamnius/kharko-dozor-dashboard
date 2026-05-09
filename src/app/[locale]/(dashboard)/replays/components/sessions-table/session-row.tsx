@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/primitives/badge";
 import { TableCell, TableRow } from "@/components/ui/data-display/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/overlays/tooltip";
-import type { SessionListItem } from "@/api-client/sessions/types";
+import type { SessionListItem } from "@/api-client/sessions/schemas";
 import { cn } from "@/lib/cn";
 import { useFormatters } from "@/lib/use-formatters";
 import { SessionRowMenu } from "../session-row-menu";

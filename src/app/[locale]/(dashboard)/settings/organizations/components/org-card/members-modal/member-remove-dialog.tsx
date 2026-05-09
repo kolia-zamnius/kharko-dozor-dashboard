@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/overlays/dialog";
 import { useRemoveMemberMutation } from "@/api-client/organizations/mutations";
-import type { Organization, OrganizationMember } from "@/api-client/organizations/types";
+import type { Organization, OrganizationMember } from "@/api-client/organizations/schemas";
 import { SignOutIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/data-display/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
 import { Badge } from "@/components/ui/primitives/badge";
-import type { UserInvite } from "@/api-client/user-invites/types";
+import type { UserInvite } from "@/api-client/user-invites/schemas";
 import { useFormatters } from "@/lib/use-formatters";
 import { useTranslations } from "next-intl";
 import { AcceptInviteDialog } from "./accept-invite-dialog";

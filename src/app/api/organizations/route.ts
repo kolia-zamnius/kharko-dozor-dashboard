@@ -1,7 +1,7 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { orgAvatarUrl } from "@/lib/avatar";
-import { organizationCreatedSchema, organizationListSchema } from "@/api-client/organizations/response-schemas";
-import { createOrgSchema } from "@/api-client/organizations/validators";
+import { organizationCreatedSchema, organizationListSchema } from "@/api-client/organizations/schemas";
+import { createOrgSchema } from "@/api-client/organizations/schemas";
 import { prisma } from "@/server/db/client";
 import { log } from "@/server/logger";
 import { NextResponse } from "next/server";

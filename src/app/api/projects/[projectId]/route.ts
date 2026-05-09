@@ -1,5 +1,5 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { updateProjectSchema } from "@/api-client/projects/validators";
+import { updateProjectSchema } from "@/api-client/projects/schemas";
 import { requireProjectMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { log } from "@/server/logger";

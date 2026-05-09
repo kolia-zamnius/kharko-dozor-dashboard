@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { sessionEventsResponseSchema } from "@/api-client/sessions/response-schemas";
+import { sessionEventsResponseSchema } from "@/api-client/sessions/schemas";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";

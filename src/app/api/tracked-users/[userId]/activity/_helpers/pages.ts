@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PageDistribution } from "@/api-client/tracked-users/types";
+import type { PageDistribution } from "@/api-client/tracked-users/schemas";
 import { prisma } from "@/server/db/client";
 import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";
 

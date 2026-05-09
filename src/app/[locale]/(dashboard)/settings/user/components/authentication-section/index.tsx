@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/layout/card";
 import { Separator } from "@/components/ui/primitives/separator";
-import type { UserProfile } from "@/api-client/user/types";
+import type { UserProfile } from "@/api-client/user/schemas";
 import { useTranslations } from "next-intl";
 import { ConnectedAccounts } from "./connected-accounts";
 import { PasskeyList } from "./passkey-list";

@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
 import { useCreateOrgMutation } from "@/api-client/organizations/mutations";
-import { createOrgSchema, type CreateOrgInput } from "@/api-client/organizations/validators";
+import { createOrgSchema, type CreateOrgInput } from "@/api-client/organizations/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";

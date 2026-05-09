@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/overlays/tooltip";
-import type { ActivityBucket, UserActivity } from "@/api-client/tracked-users/types";
+import type { ActivityBucket, UserActivity } from "@/api-client/tracked-users/schemas";
 import { type ActivityRange } from "@/api-client/tracked-users/domain";
 import type { Locale } from "@/i18n/config";
 import { cn } from "@/lib/cn";

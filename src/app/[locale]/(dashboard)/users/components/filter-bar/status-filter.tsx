@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/primitives/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/overlays/popover";
 import { FilterCountBadge } from "@/app/[locale]/(dashboard)/components/filter-count-badge";
-import { USER_ACTIVITY_STATUSES, type UserActivityStatus } from "@/api-client/tracked-users/status";
+import { USER_ACTIVITY_STATUSES, type UserActivityStatus } from "@/api-client/tracked-users/domain";
 import { STATUS_COLOR } from "@/app/[locale]/(dashboard)/users/lib/status-ui";
 import { cn } from "@/lib/cn";
 

@@ -1,4 +1,4 @@
-import type { UserAccount } from "@/api-client/user/types";
+import type { UserAccount } from "@/api-client/user/schemas";
 import { GithubLogoIcon, GoogleLogoIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { DisconnectAccountDialog } from "./disconnect-account-dialog";

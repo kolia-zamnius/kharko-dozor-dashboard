@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/overlays/dialog";
 import { useAcceptInviteMutation } from "@/api-client/user-invites/mutations";
-import type { UserInvite } from "@/api-client/user-invites/types";
+import type { UserInvite } from "@/api-client/user-invites/schemas";
 import { useFormatters } from "@/lib/use-formatters";
 import { CheckIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";

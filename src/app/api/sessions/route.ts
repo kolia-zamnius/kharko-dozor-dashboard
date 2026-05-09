@@ -2,10 +2,9 @@ import { buildCursorResponse, parseLimitParam } from "@/app/api/_lib/pagination"
 import { withAuth } from "@/app/api/_lib/with-auth";
 import type { Prisma } from "@/generated/prisma/client";
 import { dateRangeToFrom, DEFAULT_SESSION_DATE_RANGE } from "@/api-client/sessions/domain";
-import { paginatedSessionsSchema } from "@/api-client/sessions/response-schemas";
-import { sessionListParamsSchema } from "@/api-client/sessions/validators";
+import { paginatedSessionsSchema, sessionListParamsSchema } from "@/api-client/sessions/schemas";
 import { requireMember } from "@/server/auth/permissions";
-import { resolveDisplayName } from "@/api-client/tracked-users/resolve-display-name";
+import { resolveDisplayName } from "@/api-client/tracked-users/domain";
 import { prisma } from "@/server/db/client";
 import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";
 import { NextResponse } from "next/server";

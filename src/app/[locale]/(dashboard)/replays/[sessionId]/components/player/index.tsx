@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { useSessionEventsQuery } from "@/api-client/sessions/queries";
-import type { SessionDetail } from "@/api-client/sessions/types";
+import type { SessionDetail } from "@/api-client/sessions/schemas";
 import { Spinner } from "@/components/ui/feedback/spinner";
 import { slice as runSlicer } from "@/lib/slicer";
 import type { DozorEvent, Slice } from "@/lib/slicer/types";

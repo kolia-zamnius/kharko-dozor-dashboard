@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/layout/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
 import { Badge } from "@/components/ui/primitives/badge";
 import { Kbd } from "@/components/ui/primitives/kbd";
-import type { TrackedUserDetail } from "@/api-client/tracked-users/types";
+import type { TrackedUserDetail } from "@/api-client/tracked-users/schemas";
 import { trackedUserAvatarUrl } from "@/lib/avatar";
 import { useFormatters } from "@/lib/use-formatters";
 import { DisplayNameModal } from "./display-name-modal";

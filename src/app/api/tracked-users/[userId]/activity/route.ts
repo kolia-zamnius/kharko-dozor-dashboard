@@ -1,8 +1,7 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { ACTIVITY_CONFIG, parseActivityRange } from "@/api-client/tracked-users/domain";
 import { parsePageLimit } from "@/api-client/tracked-users/domain";
-import { userActivitySchema } from "@/api-client/tracked-users/response-schemas";
-import type { ActivitySummary } from "@/api-client/tracked-users/types";
+import { userActivitySchema, type ActivitySummary } from "@/api-client/tracked-users/schemas";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";

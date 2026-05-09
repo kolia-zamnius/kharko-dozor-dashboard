@@ -16,8 +16,8 @@ import { Badge } from "@/components/ui/primitives/badge";
 import { Button } from "@/components/ui/primitives/button";
 import { Spinner } from "@/components/ui/feedback/spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/overlays/tooltip";
-import type { SessionDetail } from "@/api-client/sessions/types";
-import { formatUpdateTooltip, type SessionUpdate } from "@/api-client/sessions/updates";
+import type { SessionDetail } from "@/api-client/sessions/schemas";
+import { formatUpdateTooltip, type SessionUpdate } from "@/api-client/sessions/domain";
 import { cn } from "@/lib/cn";
 import { useFormatters } from "@/lib/use-formatters";
 

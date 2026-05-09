@@ -15,13 +15,10 @@ import {
   type UserListSortBy,
   type UserListSortDir,
 } from "@/api-client/tracked-users/domain";
-import {
-  useTrackedUsersSummarySuspenseQuery,
-  useTrackedUsersSuspenseQuery,
-  USERS_LIST_POLL_MS,
-} from "@/api-client/tracked-users/queries";
-import type { UserActivityStatus } from "@/api-client/tracked-users/status";
-import type { TrackedUserListItem } from "@/api-client/tracked-users/types";
+import { USERS_LIST_POLL_MS } from "@/api-client/tracked-users/constants";
+import { useTrackedUsersSummarySuspenseQuery, useTrackedUsersSuspenseQuery } from "@/api-client/tracked-users/queries";
+import type { UserActivityStatus } from "@/api-client/tracked-users/domain";
+import type { TrackedUserListItem } from "@/api-client/tracked-users/schemas";
 import { EmptyState } from "./empty-state";
 import { FilterBar } from "./filter-bar";
 import { LoadMore } from "./load-more";

@@ -2,7 +2,7 @@ import { ChartLineUpIcon, LightningIcon, UsersIcon, WifiHighIcon } from "@phosph
 import { useTranslations } from "next-intl";
 
 import { StatCard } from "@/components/ui/data-display/stat-card";
-import type { TrackedUsersSummary } from "@/api-client/tracked-users/types";
+import type { TrackedUsersSummary } from "@/api-client/tracked-users/schemas";
 import { useFormatters } from "@/lib/use-formatters";
 
 type StatsStripProps = {

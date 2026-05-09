@@ -1,11 +1,8 @@
 import { expireStaleInvites } from "@/app/api/_lib/invite-lifecycle";
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { INVITE_EXPIRY_DAYS } from "@/api-client/organizations/constants";
-import {
-  organizationInviteCreatedSchema,
-  organizationInviteListSchema,
-} from "@/api-client/organizations/response-schemas";
-import { inviteSchema } from "@/api-client/organizations/validators";
+import { organizationInviteCreatedSchema, organizationInviteListSchema } from "@/api-client/organizations/schemas";
+import { inviteSchema } from "@/api-client/organizations/schemas";
 import { resolveLocaleForUser } from "@/i18n/resolve-locale";
 import { getEnabledProviders } from "@/server/auth/enabled-providers";
 import { requireMember } from "@/server/auth/permissions";

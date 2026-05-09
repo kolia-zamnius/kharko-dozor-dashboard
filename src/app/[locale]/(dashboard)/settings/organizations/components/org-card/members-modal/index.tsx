@@ -2,7 +2,7 @@ import { Spinner } from "@/components/ui/feedback/spinner";
 import { Button } from "@/components/ui/primitives/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/overlays/dialog";
 import { useMembersQuery } from "@/api-client/organizations/queries";
-import type { Organization } from "@/api-client/organizations/types";
+import type { Organization } from "@/api-client/organizations/schemas";
 import { UsersIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";

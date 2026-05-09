@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
 import { useCreateProjectMutation } from "@/api-client/projects/mutations";
-import { createProjectSchema, type CreateProjectInput } from "@/api-client/projects/validators";
+import { createProjectSchema, type CreateProjectInput } from "@/api-client/projects/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";

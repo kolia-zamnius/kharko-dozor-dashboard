@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 
 import { Spinner } from "@/components/ui/feedback/spinner";
-import { useUserProfileQuery } from "@/api-client/user/queries";
+import { useUserProfileSuspenseQuery } from "@/api-client/user/queries";
 import { useTranslations } from "next-intl";
 import { AuthenticationSection } from "./authentication-section";
 import { DangerZoneSection } from "./danger-zone-section";
@@ -29,7 +29,7 @@ export function UserSettings() {
 }
 
 function UserSettingsContent() {
-  const { data: profile } = useUserProfileQuery();
+  const { data: profile } = useUserProfileSuspenseQuery();
 
   return (
     <>

@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/overlays/dialog";
 import { useDeleteProjectMutation } from "@/api-client/projects/mutations";
-import type { Project } from "@/api-client/projects/types";
+import type { Project } from "@/api-client/projects/schemas";
 import { TrashIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

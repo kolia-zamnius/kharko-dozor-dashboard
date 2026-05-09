@@ -15,7 +15,7 @@ import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import type { TranslationValues } from "next-intl";
 import { toast } from "sonner";
 
-import { isApiError, type ApiErrorKind } from "@/api-client/error";
+import { isApiError, type ApiErrorKind } from "@/api-client/_lib/error";
 import { translate, type MessageKey } from "@/i18n/imperative-translator";
 
 /**

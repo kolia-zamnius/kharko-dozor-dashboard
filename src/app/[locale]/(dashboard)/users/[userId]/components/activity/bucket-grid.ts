@@ -1,4 +1,4 @@
-import type { ActivityBucket, UserActivity } from "@/api-client/tracked-users/types";
+import type { ActivityBucket, UserActivity } from "@/api-client/tracked-users/schemas";
 
 /** `/activity` returns only non-empty buckets — pre-generate every `[from, to)` slot at `bucketMs` so the histogram has no visual holes. */
 export function buildBucketGrid(data: UserActivity): ActivityBucket[] {

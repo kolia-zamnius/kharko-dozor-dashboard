@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/overlays/dialog";
 import { Separator } from "@/components/ui/primitives/separator";
-import type { TrackedUserDetail } from "@/api-client/tracked-users/types";
+import type { TrackedUserDetail } from "@/api-client/tracked-users/schemas";
 import { CustomNameSection } from "./custom-name-section";
 import { LocalTraitKeySection } from "./local-trait-key-section";
 import { ProjectTraitKeySection } from "./project-trait-key-section";

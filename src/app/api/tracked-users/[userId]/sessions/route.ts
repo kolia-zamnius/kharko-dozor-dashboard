@@ -1,6 +1,6 @@
 import { buildCursorResponse, parseLimitParam } from "@/app/api/_lib/pagination";
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { paginatedSessionsSchema } from "@/api-client/sessions/response-schemas";
+import { paginatedSessionsSchema } from "@/api-client/sessions/schemas";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";

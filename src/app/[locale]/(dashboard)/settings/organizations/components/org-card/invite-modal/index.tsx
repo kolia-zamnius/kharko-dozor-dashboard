@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/primitives/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/overlays/dialog";
 import { Separator } from "@/components/ui/primitives/separator";
-import type { Organization } from "@/api-client/organizations/types";
+import type { Organization } from "@/api-client/organizations/schemas";
 import { UserPlusIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
