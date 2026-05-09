@@ -1,5 +1,5 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { organizationMemberListSchema } from "@/api-client/organizations/response-schemas";
+import { organizationMemberListSchema } from "@/api-client/organizations/schemas";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { NextResponse } from "next/server";

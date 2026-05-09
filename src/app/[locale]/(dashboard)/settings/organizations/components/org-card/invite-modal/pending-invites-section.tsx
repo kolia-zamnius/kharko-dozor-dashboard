@@ -2,7 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/feedback/al
 import { Spinner } from "@/components/ui/feedback/spinner";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/data-display/table";
 import { useInvitesQuery } from "@/api-client/organizations/queries";
-import type { Organization } from "@/api-client/organizations/types";
+import type { Organization } from "@/api-client/organizations/schemas";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { InviteRow } from "./invite-row";

@@ -1,5 +1,5 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { renamePasskeySchema } from "@/api-client/user/validators";
+import { renamePasskeySchema } from "@/api-client/user/schemas";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
 import { log } from "@/server/logger";

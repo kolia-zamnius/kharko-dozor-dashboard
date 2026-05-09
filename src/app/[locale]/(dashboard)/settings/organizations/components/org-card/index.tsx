@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/layout/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
 import { Badge } from "@/components/ui/primitives/badge";
-import type { Organization } from "@/api-client/organizations/types";
+import type { Organization } from "@/api-client/organizations/schemas";
 import { useFormatters } from "@/lib/use-formatters";
 import { useTranslations } from "next-intl";
 import { ApiKeysSection } from "./api-keys-section";

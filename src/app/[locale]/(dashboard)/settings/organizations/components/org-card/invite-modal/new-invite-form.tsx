@@ -4,8 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/primitives/button";
 import { INVITE_EXPIRY_DAYS } from "@/api-client/organizations/constants";
 import { useInviteMemberMutation } from "@/api-client/organizations/mutations";
-import type { Organization } from "@/api-client/organizations/types";
-import { inviteSchema, type InviteInput } from "@/api-client/organizations/validators";
+import type { Organization } from "@/api-client/organizations/schemas";
+import { inviteSchema, type InviteInput } from "@/api-client/organizations/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { Controller, useForm } from "react-hook-form";

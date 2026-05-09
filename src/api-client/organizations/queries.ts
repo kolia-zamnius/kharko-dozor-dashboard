@@ -1,8 +1,8 @@
-import { apiFetch } from "@/api-client/fetch";
-import { routes } from "@/api-client/routes";
+import { apiFetch } from "@/api-client/_lib/fetch";
+import { routes } from "@/api-client/_lib/routes";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { organizationKeys } from "./keys";
-import type { Organization, OrganizationInvite, OrganizationMember } from "./types";
+import type { Organization, OrganizationInvite, OrganizationMember } from "./schemas";
 
 export const organizationQueries = {
   all: () =>
@@ -41,6 +41,16 @@ export function useMembersQuery(orgId: string, enabled = true) {
   return useQuery({ ...organizationQueries.members(orgId), enabled });
 }
 
+/** Suspense twin — for shells that always render the data (no `enabled` gate). */
+export function useMembersSuspenseQuery(orgId: string) {
+  return useSuspenseQuery(organizationQueries.members(orgId));
+}
+
 export function useInvitesQuery(orgId: string, enabled = true) {
   return useQuery({ ...organizationQueries.invites(orgId), enabled });
+}
+
+/** Suspense twin — for shells that always render the data (no `enabled` gate). */
+export function useInvitesSuspenseQuery(orgId: string) {
+  return useSuspenseQuery(organizationQueries.invites(orgId));
 }

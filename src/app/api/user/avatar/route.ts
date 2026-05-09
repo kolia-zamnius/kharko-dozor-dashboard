@@ -1,5 +1,5 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { userAvatarResponseSchema } from "@/api-client/user/response-schemas";
+import { userAvatarResponseSchema } from "@/api-client/user/schemas";
 import { userAvatarUrl } from "@/lib/avatar";
 import { prisma } from "@/server/db/client";
 import { log } from "@/server/logger";

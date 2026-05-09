@@ -1,6 +1,6 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { ONLINE_THRESHOLD_MS } from "@/api-client/tracked-users/domain";
-import { userStatusSchema } from "@/api-client/tracked-users/response-schemas";
+import { userStatusSchema } from "@/api-client/tracked-users/schemas";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { REAL_SESSION_FILTER } from "@/server/sessions/real-session-filter";

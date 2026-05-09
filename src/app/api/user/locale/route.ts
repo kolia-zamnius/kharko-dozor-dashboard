@@ -1,5 +1,5 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { updateLocaleSchema } from "@/api-client/user/validators";
+import { updateLocaleSchema } from "@/api-client/user/schemas";
 import { prisma } from "@/server/db/client";
 import { log } from "@/server/logger";
 

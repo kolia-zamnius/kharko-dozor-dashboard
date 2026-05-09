@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/overlays/dialog";
 import { Button } from "@/components/ui/primitives/button";
 import { useDeleteOrgMutation } from "@/api-client/organizations/mutations";
-import type { Organization } from "@/api-client/organizations/types";
-import { deleteOrgSchema, type DeleteOrgInput } from "@/api-client/organizations/validators";
+import type { Organization } from "@/api-client/organizations/schemas";
+import { deleteOrgSchema, type DeleteOrgInput } from "@/api-client/organizations/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TrashIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";

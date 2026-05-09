@@ -1,6 +1,6 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { userProfileSchema } from "@/api-client/user/response-schemas";
-import { deleteAccountSchema, updateProfileSchema } from "@/api-client/user/validators";
+import { userProfileSchema } from "@/api-client/user/schemas";
+import { deleteAccountSchema, updateProfileSchema } from "@/api-client/user/schemas";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";
 import { log } from "@/server/logger";

@@ -2,7 +2,7 @@ import type { useTranslations } from "next-intl";
 
 import { assertNever } from "@/lib/assert-never";
 
-import type { SessionDetail } from "./types";
+import type { SessionDetail } from "../schemas";
 
 /** Discriminated `type` so consumers exhaustively switch — adding a variant flags every site. */
 export type SessionUpdate = { type: "new-events"; count: number } | { type: "ended" };

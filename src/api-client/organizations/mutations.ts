@@ -1,12 +1,19 @@
-import { apiFetch } from "@/api-client/fetch";
+import { apiFetch } from "@/api-client/_lib/fetch";
 import { organizationKeys } from "@/api-client/organizations/keys";
 import { organizationQueries } from "@/api-client/organizations/queries";
 import { projectKeys } from "@/api-client/projects/keys";
-import { routes } from "@/api-client/routes";
+import { routes } from "@/api-client/_lib/routes";
 import { sessionKeys } from "@/api-client/sessions/keys";
 import { trackedUserKeys } from "@/api-client/tracked-users/keys";
-import type { Organization, OrganizationInvite, OrganizationMember } from "@/api-client/organizations/types";
-import type { UpdateInviteInput } from "@/api-client/organizations/validators";
+import type {
+  CreateOrgInput,
+  InviteInput,
+  Organization,
+  OrganizationInvite,
+  OrganizationMember,
+  UpdateInviteInput,
+  UpdateOrgInput,
+} from "@/api-client/organizations/schemas";
 import { useRouter } from "@/i18n/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { TranslationValues } from "next-intl";
@@ -47,7 +54,7 @@ export function useCreateOrgMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { name: string }) =>
+    mutationFn: (data: CreateOrgInput) =>
       apiFetch(routes.organizations.list(), {
         method: "POST",
         body: JSON.stringify(data),
@@ -65,7 +72,7 @@ export function useUpdateOrgMutation() {
   const { update } = useSession();
 
   return useMutation({
-    mutationFn: ({ orgId, ...data }: { orgId: string; name?: string; regenerateAvatar?: boolean }) =>
+    mutationFn: ({ orgId, ...data }: { orgId: string } & UpdateOrgInput) =>
       apiFetch(routes.organizations.detail(orgId), {
         method: "PATCH",
         body: JSON.stringify(data),
@@ -115,7 +122,7 @@ export function useInviteMemberMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ orgId, email, role }: { orgId: string; email: string; role: Role }) =>
+    mutationFn: ({ orgId, email, role }: { orgId: string } & InviteInput) =>
       apiFetch(routes.organizations.invites(orgId), {
         method: "POST",
         body: JSON.stringify({ email, role }),

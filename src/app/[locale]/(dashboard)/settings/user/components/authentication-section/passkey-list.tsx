@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/primitives/button";
 import { useRegisterPasskeyMutation } from "@/api-client/user/mutations";
-import type { UserPasskey } from "@/api-client/user/types";
+import type { UserPasskey } from "@/api-client/user/schemas";
 import { useFormatters } from "@/lib/use-formatters";
 import { FingerprintIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";

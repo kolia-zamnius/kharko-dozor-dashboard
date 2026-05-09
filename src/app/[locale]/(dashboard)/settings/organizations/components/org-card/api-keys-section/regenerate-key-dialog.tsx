@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/overlays/dialog";
 import { useRegenerateProjectKeyMutation } from "@/api-client/projects/mutations";
-import type { Project } from "@/api-client/projects/types";
+import type { Project } from "@/api-client/projects/schemas";
 import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

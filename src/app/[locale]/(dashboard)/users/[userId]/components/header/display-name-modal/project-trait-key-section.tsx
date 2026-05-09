@@ -4,7 +4,7 @@ import { useId } from "react";
 import { Input } from "@/components/ui/forms/input";
 import { Button } from "@/components/ui/primitives/button";
 import { useUpdateProjectDisplayNameTraitKeyMutation } from "@/api-client/projects/mutations";
-import type { TrackedUserDetail } from "@/api-client/tracked-users/types";
+import type { TrackedUserDetail } from "@/api-client/tracked-users/schemas";
 import { useServerSyncedInput } from "./use-server-synced-input";
 
 type ProjectTraitKeySectionProps = {

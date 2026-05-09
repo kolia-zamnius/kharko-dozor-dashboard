@@ -1,7 +1,7 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
 import { switchToPersonalSpace } from "@/app/api/organizations/_helpers/switch-to-personal-space";
 import { orgAvatarUrl } from "@/lib/avatar";
-import { updateOrgSchema } from "@/api-client/organizations/validators";
+import { updateOrgSchema } from "@/api-client/organizations/schemas";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";

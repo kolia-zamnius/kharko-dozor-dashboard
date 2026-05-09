@@ -1,4 +1,4 @@
-import type { TimelineSession } from "@/api-client/tracked-users/types";
+import type { TimelineSession } from "@/api-client/tracked-users/schemas";
 
 /** A session decorated with `[visualStart, visualEnd]` clamped to the chart window. */
 export type LaneSession = TimelineSession & {

@@ -1,7 +1,7 @@
 import { LastUpdated as GenericLastUpdated } from "@/components/last-updated";
 import { useUserActivityQuery } from "@/api-client/tracked-users/queries";
 import { type ActivityRange } from "@/api-client/tracked-users/domain";
-import { USER_PAGE_POLL_INTERVAL_MS } from "@/api-client/tracked-users/domain";
+import { USER_PAGE_POLL_INTERVAL_MS } from "@/api-client/tracked-users/constants";
 
 type LastUpdatedProps = {
   userId: string;

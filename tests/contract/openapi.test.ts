@@ -21,62 +21,65 @@ import { describe, expect, it } from "vitest";
 import { z, type ZodType } from "zod";
 
 import {
+  createOrgSchema,
+  inviteSchema,
   organizationCreatedSchema,
   organizationInviteCreatedSchema,
   organizationInviteListSchema,
   organizationListSchema,
   organizationMemberListSchema,
-} from "@/api-client/organizations/response-schemas";
-import {
-  createOrgSchema,
-  inviteSchema,
   updateInviteSchema,
   updateOrgSchema,
-} from "@/api-client/organizations/validators";
-import { projectKeySchema, projectListSchema, projectSchema } from "@/api-client/projects/response-schemas";
+} from "@/api-client/organizations/schemas";
 import {
   createProjectSchema,
   deleteProjectSchema,
+  projectKeySchema,
+  projectListSchema,
+  projectSchema,
   updateProjectDisplayNameTraitKeySchema,
   updateProjectSchema,
-} from "@/api-client/projects/validators";
+} from "@/api-client/projects/schemas";
 import {
   paginatedSessionsSchema,
   sessionDetailSchema,
   sessionEventsResponseSchema,
+  sessionListParamsSchema,
   sessionMarkersResponseSchema,
   sessionsSummarySchema,
-} from "@/api-client/sessions/response-schemas";
-import { sessionListParamsSchema } from "@/api-client/sessions/validators";
+} from "@/api-client/sessions/schemas";
 import {
   paginatedTrackedUsersSchema,
   trackedUserDetailSchema,
   trackedUsersSummarySchema,
+  updateDisplayNameSchema,
   userActivitySchema,
+  userListParamsSchema,
   userStatusSchema,
   userTimelineSchema,
-} from "@/api-client/tracked-users/response-schemas";
-import { updateDisplayNameSchema, userListParamsSchema } from "@/api-client/tracked-users/validators";
+} from "@/api-client/tracked-users/schemas";
 import {
   userInviteAcceptResponseSchema,
   userInviteDeclineResponseSchema,
   userInviteListSchema,
-} from "@/api-client/user-invites/response-schemas";
-import { userAvatarResponseSchema, userProfileSchema } from "@/api-client/user/response-schemas";
+} from "@/api-client/user-invites/schemas";
 import {
   deleteAccountSchema,
   renamePasskeySchema,
   updateLocaleSchema,
   updateProfileSchema,
-} from "@/api-client/user/validators";
+  userAvatarResponseSchema,
+  userProfileSchema,
+} from "@/api-client/user/schemas";
 import { ingestSchema } from "@/app/api/ingest/_helpers/parse-body";
 
 /**
- * Mirrors of schemas that live inline in route files (not in `validators.ts`) —
- * importing the route module would drag in Prisma + Auth.js + the whole server
- * runtime. Drift is unguarded: if a route's inline schema diverges, the docs
- * render the wrong shape but no test fails. Acceptable for the handful of
- * inline bodies; hoist into `validators.ts` if more appear.
+ * Mirrors of schemas that live inline in route files (not in their feature's
+ * `schemas.ts`) — importing the route module would drag in Prisma + Auth.js +
+ * the whole server runtime. Drift is unguarded: if a route's inline schema
+ * diverges, the docs render the wrong shape but no test fails. Acceptable for
+ * the handful of inline bodies; hoist into the feature `schemas.ts` if more
+ * appear.
  */
 const switchOrgSchema = z.object({
   organizationId: z.string().min(1, "organizationId is required"),

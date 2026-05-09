@@ -5,8 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
 import { useUpdateOrgMutation } from "@/api-client/organizations/mutations";
-import type { Organization } from "@/api-client/organizations/types";
-import { createOrgSchema, type CreateOrgInput } from "@/api-client/organizations/validators";
+import type { Organization } from "@/api-client/organizations/schemas";
+import { createOrgSchema, type CreateOrgInput } from "@/api-client/organizations/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowsClockwiseIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";

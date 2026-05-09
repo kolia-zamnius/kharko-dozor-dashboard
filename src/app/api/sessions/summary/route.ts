@@ -1,5 +1,5 @@
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { sessionsSummarySchema } from "@/api-client/sessions/response-schemas";
+import { sessionsSummarySchema } from "@/api-client/sessions/schemas";
 import { ONE_DAY_MS } from "@/lib/time";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";

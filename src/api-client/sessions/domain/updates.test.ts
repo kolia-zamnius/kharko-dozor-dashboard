@@ -7,9 +7,9 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
 
-import { fakeTranslator } from "../../../tests/helpers/translator";
+import { fakeTranslator } from "../../../../tests/helpers/translator";
 import { detectSessionUpdates, formatUpdateTooltip, type SessionUpdate } from "./updates";
-import type { SessionDetail } from "./types";
+import type { SessionDetail } from "../schemas";
 
 function snapshot(overrides: Partial<SessionDetail> = {}): SessionDetail {
   return {

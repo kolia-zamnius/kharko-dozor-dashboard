@@ -14,13 +14,13 @@ import {
   parseSessionDateRange,
   parseSessionListSortBy,
   parseSessionListSortDir,
-  SESSIONS_LIST_POLL_MS,
   type SessionDateRange,
   type SessionListSortBy,
   type SessionListSortDir,
 } from "@/api-client/sessions/domain";
+import { SESSIONS_LIST_POLL_MS } from "@/api-client/sessions/constants";
 import { useSessionsSummarySuspenseQuery, useSessionsSuspenseQuery } from "@/api-client/sessions/queries";
-import type { SessionListItem } from "@/api-client/sessions/types";
+import type { SessionListItem } from "@/api-client/sessions/schemas";
 import { useCanManageActiveOrg } from "@/lib/hooks/use-can-manage-active-org";
 import { EmptyState } from "./empty-state";
 import { FilterBar } from "./filter-bar";

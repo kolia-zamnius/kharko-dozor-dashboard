@@ -1,7 +1,6 @@
 import { buildCursorResponse, parseLimitParam } from "@/app/api/_lib/pagination";
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { paginatedTrackedUsersSchema } from "@/api-client/tracked-users/response-schemas";
-import { userListParamsSchema } from "@/api-client/tracked-users/validators";
+import { paginatedTrackedUsersSchema, userListParamsSchema } from "@/api-client/tracked-users/schemas";
 import { SEVEN_DAYS_MS } from "@/lib/time";
 import { requireMember } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";

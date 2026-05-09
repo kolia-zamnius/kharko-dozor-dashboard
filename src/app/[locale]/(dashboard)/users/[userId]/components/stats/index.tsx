@@ -1,7 +1,7 @@
 import { ClockIcon, CursorClickIcon, GaugeIcon, MapPinIcon, PlayCircleIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 
-import type { UserActivity } from "@/api-client/tracked-users/types";
+import type { UserActivity } from "@/api-client/tracked-users/schemas";
 import { type ActivityRange } from "@/api-client/tracked-users/domain";
 import { useFormatters } from "@/lib/use-formatters";
 import { StatCard } from "@/components/ui/data-display/stat-card";

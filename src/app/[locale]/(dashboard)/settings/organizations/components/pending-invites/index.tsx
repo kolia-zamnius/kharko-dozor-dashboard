@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card";
-import type { UserInvite } from "@/api-client/user-invites/types";
+import type { UserInvite } from "@/api-client/user-invites/schemas";
 import { EnvelopeIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { InvitesTable } from "./invites-table";

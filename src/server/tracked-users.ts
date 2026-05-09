@@ -1,9 +1,7 @@
 import "server-only";
 
-import { trackedUserDetailSchema } from "@/api-client/tracked-users/response-schemas";
-import type { TrackedUserDetail } from "@/api-client/tracked-users/types";
-import { deriveUserStatus } from "@/api-client/tracked-users/status";
-import { resolveDisplayName } from "@/api-client/tracked-users/resolve-display-name";
+import { trackedUserDetailSchema, type TrackedUserDetail } from "@/api-client/tracked-users/schemas";
+import { deriveUserStatus, resolveDisplayName } from "@/api-client/tracked-users/domain";
 import { SEVEN_DAYS_MS } from "@/lib/time";
 import { requireResourceAccess } from "@/server/auth/permissions";
 import { prisma } from "@/server/db/client";

@@ -23,11 +23,7 @@ export async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
     if (!bridge) {
       // Loud message — replaces Node's obscure `Failed to parse URL`.
       throw new Error(
-        "apiFetch: server-side relative URL cannot be resolved — the " +
-          "server-only bridge is not registered. Import " +
-          "`@/api-client/fetch-server-bridge` as a side-effect from a " +
-          "Server Component that's always in the render tree " +
-          "(e.g. `src/app/[locale]/layout.tsx`).",
+        "apiFetch: server-side relative URL cannot be resolved — the server-only bridge is not registered. Import `@/api-client/_lib/fetch-server-bridge` as a side-effect from a Server Component that's always in the render tree (e.g. `src/app/layout.tsx`).",
       );
     }
     const resolved = await bridge(url, init);

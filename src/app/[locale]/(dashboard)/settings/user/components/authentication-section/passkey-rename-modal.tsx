@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
 import { useRenamePasskeyMutation } from "@/api-client/user/mutations";
-import { renamePasskeySchema, type RenamePasskeyInput } from "@/api-client/user/validators";
+import { renamePasskeySchema, type RenamePasskeyInput } from "@/api-client/user/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";

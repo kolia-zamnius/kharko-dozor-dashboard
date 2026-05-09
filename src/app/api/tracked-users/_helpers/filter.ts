@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { UserActivityStatus } from "@/api-client/tracked-users/status";
+import type { UserActivityStatus } from "@/api-client/tracked-users/domain";
 import type { EnrichedTrackedUser } from "./enrich";
 
 type FilterParams = {

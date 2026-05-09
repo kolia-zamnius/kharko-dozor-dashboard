@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/overlays/dialog";
 import { useDeletePasskeyMutation } from "@/api-client/user/mutations";
-import type { UserPasskey } from "@/api-client/user/types";
+import type { UserPasskey } from "@/api-client/user/schemas";
 import { TrashIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";

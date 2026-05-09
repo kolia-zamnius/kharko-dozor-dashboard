@@ -7,7 +7,7 @@ import { cn } from "@/lib/cn";
 // Side-effect — registers the server-only `apiFetch` bridge on `globalThis`.
 // Imported from a Server Component (not `fetch.ts`) to keep `next/headers`
 // out of the Client Component SSR graph.
-import "@/api-client/fetch-server-bridge";
+import "@/api-client/_lib/fetch-server-bridge";
 
 import { Providers } from "./_providers/stable";
 

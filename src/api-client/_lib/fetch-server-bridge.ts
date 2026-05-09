@@ -9,7 +9,7 @@ import type { ApiFetchServerBridge } from "./fetch";
  * Self-registers on `globalThis.__apiFetchServerBridge` instead of being imported
  * by `fetch.ts` — a direct import would pull `next/headers` into the Client
  * Component SSR graph, which Next.js forbids. Side-effect-imported from
- * {@link src/app/[locale]/layout.tsx}.
+ * {@link src/app/layout.tsx} (the non-localised root).
  */
 const resolveServerFetchInit: ApiFetchServerBridge = async (url, init) => {
   const baseUrl = getAppUrl();

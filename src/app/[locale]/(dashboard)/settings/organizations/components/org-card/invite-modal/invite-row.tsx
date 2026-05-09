@@ -3,7 +3,7 @@ import { TableCell, TableRow } from "@/components/ui/data-display/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/forms/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/overlays/tooltip";
 import { useDeleteInviteMutation, useUpdateInviteMutation } from "@/api-client/organizations/mutations";
-import type { OrganizationInvite } from "@/api-client/organizations/types";
+import type { OrganizationInvite } from "@/api-client/organizations/schemas";
 import { useFormatters } from "@/lib/use-formatters";
 import { ArrowClockwiseIcon, TrashIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";

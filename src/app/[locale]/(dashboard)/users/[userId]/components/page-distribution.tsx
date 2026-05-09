@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/primitives/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/layout/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/data-display/table";
-import type { UserActivity } from "@/api-client/tracked-users/types";
+import type { UserActivity } from "@/api-client/tracked-users/schemas";
 import { PAGE_DISTRIBUTION_INITIAL, PAGE_DISTRIBUTION_STEP } from "@/api-client/tracked-users/domain";
 import { colorClassForPathname } from "../lib/page-colors";
 import { cn } from "@/lib/cn";

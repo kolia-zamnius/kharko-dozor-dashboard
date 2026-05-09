@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
-import type { Organization } from "@/api-client/organizations/types";
+import type { Organization } from "@/api-client/organizations/schemas";
 import { cn } from "@/lib/cn";
 import { useFormatters } from "@/lib/use-formatters";
 import { CheckIcon } from "@phosphor-icons/react";

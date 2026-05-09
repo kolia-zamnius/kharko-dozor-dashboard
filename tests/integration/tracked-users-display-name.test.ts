@@ -11,7 +11,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 
 import * as displayNameRoute from "@/app/api/tracked-users/[userId]/display-name/route";
 
-import { resolveDisplayName } from "@/api-client/tracked-users/resolve-display-name";
+import { resolveDisplayName } from "@/api-client/tracked-users/domain";
 import { buildSession, buildSessionUser } from "../helpers/auth-mock";
 import { getTestPrisma, truncateAll } from "../helpers/db";
 import {

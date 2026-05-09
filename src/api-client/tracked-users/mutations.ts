@@ -1,15 +1,11 @@
-import { apiFetch } from "@/api-client/fetch";
-import { routes } from "@/api-client/routes";
+import { apiFetch } from "@/api-client/_lib/fetch";
+import { routes } from "@/api-client/_lib/routes";
 import { trackedUserQueries } from "@/api-client/tracked-users/queries";
+import type { UpdateDisplayNameInput } from "@/api-client/tracked-users/schemas";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-type UpdateDisplayNameVars = {
-  userId: string;
-  /** `undefined` = leave unchanged, `null` = reset, string = set. */
-  customName?: string | null;
-  /** `undefined` = leave unchanged, `null` = reset, string = set. */
-  traitKey?: string | null;
-};
+/** URL `userId` rides alongside the schema-typed body fields. */
+type UpdateDisplayNameVars = { userId: string } & UpdateDisplayNameInput;
 
 /**
  * Three-state field semantics: omitted = leave alone, `null` = reset, string =
@@ -23,7 +19,7 @@ export function useUpdateTrackedUserDisplayNameMutation() {
 
   return useMutation({
     mutationFn: async ({ userId, customName, traitKey }: UpdateDisplayNameVars) => {
-      const payload: { customName?: string | null; traitKey?: string | null } = {};
+      const payload: UpdateDisplayNameInput = {};
       if (customName !== undefined) payload.customName = customName;
       if (traitKey !== undefined) payload.traitKey = traitKey;
 

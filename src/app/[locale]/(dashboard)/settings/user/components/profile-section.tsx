@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
 import { useRegenerateAvatarMutation, useUpdateProfileMutation } from "@/api-client/user/mutations";
-import type { UserProfile } from "@/api-client/user/types";
-import { updateProfileSchema, type UpdateProfileInput } from "@/api-client/user/validators";
+import type { UserProfile } from "@/api-client/user/schemas";
+import { updateProfileSchema, type UpdateProfileInput } from "@/api-client/user/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";

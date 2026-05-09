@@ -1,6 +1,6 @@
 import { expireStaleInvites } from "@/app/api/_lib/invite-lifecycle";
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { userInviteListSchema } from "@/api-client/user-invites/response-schemas";
+import { userInviteListSchema } from "@/api-client/user-invites/schemas";
 import { prisma } from "@/server/db/client";
 import { NextResponse } from "next/server";
 

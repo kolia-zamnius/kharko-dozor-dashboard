@@ -1,6 +1,6 @@
 import { assertInviteUsableForUser } from "@/app/api/_lib/invite-lifecycle";
 import { withAuth } from "@/app/api/_lib/with-auth";
-import { userInviteAcceptResponseSchema } from "@/api-client/user-invites/response-schemas";
+import { userInviteAcceptResponseSchema } from "@/api-client/user-invites/schemas";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/server/db/client";
 import { HttpError } from "@/server/http-error";

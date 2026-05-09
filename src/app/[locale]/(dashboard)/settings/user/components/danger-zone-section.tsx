@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/overlays/dialog";
 import { Button } from "@/components/ui/primitives/button";
 import { useDeleteAccountMutation } from "@/api-client/user/mutations";
-import { deleteAccountSchema, type DeleteAccountInput } from "@/api-client/user/validators";
+import { deleteAccountSchema, type DeleteAccountInput } from "@/api-client/user/schemas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { signOut } from "next-auth/react";
