@@ -1,7 +1,8 @@
-import { apiFetch } from "@/api-client/fetch";
-import { pollingOptions } from "@/api-client/polling";
-import { routes } from "@/api-client/routes";
-import { keepPreviousData, queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/api-client/_lib/fetch";
+import { pollingOptions } from "@/api-client/_lib/polling";
+import { routes } from "@/api-client/_lib/routes";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { cursorPlaceholderData } from "@/api-client/_lib/pagination";
 import { trackedUserKeys } from "./keys";
 import type {
   PaginatedTrackedUsers,
@@ -11,10 +12,14 @@ import type {
   UserActivity,
   UserStatus,
   UserTimeline,
-} from "./types";
-import type { PaginatedSessions } from "@/api-client/sessions/types";
+} from "./schemas";
+import type { PaginatedSessions } from "@/api-client/sessions/schemas";
 import type { ActivityRange } from "@/api-client/tracked-users/domain";
-import { STATUS_POLL_INTERVAL_MS, USER_PAGE_POLL_INTERVAL_MS } from "@/api-client/tracked-users/domain";
+import {
+  STATUS_POLL_INTERVAL_MS,
+  USERS_LIST_POLL_MS,
+  USER_PAGE_POLL_INTERVAL_MS,
+} from "@/api-client/tracked-users/constants";
 
 function buildListQuery(params: TrackedUserListParams): string {
   const sp = new URLSearchParams();
@@ -28,9 +33,6 @@ function buildListQuery(params: TrackedUserListParams): string {
   return qs ? `?${qs}` : "";
 }
 
-/** Reuses the user-detail cadence so list and detail views feel equally live. */
-export const USERS_LIST_POLL_MS = USER_PAGE_POLL_INTERVAL_MS;
-
 export const trackedUserQueries = {
   list: (params: TrackedUserListParams = {}) =>
     queryOptions({
@@ -39,7 +41,7 @@ export const trackedUserQueries = {
         apiFetch<PaginatedTrackedUsers>(`${routes.trackedUsers.list()}${buildListQuery(params)}`, { signal }),
       ...pollingOptions(USERS_LIST_POLL_MS),
       // Filter / sort / cursor changes create new keys — keep previous data visible.
-      placeholderData: keepPreviousData,
+      placeholderData: cursorPlaceholderData,
     }),
   summary: () =>
     queryOptions({
@@ -62,7 +64,7 @@ export const trackedUserQueries = {
       },
       ...pollingOptions(USER_PAGE_POLL_INTERVAL_MS),
       // Cursor change (Load More) creates a new key — keep page 1 visible during the page-2 fetch.
-      placeholderData: keepPreviousData,
+      placeholderData: cursorPlaceholderData,
     }),
   timeline: (userId: string, range: ActivityRange) =>
     queryOptions({
@@ -70,7 +72,7 @@ export const trackedUserQueries = {
       queryFn: ({ signal }) =>
         apiFetch<UserTimeline>(`${routes.trackedUsers.timeline(userId)}?range=${range}`, { signal }),
       ...pollingOptions(USER_PAGE_POLL_INTERVAL_MS),
-      placeholderData: keepPreviousData,
+      placeholderData: cursorPlaceholderData,
     }),
   activity: (userId: string, range: ActivityRange, pageLimit: number) =>
     queryOptions({
@@ -83,7 +85,7 @@ export const trackedUserQueries = {
       // updates all three. `pageLimit` in the key means "Show more" triggers a
       // fresh fetch that ALSO refreshes stats and histogram as a side effect.
       ...pollingOptions(USER_PAGE_POLL_INTERVAL_MS),
-      placeholderData: keepPreviousData,
+      placeholderData: cursorPlaceholderData,
     }),
   status: (userId: string) =>
     queryOptions({
@@ -137,4 +139,7 @@ export function useUserActivitySuspenseQuery(userId: string, range: ActivityRang
 
 export function useUserStatusQuery(userId: string) {
   return useQuery(trackedUserQueries.status(userId));
+}
+export function useUserStatusSuspenseQuery(userId: string) {
+  return useSuspenseQuery(trackedUserQueries.status(userId));
 }

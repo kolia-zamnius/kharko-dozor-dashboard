@@ -1,12 +1,10 @@
-import { apiFetch } from "@/api-client/fetch";
+import { apiFetch } from "@/api-client/_lib/fetch";
 import { organizationQueries } from "@/api-client/organizations/queries";
-import { routes } from "@/api-client/routes";
+import { routes } from "@/api-client/_lib/routes";
 import { userInviteQueries } from "@/api-client/user-invites/queries";
-import type { UserInvite } from "@/api-client/user-invites/types";
+import type { InviteActionVariables, UserInvite } from "@/api-client/user-invites/schemas";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-
-type InviteVariables = { inviteId: string; organizationName: string };
 
 type OptimisticContext = {
   previous: UserInvite[] | undefined;
@@ -18,16 +16,15 @@ type OptimisticContext = {
  * snapshot. `onSettled` invalidates once: on success, reconciles edge cases
  * (row also declined in another tab); on error, no-op against the restored snapshot.
  */
-function createOptimisticRemoval(
+async function createOptimisticRemoval(
   queryClient: ReturnType<typeof useQueryClient>,
   inviteId: string,
 ): Promise<OptimisticContext> {
   const key = userInviteQueries.all().queryKey;
-  return queryClient.cancelQueries({ queryKey: key }).then(() => {
-    const previous = queryClient.getQueryData<UserInvite[]>(key);
-    queryClient.setQueryData<UserInvite[]>(key, (old) => (old ? old.filter((invite) => invite.id !== inviteId) : old));
-    return { previous };
-  });
+  await queryClient.cancelQueries({ queryKey: key });
+  const previous = queryClient.getQueryData<UserInvite[]>(key);
+  queryClient.setQueryData<UserInvite[]>(key, (old) => (old ? old.filter((invite) => invite.id !== inviteId) : old));
+  return { previous };
 }
 
 function rollbackOptimisticRemoval(
@@ -49,7 +46,7 @@ export function useAcceptInviteMutation() {
   const queryClient = useQueryClient();
   const { update } = useSession();
 
-  return useMutation<unknown, Error, InviteVariables, OptimisticContext>({
+  return useMutation<unknown, Error, InviteActionVariables, OptimisticContext>({
     mutationFn: ({ inviteId }) => apiFetch(routes.user.acceptInvite(inviteId), { method: "POST" }),
     onMutate: ({ inviteId }) => createOptimisticRemoval(queryClient, inviteId),
     onError: (_err, _variables, context) => rollbackOptimisticRemoval(queryClient, context),
@@ -64,7 +61,7 @@ export function useAcceptInviteMutation() {
       errorKey: "settings.mutations.invites.accept.error",
       successKey: "settings.mutations.invites.accept.success",
       successVars: (variables) => {
-        const { organizationName } = variables as InviteVariables;
+        const { organizationName } = variables as InviteActionVariables;
         return { organizationName };
       },
     },
@@ -75,7 +72,7 @@ export function useAcceptInviteMutation() {
 export function useDeclineInviteMutation() {
   const queryClient = useQueryClient();
 
-  return useMutation<unknown, Error, InviteVariables, OptimisticContext>({
+  return useMutation<unknown, Error, InviteActionVariables, OptimisticContext>({
     mutationFn: ({ inviteId }) => apiFetch(routes.user.declineInvite(inviteId), { method: "POST" }),
     onMutate: ({ inviteId }) => createOptimisticRemoval(queryClient, inviteId),
     onError: (_err, _variables, context) => rollbackOptimisticRemoval(queryClient, context),
@@ -86,7 +83,7 @@ export function useDeclineInviteMutation() {
       errorKey: "settings.mutations.invites.decline.error",
       successKey: "settings.mutations.invites.decline.success",
       successVars: (variables) => {
-        const { organizationName } = variables as InviteVariables;
+        const { organizationName } = variables as InviteActionVariables;
         return { organizationName };
       },
     },

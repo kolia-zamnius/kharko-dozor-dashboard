@@ -256,7 +256,7 @@ model TrackedUser {
   updatedAt  DateTime @updatedAt
 
   /// First two priorities of the 4-level display-name chain (full chain in
-  /// `src/api-client/tracked-users/resolve-display-name.ts`):
+  /// `src/api-client/tracked-users/domain/resolve-display-name.ts`):
   /// 1. `customName` — admin-typed override
   /// 2. `displayNameTraitKey` — read `traits[this]` for this user
   customName          String?

@@ -1,11 +1,9 @@
 /**
- * Unit tests for sessions `domain.ts` — date-range math and parsers.
- *
- * @remarks
+ * Unit tests for sessions `domain/` parsers — date-range math + sort options.
  * Table-driven so "today" / "7d" / "30d" / "90d" share one test body. The
  * widest preset (`90d`) is anchored to `SESSION_RETENTION_MS`, so the
- * assertion pulls from the same constant — flipping retention updates
- * both places in lockstep.
+ * assertion pulls from the same constant — flipping retention updates both
+ * places in lockstep.
  */
 
 import { describe, expect, it } from "vitest";
@@ -14,16 +12,18 @@ import { SESSION_RETENTION_MS, SEVEN_DAYS_MS, THIRTY_DAYS_MS } from "@/lib/time"
 
 import {
   DEFAULT_SESSION_DATE_RANGE,
-  DEFAULT_SESSION_LIST_SORT,
-  DEFAULT_SESSION_LIST_SORT_DIR,
   dateRangeToFrom,
   parseSessionDateRange,
+  SESSION_DATE_RANGES,
+  type SessionDateRange,
+} from "./ranges";
+import {
+  DEFAULT_SESSION_LIST_SORT,
+  DEFAULT_SESSION_LIST_SORT_DIR,
   parseSessionListSortBy,
   parseSessionListSortDir,
-  SESSION_DATE_RANGES,
   SESSION_LIST_SORT_OPTIONS,
-  type SessionDateRange,
-} from "./domain";
+} from "./sort";
 
 describe("dateRangeToFrom", () => {
   const now = new Date("2025-06-15T14:30:00.000Z");

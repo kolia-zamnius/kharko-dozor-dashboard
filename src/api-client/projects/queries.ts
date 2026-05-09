@@ -1,8 +1,8 @@
-import { apiFetch } from "@/api-client/fetch";
-import { routes } from "@/api-client/routes";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/api-client/_lib/fetch";
+import { routes } from "@/api-client/_lib/routes";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { projectKeys } from "./keys";
-import type { Project } from "./types";
+import type { Project } from "./schemas";
 
 export const projectQueries = {
   all: () =>
@@ -23,8 +23,18 @@ export function useProjectsQuery() {
   return useQuery(projectQueries.all());
 }
 
+export function useProjectsSuspenseQuery() {
+  return useSuspenseQuery(projectQueries.all());
+}
+
+/** Conditional via `enabled` — modal flows that mount their query only when opened. Suspense doesn't accept `enabled: false`. */
 export function useOrgProjectsQuery(organizationId: string, enabled = true) {
   return useQuery({ ...projectQueries.byOrg(organizationId), enabled });
+}
+
+/** Suspense twin — for shells that always render the data. Skip when the caller needs `enabled: false`. */
+export function useOrgProjectsSuspenseQuery(organizationId: string) {
+  return useSuspenseQuery(projectQueries.byOrg(organizationId));
 }
 
 /**

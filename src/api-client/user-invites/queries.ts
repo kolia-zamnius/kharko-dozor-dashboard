@@ -1,8 +1,8 @@
-import { apiFetch } from "@/api-client/fetch";
-import { routes } from "@/api-client/routes";
+import { apiFetch } from "@/api-client/_lib/fetch";
+import { routes } from "@/api-client/_lib/routes";
 import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { userInviteKeys } from "./keys";
-import type { UserInvite } from "./types";
+import type { UserInvite } from "./schemas";
 
 /**
  * Short `staleTime` (30s) — pending invites are countdown-like and the navbar

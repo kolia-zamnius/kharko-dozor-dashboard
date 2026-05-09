@@ -1,5 +1,5 @@
-import { apiFetch } from "@/api-client/fetch";
-import { routes } from "@/api-client/routes";
+import { apiFetch } from "@/api-client/_lib/fetch";
+import { routes } from "@/api-client/_lib/routes";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { sessionKeys } from "./keys";
 

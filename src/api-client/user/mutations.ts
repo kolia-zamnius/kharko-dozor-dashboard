@@ -1,7 +1,12 @@
-import { apiFetch } from "@/api-client/fetch";
-import { routes } from "@/api-client/routes";
+import { apiFetch } from "@/api-client/_lib/fetch";
+import { routes } from "@/api-client/_lib/routes";
 import { userQueries } from "@/api-client/user/queries";
-import type { UpdateLocaleInput } from "@/api-client/user/validators";
+import type {
+  DeleteAccountInput,
+  RenamePasskeyInput,
+  UpdateLocaleInput,
+  UpdateProfileInput,
+} from "@/api-client/user/schemas";
 import { signalUnknownCredential } from "@/lib/signal-unknown-credential";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { signIn } from "next-auth/webauthn";
@@ -19,7 +24,7 @@ export function useUpdateProfileMutation() {
   const invalidate = useProfileInvalidation();
 
   return useMutation({
-    mutationFn: (data: { name: string }) =>
+    mutationFn: (data: UpdateProfileInput) =>
       apiFetch(routes.user.me(), {
         method: "PATCH",
         body: JSON.stringify(data),
@@ -65,7 +70,7 @@ export function useRenamePasskeyMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ credentialID, name }: { credentialID: string; name: string }) =>
+    mutationFn: ({ credentialID, name }: { credentialID: string } & RenamePasskeyInput) =>
       apiFetch(routes.user.passkey(encodeURIComponent(credentialID)), {
         method: "PATCH",
         body: JSON.stringify({ name }),
@@ -137,7 +142,7 @@ export function useUpdateLocaleMutation() {
 
 export function useDeleteAccountMutation() {
   return useMutation({
-    mutationFn: (data: { confirmation: string }) =>
+    mutationFn: (data: DeleteAccountInput) =>
       apiFetch(routes.user.me(), {
         method: "DELETE",
         body: JSON.stringify(data),

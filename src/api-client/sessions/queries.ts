@@ -1,7 +1,8 @@
-import { apiFetch } from "@/api-client/fetch";
-import { pollingOptions } from "@/api-client/polling";
-import { routes } from "@/api-client/routes";
-import { keepPreviousData, queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/api-client/_lib/fetch";
+import { pollingOptions } from "@/api-client/_lib/polling";
+import { routes } from "@/api-client/_lib/routes";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { cursorPlaceholderData } from "@/api-client/_lib/pagination";
 import { sessionKeys } from "./keys";
 import type {
   PaginatedSessions,
@@ -10,8 +11,9 @@ import type {
   SessionListParams,
   SessionMarkersResponse,
   SessionsSummary,
-} from "./types";
-import { DEFAULT_SESSION_DATE_RANGE, SESSION_DETAIL_POLL_MS, SESSIONS_LIST_POLL_MS } from "./domain";
+} from "./schemas";
+import { DEFAULT_SESSION_DATE_RANGE } from "./domain";
+import { SESSION_DETAIL_POLL_MS, SESSIONS_LIST_POLL_MS } from "./constants";
 
 function buildSessionsUrl(params: SessionListParams): string {
   const sp = new URLSearchParams();
@@ -32,7 +34,7 @@ export const sessionQueries = {
       queryKey: sessionKeys.list(params),
       queryFn: ({ signal }) => apiFetch<PaginatedSessions>(buildSessionsUrl(params), { signal }),
       ...pollingOptions(SESSIONS_LIST_POLL_MS),
-      placeholderData: keepPreviousData,
+      placeholderData: cursorPlaceholderData,
     }),
   summary: () =>
     queryOptions({
@@ -83,11 +85,20 @@ export function useSessionsSummarySuspenseQuery() {
 export function useSessionQuery(sessionId: string) {
   return useQuery(sessionQueries.detail(sessionId));
 }
+export function useSessionSuspenseQuery(sessionId: string) {
+  return useSuspenseQuery(sessionQueries.detail(sessionId));
+}
 
 export function useSessionEventsQuery(sessionId: string) {
   return useQuery(sessionQueries.events(sessionId));
 }
+export function useSessionEventsSuspenseQuery(sessionId: string) {
+  return useSuspenseQuery(sessionQueries.events(sessionId));
+}
 
 export function useSessionMarkersQuery(sessionId: string) {
   return useQuery(sessionQueries.markers(sessionId));
+}
+export function useSessionMarkersSuspenseQuery(sessionId: string) {
+  return useSuspenseQuery(sessionQueries.markers(sessionId));
 }

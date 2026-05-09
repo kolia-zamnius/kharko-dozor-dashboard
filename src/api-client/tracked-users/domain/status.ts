@@ -6,8 +6,13 @@
  * `src/app/[locale]/(dashboard)/users/lib/status-ui.ts`.
  */
 
-import { ONE_DAY_MS, SEVEN_DAYS_MS } from "@/lib/time";
-import { ONLINE_THRESHOLD_MS } from "./domain";
+import { ONE_DAY_MS, ONE_MINUTE_MS, SEVEN_DAYS_MS } from "@/lib/time";
+
+/**
+ * Online if last event lands within this window. Server-side filter + client-side
+ * badge consume the same threshold so the two views can never disagree.
+ */
+export const ONLINE_THRESHOLD_MS = 2 * ONE_MINUTE_MS;
 
 export const USER_ACTIVITY_STATUSES = ["ONLINE", "ACTIVE_24H", "IDLE_7D", "DORMANT"] as const;
 export type UserActivityStatus = (typeof USER_ACTIVITY_STATUSES)[number];

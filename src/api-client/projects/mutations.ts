@@ -1,7 +1,12 @@
-import { apiFetch } from "@/api-client/fetch";
+import { apiFetch } from "@/api-client/_lib/fetch";
 import { projectQueries } from "@/api-client/projects/queries";
-import { routes } from "@/api-client/routes";
-import type { Project } from "@/api-client/projects/types";
+import { routes } from "@/api-client/_lib/routes";
+import type {
+  CreateProjectInput,
+  Project,
+  UpdateProjectDisplayNameTraitKeyInput,
+  UpdateProjectInput,
+} from "@/api-client/projects/schemas";
 import { trackedUserKeys } from "@/api-client/tracked-users/keys";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -9,7 +14,7 @@ export function useCreateProjectMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ name, organizationId }: { name: string; organizationId: string }) =>
+    mutationFn: ({ name, organizationId }: CreateProjectInput) =>
       apiFetch<Project>(routes.projects.list(), {
         method: "POST",
         body: JSON.stringify({ name, organizationId }),
@@ -31,7 +36,7 @@ export function useUpdateProjectMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ projectId, name }: { projectId: string; name: string }) =>
+    mutationFn: ({ projectId, name }: { projectId: string } & UpdateProjectInput) =>
       apiFetch(routes.projects.detail(projectId), {
         method: "PATCH",
         body: JSON.stringify({ name }),
@@ -85,12 +90,11 @@ export function useUpdateProjectDisplayNameTraitKeyMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ projectId, traitKey }: { projectId: string; traitKey: string | null }) => {
-      await apiFetch<void>(routes.projects.displayNameTraitKey(projectId), {
+    mutationFn: ({ projectId, traitKey }: { projectId: string } & UpdateProjectDisplayNameTraitKeyInput) =>
+      apiFetch<void>(routes.projects.displayNameTraitKey(projectId), {
         method: "PATCH",
         body: JSON.stringify({ traitKey }),
-      });
-    },
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: trackedUserKeys.details() });
     },
