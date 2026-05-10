@@ -75,7 +75,7 @@ export default async function GlobalNotFound() {
           <p className="text-muted-foreground mt-2 text-sm">{t("description")}</p>
           <Button asChild className="mt-6">
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- hard nav so proxy.ts re-runs (see file JSDoc) */}
-            <a href="/users">{t("goToDashboard")}</a>
+            <a href="/replays">{t("goToDashboard")}</a>
           </Button>
         </div>
       </body>

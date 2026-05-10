@@ -97,7 +97,9 @@
         "skipIdleAria": "Пропускати періоди бездіяльності",
         "skipIdle": "Пропускати паузи",
         "compressIdleAria": "Стискати паузи у часовій шкалі",
-        "compressIdle": "Стискати паузи"
+        "compressIdle": "Стискати паузи",
+        "fullscreenAria": "Перемкнути повноекранний режим",
+        "sidePanelAria": "Перемкнути бічну панель"
       },
       "tabs": {
         "history": "Історія",

@@ -25,7 +25,7 @@ type SignUpState = { step: "form" } | { step: "otp"; email: string };
  * party name lands without a second round-trip. Error sentinels translated to
  * product copy here so the server action stays free of user-facing strings.
  */
-export function SignUpForm({ callbackUrl = "/users", enabled }: { callbackUrl?: string; enabled: EnabledProviders }) {
+export function SignUpForm({ callbackUrl = "/replays", enabled }: { callbackUrl?: string; enabled: EnabledProviders }) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [state, setState] = useState<SignUpState>({ step: "form" });
@@ -48,7 +48,9 @@ export function SignUpForm({ callbackUrl = "/users", enabled }: { callbackUrl?: 
       if (result.error === "ACCOUNT_EXISTS") {
         toast.info(t("signUp.toast.accountExists"));
         setSubmitting(false);
-        router.push(callbackUrl !== "/users" ? `/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/sign-in");
+        router.push(
+          callbackUrl !== "/replays" ? `/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/sign-in",
+        );
         return;
       }
       if (result.error === "RATE_LIMITED") {

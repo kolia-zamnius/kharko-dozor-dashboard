@@ -3,9 +3,6 @@ import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/primitives/button";
 
 /**
- * `/users` button works for both audiences — signed-in lands on dashboard,
- * anon hits `proxy.ts` which redirects to `/sign-in?callbackUrl=/users`.
- *
  * `getTranslations` (not the hook) — when `notFound()` fires from inside
  * `[locale]/layout.tsx`, the client provider chain may not be mounted.
  * Hard nav `<a href>` so middleware re-runs (soft nav can leave the 404 UI
@@ -19,7 +16,7 @@ export default async function LocaleNotFound() {
       <p className="text-muted-foreground mt-2 text-sm">{t("description")}</p>
       <Button asChild className="mt-6">
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- hard nav so proxy re-runs */}
-        <a href="/users">{t("goToDashboard")}</a>
+        <a href="/replays">{t("goToDashboard")}</a>
       </Button>
     </div>
   );

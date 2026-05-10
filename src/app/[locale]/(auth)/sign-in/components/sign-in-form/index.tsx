@@ -22,7 +22,7 @@ type SignInState =
 /** Pure orchestrator — owns typestate + step routing. Form validation, OAuth, WebAuthn live in the step components. */
 export function SignInForm({
   error,
-  callbackUrl = "/users",
+  callbackUrl = "/replays",
   enabled,
 }: {
   error?: string;

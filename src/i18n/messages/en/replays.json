@@ -97,7 +97,9 @@
         "skipIdleAria": "Skip idle periods",
         "skipIdle": "Skip idle",
         "compressIdleAria": "Compress idle gaps in the timeline",
-        "compressIdle": "Compress idle"
+        "compressIdle": "Compress idle",
+        "fullscreenAria": "Toggle fullscreen",
+        "sidePanelAria": "Toggle side panel"
       },
       "tabs": {
         "history": "History",

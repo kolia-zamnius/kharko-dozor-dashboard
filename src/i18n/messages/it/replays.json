@@ -97,7 +97,9 @@
         "skipIdleAria": "Salta periodi di inattività",
         "skipIdle": "Salta inattivo",
         "compressIdleAria": "Comprimi periodi di inattività nella timeline",
-        "compressIdle": "Comprimi inattivo"
+        "compressIdle": "Comprimi inattivo",
+        "fullscreenAria": "Attiva/disattiva schermo intero",
+        "sidePanelAria": "Attiva/disattiva pannello laterale"
       },
       "tabs": {
         "history": "Cronologia",
