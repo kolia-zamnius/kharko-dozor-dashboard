@@ -97,7 +97,9 @@
         "skipIdleAria": "Leerlaufphasen überspringen",
         "skipIdle": "Leerlauf überspringen",
         "compressIdleAria": "Leerlaufphasen in der Zeitleiste komprimieren",
-        "compressIdle": "Leerlauf komprimieren"
+        "compressIdle": "Leerlauf komprimieren",
+        "fullscreenAria": "Vollbildmodus umschalten",
+        "sidePanelAria": "Seitenleiste umschalten"
       },
       "tabs": {
         "history": "Verlauf",

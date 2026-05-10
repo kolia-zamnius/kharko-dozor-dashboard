@@ -79,6 +79,8 @@ type PlayerStoreState = {
   skipInactive: boolean;
   /** Cap idle gaps in the rrweb stream to a small fixed length so the seek bar is scrubbable. */
   compressIdle: boolean;
+  /** Whether the History/Console side panel is rendered. Off → viewport takes the full width. */
+  sidePanelVisible: boolean;
 
   activeTab: PlayerTab;
 };
@@ -91,6 +93,7 @@ type PlayerStoreActions = {
   setSpeed: (speed: number) => void;
   toggleSkipInactive: () => void;
   toggleCompressIdle: () => void;
+  toggleSidePanel: () => void;
   setActiveTab: (tab: PlayerTab) => void;
   setEvents: (events: PlayerEvent[]) => void;
   setHistoryItems: (items: HistoryItem[]) => void;
@@ -109,6 +112,7 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
   speed: 1,
   skipInactive: true,
   compressIdle: true,
+  sidePanelVisible: true,
   activeTab: "history" as PlayerTab,
 
   onReplayerReady: (h) => {
@@ -167,6 +171,7 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
 
   toggleSkipInactive: () => set((s) => ({ skipInactive: !s.skipInactive })),
   toggleCompressIdle: () => set((s) => ({ compressIdle: !s.compressIdle })),
+  toggleSidePanel: () => set((s) => ({ sidePanelVisible: !s.sidePanelVisible })),
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 

@@ -7,6 +7,8 @@ import { Spinner } from "@/components/ui/feedback/spinner";
 import { buildHistory } from "@/lib/history";
 import { compressIdleEvents } from "@/lib/history/compress";
 import type { DozorEvent } from "@/lib/history/types";
+import { cn } from "@/lib/cn";
+import { useFullscreen } from "@/lib/hooks/use-fullscreen";
 
 import { ControlBar } from "./control-bar";
 import { SidePanel } from "./side-panel";
@@ -32,6 +34,14 @@ export function Player({ session }: PlayerProps) {
   const setHistoryItems = usePlayerStore((s) => s.setHistoryItems);
   const resetForSession = usePlayerStore((s) => s.resetForSession);
   const compressIdle = usePlayerStore((s) => s.compressIdle);
+  const sidePanelVisible = usePlayerStore((s) => s.sidePanelVisible);
+
+  const {
+    ref: fullscreenRef,
+    isFullscreen,
+    isSupported: fullscreenSupported,
+    toggle: toggleFullscreen,
+  } = useFullscreen<HTMLDivElement>();
 
   const [allEvents, setAllEvents] = useState<DozorEvent[]>([]);
   const [decompressing, setDecompressing] = useState(true);
@@ -105,9 +115,17 @@ export function Player({ session }: PlayerProps) {
   useEffect(() => setHistoryItems(historyItems), [historyItems, setHistoryItems]);
 
   return (
-    <div>
-      <div className="bg-muted overflow-hidden rounded-t-lg border lg:grid lg:aspect-video lg:grid-cols-[1fr_320px]">
-        <div className="aspect-video lg:aspect-auto lg:h-full">
+    <div
+      ref={fullscreenRef}
+      className="fullscreen:bg-background fullscreen:flex fullscreen:h-screen fullscreen:flex-col"
+    >
+      <div
+        className={cn(
+          "bg-muted in-fullscreen:flex-1 in-fullscreen:rounded-none in-fullscreen:border-0 in-fullscreen:lg:aspect-auto overflow-hidden rounded-t-lg border lg:grid lg:aspect-video",
+          sidePanelVisible ? "lg:grid-cols-[1fr_320px]" : "lg:grid-cols-1",
+        )}
+      >
+        <div className="in-fullscreen:aspect-auto aspect-video lg:aspect-auto lg:h-full">
           {decompressError ? (
             <div className="flex h-full items-center justify-center">
               <p className="text-muted-foreground text-sm">{t("decompressError")}</p>
@@ -124,11 +142,17 @@ export function Player({ session }: PlayerProps) {
             <Viewport />
           )}
         </div>
-        <div className="bg-card max-h-96 border-t lg:max-h-none lg:border-t-0 lg:border-l">
-          <SidePanel />
-        </div>
+        {sidePanelVisible && (
+          <div className="bg-card in-fullscreen:max-h-none max-h-96 border-t lg:max-h-none lg:border-t-0 lg:border-l">
+            <SidePanel />
+          </div>
+        )}
       </div>
-      <ControlBar />
+      <ControlBar
+        isFullscreen={isFullscreen}
+        fullscreenSupported={fullscreenSupported}
+        onToggleFullscreen={toggleFullscreen}
+      />
     </div>
   );
 }

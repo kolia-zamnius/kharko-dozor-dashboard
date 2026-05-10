@@ -97,7 +97,9 @@
         "skipIdleAria": "Saltar periodos de inactividad",
         "skipIdle": "Saltar inactivo",
         "compressIdleAria": "Comprimir periodos de inactividad en la línea de tiempo",
-        "compressIdle": "Comprimir inactivo"
+        "compressIdle": "Comprimir inactivo",
+        "fullscreenAria": "Alternar pantalla completa",
+        "sidePanelAria": "Alternar panel lateral"
       },
       "tabs": {
         "history": "Historial",

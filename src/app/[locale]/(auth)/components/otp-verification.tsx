@@ -23,7 +23,7 @@ type OTPVerificationProps = {
  * `/api/auth/callback/...`, outside `[locale]/`; the intl router would apply
  * locale-prefix logic to a path that must stay untouched.
  */
-export function OTPVerification({ email, callbackUrl = "/users", onBack }: OTPVerificationProps) {
+export function OTPVerification({ email, callbackUrl = "/replays", onBack }: OTPVerificationProps) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [code, setCode] = useState("");

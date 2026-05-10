@@ -90,6 +90,10 @@
   }
 }
 
+/* `:fullscreen` matches only `document.fullscreenElement` — descendants need a separate variant. */
+@custom-variant fullscreen (&:fullscreen);
+@custom-variant in-fullscreen (:fullscreen &);
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

@@ -2,9 +2,12 @@ import {
   ArrowsInLineHorizontalIcon,
   ClockClockwiseIcon,
   ClockCounterClockwiseIcon,
+  CornersInIcon,
+  CornersOutIcon,
   FastForwardIcon,
   PauseIcon,
   PlayIcon,
+  SidebarSimpleIcon,
 } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useShallow } from "zustand/react/shallow";
@@ -19,24 +22,31 @@ const SPEED_OPTIONS = [0.5, 1, 2] as const;
 const BRAND_HOVER = "hover:bg-primary/10 hover:text-primary";
 const BRAND_ACTIVE = "bg-primary/10 text-primary";
 
+type ControlBarProps = {
+  isFullscreen: boolean;
+  fullscreenSupported: boolean;
+  onToggleFullscreen: () => void;
+};
+
 /** `useShallow` over preference fields so the 60fps `currentTime` tick doesn't re-render the bar. */
-export function ControlBar() {
+export function ControlBar({ isFullscreen, fullscreenSupported, onToggleFullscreen }: ControlBarProps) {
   const t = useTranslations("replays.detail.player.control");
-  const { state, speed, skipInactive, compressIdle } = usePlayerStore(
+  const { state, speed, skipInactive, compressIdle, sidePanelVisible } = usePlayerStore(
     useShallow((s) => ({
       state: s.state,
       speed: s.speed,
       skipInactive: s.skipInactive,
       compressIdle: s.compressIdle,
+      sidePanelVisible: s.sidePanelVisible,
     })),
   );
   const isDisabled = usePlayerStore(selectIsPlayerDisabled);
-  const { play, pause, seek, setSpeed, toggleSkipInactive, toggleCompressIdle } = usePlayerStore();
+  const { play, pause, seek, setSpeed, toggleSkipInactive, toggleCompressIdle, toggleSidePanel } = usePlayerStore();
 
   const isPlaying = state === "playing";
 
   return (
-    <div className="bg-card space-y-2 rounded-b-lg border border-t-0 px-4 py-3">
+    <div className="bg-card in-fullscreen:rounded-none in-fullscreen:border-x-0 in-fullscreen:border-b-0 space-y-2 rounded-b-lg border border-t-0 px-4 py-3">
       <SeekBar />
 
       <div className="flex items-center gap-1">
@@ -121,12 +131,37 @@ export function ControlBar() {
           size="sm"
           className={cn(BRAND_HOVER, "gap-1", compressIdle && BRAND_ACTIVE)}
           onClick={toggleCompressIdle}
+          disabled={isDisabled}
           aria-label={t("compressIdleAria")}
           aria-pressed={compressIdle}
         >
           <ArrowsInLineHorizontalIcon size={14} />
           <span className="hidden sm:inline">{t("compressIdle")}</span>
         </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(BRAND_HOVER, "ml-auto size-8", sidePanelVisible && BRAND_ACTIVE)}
+          onClick={toggleSidePanel}
+          aria-label={t("sidePanelAria")}
+          aria-pressed={sidePanelVisible}
+        >
+          <SidebarSimpleIcon size={16} />
+        </Button>
+
+        {fullscreenSupported && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(BRAND_HOVER, "size-8")}
+            onClick={onToggleFullscreen}
+            aria-label={t("fullscreenAria")}
+            aria-pressed={isFullscreen}
+          >
+            {isFullscreen ? <CornersInIcon size={16} /> : <CornersOutIcon size={16} />}
+          </Button>
+        )}
       </div>
     </div>
   );

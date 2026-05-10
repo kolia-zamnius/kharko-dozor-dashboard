@@ -12,7 +12,7 @@ type OAuthFlags = {
  * doesn't end up with a button that crashes on click. `null` when neither is
  * enabled — caller skips its OAuth-section wrapper without a conditional.
  */
-export function OAuthButtons({ enabled, callbackUrl = "/users" }: { enabled: OAuthFlags; callbackUrl?: string }) {
+export function OAuthButtons({ enabled, callbackUrl = "/replays" }: { enabled: OAuthFlags; callbackUrl?: string }) {
   if (!enabled.google && !enabled.github) return null;
 
   const single = enabled.google !== enabled.github;

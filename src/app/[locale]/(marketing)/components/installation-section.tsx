@@ -45,7 +45,7 @@ export async function InstallationSection() {
             </a>
           </Button>
           <Button asChild variant="ghost" size="sm">
-            <Link href="/users">{t("dashboardLink")}</Link>
+            <Link href="/replays">{t("dashboardLink")}</Link>
           </Button>
         </div>
       </div>

@@ -40,7 +40,9 @@ export function EmailStep({ callbackUrl, enabled, onEmailResolved }: EmailStepPr
       if (result.error === "ACCOUNT_NOT_FOUND") {
         toast.info(t("signIn.toast.accountNotFound"));
         setSubmitting(false);
-        router.push(callbackUrl !== "/users" ? `/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/sign-up");
+        router.push(
+          callbackUrl !== "/replays" ? `/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}` : "/sign-up",
+        );
         return;
       }
       if (result.error === "RATE_LIMITED") {

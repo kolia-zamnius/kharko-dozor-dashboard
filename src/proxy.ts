@@ -75,7 +75,7 @@ export async function proxy(request: NextRequest) {
 
   if (matchesAny(canonical, authPaths)) {
     if (isAuthenticated) {
-      return NextResponse.redirect(buildRedirectUrl("/users", preferredLocale, request));
+      return NextResponse.redirect(buildRedirectUrl("/replays", preferredLocale, request));
     }
     return intlMiddleware(request);
   }
