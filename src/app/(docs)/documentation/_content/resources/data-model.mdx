@@ -85,7 +85,7 @@ Hot read paths:
 | Tracked users list (per project, recent first) | `[projectId, updatedAt(sort: Desc)]` on `TrackedUser`         |
 | Ingest upsert (per project, by external id)    | `[projectId, externalId]` unique on `Session` + `TrackedUser` |
 | Session events stream (player load)            | `[sessionId, firstTimestamp]` on `EventBatch`                 |
-| Marker timeline (stats / slicer hints)         | `[sessionId, kind, timestamp]` on `Marker`                    |
+| Marker timeline (history feed + stats)         | `[sessionId, kind, timestamp]` on `Marker`                    |
 | Member's orgs                                  | `userId` on `Membership`                                      |
 | Org's members                                  | `organizationId` on `Membership`                              |
 | OAuth account lookup                           | `[provider, providerAccountId]` unique on `Account`           |

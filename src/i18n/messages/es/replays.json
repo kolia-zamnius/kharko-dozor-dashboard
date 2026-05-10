@@ -96,20 +96,26 @@
         "forwardFive": "Avanzar 5 segundos",
         "skipIdleAria": "Saltar periodos de inactividad",
         "skipIdle": "Saltar inactivo",
-        "autoPlayAria": "Reproducir automáticamente el siguiente segmento",
-        "autoPlay": "Auto",
-        "consoleAria": "Alternar panel de consola",
+        "compressIdleAria": "Comprimir periodos de inactividad en la línea de tiempo",
+        "compressIdle": "Comprimir inactivo"
+      },
+      "tabs": {
+        "history": "Historial",
         "console": "Consola"
       },
-      "console": {
-        "title": "Consola",
-        "empty": "No hay registros en este momento."
+      "history": {
+        "count": "{count, plural, one {# entrada} other {# entradas}}",
+        "copyUrlAria": "Copiar URL",
+        "copyUrlSuccess": "URL copiada",
+        "copyUrlError": "Error al copiar la URL",
+        "kind": {
+          "init": "Inicio de sesión",
+          "idle": "Inactivo",
+          "identify": "Identificado: {userId}"
+        }
       },
-      "slicePicker": {
-        "reasonInit": "Inicio",
-        "reasonIdle": "Tras inactividad",
-        "reasonUrl": "Cambio de URL",
-        "tooltip": "{reason} · {pathname} · {duration} · {events} eventos"
+      "console": {
+        "empty": "No hay registros en este momento."
       }
     }
   }

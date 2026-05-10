@@ -1,13 +1,12 @@
-import { TerminalWindowIcon } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef } from "react";
 
 import { Spinner } from "@/components/ui/feedback/spinner";
 import { cn } from "@/lib/cn";
-import { usePlayerStore } from "./store";
-import { extractConsoleLogs, formatTimePrecise } from "./utils";
 
-/** Closed union — adding a level is a compile error at every consumer. */
+import { usePlayerStore } from "../store";
+import { extractConsoleLogs, formatTimePrecise } from "../utils";
+
 type ConsoleLogLevel = "error" | "warn" | "info" | "debug" | "log";
 
 const LEVEL_STYLE = {
@@ -23,11 +22,10 @@ function styleForLevel(level: string): string {
 }
 
 /**
- * Stick-to-bottom — auto-scroll only when the user was at the bottom on the
- * last manual scroll. Inspection of an earlier log isn't ripped away by the
- * next append.
+ * Stick-to-bottom auto-scroll: only when the user was at the bottom on the last manual scroll,
+ * so inspecting an earlier log isn't ripped away by the next append.
  */
-export function ConsolePanel() {
+export function ConsoleTab() {
   const t = useTranslations("replays.detail.player.console");
   const events = usePlayerStore((s) => s.events);
   const currentTime = usePlayerStore((s) => s.currentTime);
@@ -37,10 +35,7 @@ export function ConsolePanel() {
   const wasAtBottomRef = useRef(true);
 
   const allLogs = useMemo(() => extractConsoleLogs(events), [events]);
-  // `currentTime` ticks at ~60fps via RAF in the player store. Without
-  // memoisation, `allLogs.filter(...)` allocates a fresh array every
-  // frame, defeating React's stable-reference reconciliation and
-  // hammering the main thread on long sessions.
+  // Memo guards against per-frame reallocation: `currentTime` updates at ~60fps.
   const visibleLogs = useMemo(() => allLogs.filter((l) => l.timeOffset <= currentTime), [allLogs, currentTime]);
 
   useEffect(() => {
@@ -52,24 +47,15 @@ export function ConsolePanel() {
   const handleScroll = () => {
     const el = containerRef.current;
     if (!el) return;
-    // 60px slack so the "near bottom" state survives one extra log
-    // landing while the user was at the tail — without it, the tail
-    // follow would break the moment a log taller than one line lands.
+    // 60px slack so a log taller than one line lands without breaking the tail-follow state.
     wasAtBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden border-l">
-      <div className="flex shrink-0 items-center justify-between border-b px-3 py-2">
-        <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-          <TerminalWindowIcon size={14} />
-          {t("title")}
-        </div>
-        <span className="text-muted-foreground text-xs">
-          {visibleLogs.length} / {allLogs.length}
-        </span>
+    <div className="flex h-full flex-col">
+      <div className="text-muted-foreground shrink-0 border-b px-3 py-2 text-xs">
+        {visibleLogs.length} / {allLogs.length}
       </div>
-
       <div ref={containerRef} onScroll={handleScroll} className="min-h-0 flex-1 overflow-y-auto font-mono text-xs">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">

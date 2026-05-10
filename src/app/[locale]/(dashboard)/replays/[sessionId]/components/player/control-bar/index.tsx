@@ -1,11 +1,10 @@
 import {
+  ArrowsInLineHorizontalIcon,
   ClockClockwiseIcon,
   ClockCounterClockwiseIcon,
   FastForwardIcon,
   PauseIcon,
   PlayIcon,
-  SkipForwardIcon,
-  TerminalWindowIcon,
 } from "@phosphor-icons/react";
 import { useTranslations } from "next-intl";
 import { useShallow } from "zustand/react/shallow";
@@ -23,17 +22,16 @@ const BRAND_ACTIVE = "bg-primary/10 text-primary";
 /** `useShallow` over preference fields so the 60fps `currentTime` tick doesn't re-render the bar. */
 export function ControlBar() {
   const t = useTranslations("replays.detail.player.control");
-  const { state, speed, skipInactive, autoContinue, consoleOpen } = usePlayerStore(
+  const { state, speed, skipInactive, compressIdle } = usePlayerStore(
     useShallow((s) => ({
       state: s.state,
       speed: s.speed,
       skipInactive: s.skipInactive,
-      autoContinue: s.autoContinue,
-      consoleOpen: s.consoleOpen,
+      compressIdle: s.compressIdle,
     })),
   );
   const isDisabled = usePlayerStore(selectIsPlayerDisabled);
-  const { play, pause, seek, setSpeed, toggleSkipInactive, toggleAutoContinue, toggleConsole } = usePlayerStore();
+  const { play, pause, seek, setSpeed, toggleSkipInactive, toggleCompressIdle } = usePlayerStore();
 
   const isPlaying = state === "playing";
 
@@ -121,29 +119,13 @@ export function ControlBar() {
         <Button
           variant="ghost"
           size="sm"
-          className={cn(BRAND_HOVER, "gap-1", autoContinue && BRAND_ACTIVE)}
-          onClick={toggleAutoContinue}
-          disabled={isDisabled}
-          aria-label={t("autoPlayAria")}
-          aria-pressed={autoContinue}
+          className={cn(BRAND_HOVER, "gap-1", compressIdle && BRAND_ACTIVE)}
+          onClick={toggleCompressIdle}
+          aria-label={t("compressIdleAria")}
+          aria-pressed={compressIdle}
         >
-          <SkipForwardIcon size={14} />
-          <span className="hidden sm:inline">{t("autoPlay")}</span>
-        </Button>
-
-        <div className="flex-1" />
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(BRAND_HOVER, "gap-1", consoleOpen && BRAND_ACTIVE)}
-          onClick={toggleConsole}
-          disabled={isDisabled}
-          aria-label={t("consoleAria")}
-          aria-pressed={consoleOpen}
-        >
-          <TerminalWindowIcon size={14} />
-          <span className="hidden sm:inline">{t("console")}</span>
+          <ArrowsInLineHorizontalIcon size={14} />
+          <span className="hidden sm:inline">{t("compressIdle")}</span>
         </Button>
       </div>
     </div>

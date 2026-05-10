@@ -8,11 +8,9 @@ vertically:
 
 1. **Compact header** — badges with session id, user, project,
    duration, screen size, date.
-2. **Slice picker** (only if the session has more than one slice) —
-   horizontal row of buttons, click to jump.
-3. **Viewport** — rrweb player. Optional console panel attaches as a
-   side column when you toggle it on.
-4. **Control bar** — playback controls + the seek bar.
+2. **Viewport + side panel** — rrweb player on the left, side panel
+   on the right with two tabs (`History`, `Console`).
+3. **Control bar** — playback controls + the seek bar.
 
 ## Compact header
 
@@ -34,28 +32,35 @@ snapshot — playback resets to `t=0`. The button stays hidden when
 there's nothing to act on, so the orange signal carries weight when
 it appears.
 
-## Slices — derived in the browser
+## History — derived in the browser
 
-Slicing happens at read time on the client. The server hands the
-player one continuous event stream; a pure slicer module
-(`src/lib/slicer/`) folds it into slices based on criteria. Two
-reasons can split a slice:
+The replay plays the full session as one continuous stream — there is
+no chunking on the playback side. The side panel's `History` tab
+turns the same stream into a chronological feed of timeline
+annotations the user can click to seek. Folding happens at read time
+in a pure module (`src/lib/history/`) over the decompressed events.
 
-- **`url`** — a `dozor:url` rrweb custom event (type=5) lands when
-  the SDK detects an SPA pathname change. Hash-only and query-only
-  changes don't fire (`?utm=…` rewrites and anchor jumps stay in the
-  current slice).
-- **`idle`** — gap >60s with no events at all. The first event after
-  the gap opens the next slice.
+Four item kinds appear in the feed:
 
-The first slice always carries the `init` reason. The slice picker
-renders one button per slice with an icon, a truncated pathname, and
-the duration. Hover for the breakdown (reason / pathname / duration /
-event count). Clicking a slice resets `t=0` within it.
+- **`init`** — first item. Spans from the session start up to the
+  first navigation (or the session end, whichever comes first).
+- **`navigation`** — opens whenever a `dozor:url` rrweb custom event
+  (type=5) lands. Hash-only and query-only changes don't fire
+  (`?utm=…` rewrites and anchor jumps stay inside the current
+  section).
+- **`idle`** — emitted when the gap between two consecutive events
+  exceeds the threshold (30s by default). Sits as a marker inside the
+  surrounding section's range, not as a separate section.
+- **`identify`** — point marker for `dozor:identity` events. Zero
+  duration; never highlighted, but clickable to jump to the moment
+  the user was identified.
 
-Because slicing is pure derived state, changing the criteria reslices
-instantly without a server round-trip — no per-slice cache, no
-flicker, no extra fetch.
+Sections (`init` / `navigation`) chain head-to-tail and cover the
+full session. The currently-playing section is highlighted in the
+feed and auto-scrolled into view; clicking any item seeks the
+replayer to its start timestamp. Markers (`idle`, `identify`) take
+priority over sections in the active-item lookup so playing through
+an idle gap visibly highlights the gap itself.
 
 ## Event loading
 
@@ -64,8 +69,8 @@ metadata + a marker list (timeline anchors). The events themselves
 load via `GET /api/sessions/{sessionId}/events` — `{ batches: [...] }`
 where each batch's `data` is a base64-encoded gzip blob the browser
 decompresses with `DecompressionStream`. The decompressed batches are
-concatenated, sorted by timestamp, and fed to the slicer + rrweb
-`Replayer`.
+concatenated, sorted by timestamp, and fed to both the rrweb
+`Replayer` and the history builder.
 
 The events query is `staleTime: Infinity` — recordings are immutable
 once captured. A polled session-detail update (new markers / `endedAt`
@@ -76,28 +81,31 @@ the (now-larger) event stream.
 
 The bar below the viewport carries:
 
-- **Play / Pause** — toggle playback of the active slice.
+- **Play / Pause** — toggle playback.
 - **−5s** / **+5s** — seek backward / forward by 5 seconds.
 - **Speed** — popover with `0.5×` / `1×` / `2×`.
-- **Skip idle** (toggle) — fast-forward through inactive periods inside
-  a slice.
-- **Auto play next** (toggle) — when the active slice ends, the player
-  advances to the next slice automatically. Off by default.
-- **Console** (toggle) — opens / closes the console-output side panel
-  on the right of the viewport.
-- **Seek bar** — scrubbable progress bar across the active slice's
-  duration.
+- **Skip idle** (toggle) — fast-forward through inactive periods during playback.
+- **Compress idle** (toggle, on by default) — physically squashes idle gaps in the timeline to
+  5 s each before the rrweb Replayer sees the events. The seek bar represents only active time;
+  history items still display their **real** durations on labels (so a 59-minute idle reads as
+  "59m" in the feed even though it occupies a 5 s blip on the seek bar). Toggle off to inspect
+  real-time pacing.
+- **Seek bar** — scrubbable progress bar across the (possibly compressed) timeline.
 
 There are no keyboard shortcuts.
 
-## Console panel
+## Side panel
 
-Toggling **Console** in the bar opens a 320 px-wide column to the right
-of the viewport. It lists every `console.log/warn/error/info/debug`
-call captured during the session, filtered to entries up to the
-current playback time. The list follows playback when you're scrolled
-to the bottom; scrolling up to inspect an earlier log pauses the
-auto-follow until you scroll back down.
+A 320 px column on the right of the viewport with two tabs:
+
+- **History** — the chronological feed described above. The currently
+  playing item is highlighted; the list auto-scrolls to keep it in
+  view. Click any item to seek.
+- **Console** — every `console.log/warn/error/info/debug` call
+  captured during the session, filtered to entries up to the current
+  playback time. Follows playback when you're scrolled to the
+  bottom; scrolling up to inspect an earlier log pauses the
+  auto-follow until you scroll back down.
 
 Console capture is on by default in the SDK (`recordConsole: true`)
 and can be opted out per-deployment.

@@ -96,20 +96,26 @@
         "forwardFive": "Forward 5 seconds",
         "skipIdleAria": "Skip idle periods",
         "skipIdle": "Skip idle",
-        "autoPlayAria": "Auto-play next slice",
-        "autoPlay": "Auto-play",
-        "consoleAria": "Toggle console panel",
+        "compressIdleAria": "Compress idle gaps in the timeline",
+        "compressIdle": "Compress idle"
+      },
+      "tabs": {
+        "history": "History",
         "console": "Console"
       },
-      "console": {
-        "title": "Console",
-        "empty": "No logs at this point in time."
+      "history": {
+        "count": "{count, plural, one {# entry} other {# entries}}",
+        "copyUrlAria": "Copy URL",
+        "copyUrlSuccess": "URL copied",
+        "copyUrlError": "Failed to copy URL",
+        "kind": {
+          "init": "Session start",
+          "idle": "Idle",
+          "identify": "Identified: {userId}"
+        }
       },
-      "slicePicker": {
-        "reasonInit": "Start",
-        "reasonIdle": "After idle",
-        "reasonUrl": "URL change",
-        "tooltip": "{reason} · {pathname} · {duration} · {events} events"
+      "console": {
+        "empty": "No logs at this point in time."
       }
     }
   }

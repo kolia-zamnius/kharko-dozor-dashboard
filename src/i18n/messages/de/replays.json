@@ -96,20 +96,26 @@
         "forwardFive": "5 Sekunden vor",
         "skipIdleAria": "Leerlaufphasen überspringen",
         "skipIdle": "Leerlauf überspringen",
-        "autoPlayAria": "Nächstes Segment automatisch abspielen",
-        "autoPlay": "Auto",
-        "consoleAria": "Konsolen-Panel umschalten",
+        "compressIdleAria": "Leerlaufphasen in der Zeitleiste komprimieren",
+        "compressIdle": "Leerlauf komprimieren"
+      },
+      "tabs": {
+        "history": "Verlauf",
         "console": "Konsole"
       },
-      "console": {
-        "title": "Konsole",
-        "empty": "Keine Logs an diesem Zeitpunkt."
+      "history": {
+        "count": "{count, plural, one {# Eintrag} other {# Einträge}}",
+        "copyUrlAria": "URL kopieren",
+        "copyUrlSuccess": "URL kopiert",
+        "copyUrlError": "URL konnte nicht kopiert werden",
+        "kind": {
+          "init": "Sitzungsstart",
+          "idle": "Leerlauf",
+          "identify": "Identifiziert: {userId}"
+        }
       },
-      "slicePicker": {
-        "reasonInit": "Start",
-        "reasonIdle": "Nach Leerlauf",
-        "reasonUrl": "URL-Wechsel",
-        "tooltip": "{reason} · {pathname} · {duration} · {events} Ereignisse"
+      "console": {
+        "empty": "Keine Logs an diesem Zeitpunkt."
       }
     }
   }

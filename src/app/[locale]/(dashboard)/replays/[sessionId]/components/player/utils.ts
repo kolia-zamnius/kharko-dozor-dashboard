@@ -1,30 +1,26 @@
-import type { Slice } from "@/lib/slicer/types";
+import { RRWEB_EVENT_TYPE } from "@/lib/rrweb-constants";
+
 import type { ConsoleLogEntry, PlayerEvent } from "./types";
 
-const RRWEB_META_TYPE = 4;
-const RRWEB_FULL_SNAPSHOT_TYPE = 2;
-const RRWEB_CUSTOM_TYPE = 5;
-const EVENT_TYPE_PLUGIN = 6;
 const CONSOLE_PLUGIN_NAME = "rrweb/console@1";
-// Fallback only when the session was recorded before Dozor stamped viewport — never the active path.
 const DEFAULT_VIEWPORT = { width: 1920, height: 1080 } as const;
 
-// rrweb requires Meta(4) → FullSnapshot(2) → Mutations ordering. URL-cut slices
-// start with the `dozor:url` Custom event and the FullSnapshot lands at index
-// 1+, so we scan past leading Custom events before deciding to synthesise.
-// Without this, rrweb falls back to a default viewport and stretches mobile
-// recordings to desktop.
+/**
+ * rrweb needs `Meta(4)` before `FullSnapshot(2)`. Healthy sessions emit Meta first, but old
+ * recordings (before the SDK stamped viewport) start straight at FullSnapshot — synthesise a Meta
+ * off the session URL so replay doesn't fall back to a default desktop viewport on mobile data.
+ */
 export function ensureMetaEvent(
   events: PlayerEvent[],
-  slice: Slice,
+  sessionUrl: string | null,
   viewport: { width: number | null; height: number | null },
 ): PlayerEvent[] {
   if (events.length === 0) return events;
-  if (events[0]!.type === RRWEB_META_TYPE) return events;
+  if (events[0]!.type === RRWEB_EVENT_TYPE.Meta) return events;
 
   let firstRenderIdx = -1;
   for (let i = 0; i < events.length; i++) {
-    if (events[i]!.type !== RRWEB_CUSTOM_TYPE) {
+    if (events[i]!.type !== RRWEB_EVENT_TYPE.Custom) {
       firstRenderIdx = i;
       break;
     }
@@ -32,14 +28,14 @@ export function ensureMetaEvent(
   if (firstRenderIdx === -1) return events;
 
   const firstRender = events[firstRenderIdx]!;
-  if (firstRender.type === RRWEB_META_TYPE) return events;
-  if (firstRender.type !== RRWEB_FULL_SNAPSHOT_TYPE) return events;
+  if (firstRender.type === RRWEB_EVENT_TYPE.Meta) return events;
+  if (firstRender.type !== RRWEB_EVENT_TYPE.FullSnapshot) return events;
 
   const syntheticMeta: PlayerEvent = {
-    type: RRWEB_META_TYPE,
+    type: RRWEB_EVENT_TYPE.Meta,
     timestamp: firstRender.timestamp - 1,
     data: {
-      href: slice.url ?? "",
+      href: sessionUrl ?? "",
       width: viewport.width ?? DEFAULT_VIEWPORT.width,
       height: viewport.height ?? DEFAULT_VIEWPORT.height,
     },
@@ -47,7 +43,6 @@ export function ensureMetaEvent(
   return [...events.slice(0, firstRenderIdx), syntheticMeta, ...events.slice(firstRenderIdx)];
 }
 
-// Browser `DecompressionStream` ships in every target — no polyfill needed.
 export async function decompressBatch(base64Data: string): Promise<PlayerEvent[]> {
   if (base64Data.length === 0) return [];
 
@@ -83,7 +78,7 @@ export function extractConsoleLogs(events: PlayerEvent[]): ConsoleLogEntry[] {
   const logs: ConsoleLogEntry[] = [];
 
   for (const event of events) {
-    if (event.type !== EVENT_TYPE_PLUGIN) continue;
+    if (event.type !== RRWEB_EVENT_TYPE.Plugin) continue;
     const data = event.data as {
       plugin?: string;
       payload?: { level?: string; payload?: string[]; trace?: string[] };

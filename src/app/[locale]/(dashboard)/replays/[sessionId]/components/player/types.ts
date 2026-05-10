@@ -1,9 +1,16 @@
-import type { DozorEvent, Slice } from "@/lib/slicer/types";
+import type { DozorEvent, HistoryItem } from "@/lib/history/types";
 
-/** `idle` = no replayer (initial/post-reset); `paused` = either user-paused or just-ready. */
+/** `idle` = no replayer (initial / post-reset); `paused` = either user-paused or just-ready. */
 export type PlayerState = "idle" | "playing" | "paused" | "finished";
 
-/** Thin interface over the raw rrweb Replayer — Viewport creates it, consumers only get this handle. */
+export const PLAYER_TABS = ["history", "console"] as const;
+export type PlayerTab = (typeof PLAYER_TABS)[number];
+
+export function isPlayerTab(value: string): value is PlayerTab {
+  return (PLAYER_TABS as readonly string[]).includes(value);
+}
+
+/** Thin facade over the rrweb Replayer — Viewport creates it, consumers only get this handle. */
 export type ReplayerHandle = {
   play: (timeOffset?: number) => void;
   pause: (timeOffset?: number) => void;
@@ -14,15 +21,13 @@ export type ReplayerHandle = {
 };
 
 export type ConsoleLogEntry = {
-  /** ms offset from the first event in the session. */
+  /** Ms offset from the first event in the session. */
   timeOffset: number;
   level: string;
   payload: string[];
   trace: string[];
 };
 
-// Player-side alias for the slicer's `DozorEvent` — same shape, kept under a player-flavoured name
-// so grep'ing for `PlayerEvent` lands you in the player tree, not the read-time slicer module.
 export type PlayerEvent = DozorEvent;
 
-export type { Slice };
+export type { HistoryItem };
