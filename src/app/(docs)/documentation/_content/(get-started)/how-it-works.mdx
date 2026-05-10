@@ -89,15 +89,17 @@ Open the dashboard, click a session row:
    `{ batches: [{ data: "<base64-gzip>", … }] }` ordered by
    `firstTimestamp`. The browser decompresses each blob via
    `DecompressionStream`, concatenates, sorts by timestamp.
-3. **Slicer runs in the browser** — pure function from the events
-   array + slicing criteria (split on URL change, split on idle gap,
-   or both). Slices are derived state; changing the criteria reslices
-   instantly without a server round-trip.
-4. **rrweb's player** consumes the active slice's event stream inside
-   a sandboxed iframe — DOM mutations are re-applied to a fresh
+3. **History builder runs in the browser** — pure function over the
+   events array that produces a chronological feed of timeline
+   annotations (session start, navigations, idle gaps, identifies).
+   Derived state; the feed rebuilds instantly when the source events
+   change.
+4. **rrweb's player** consumes the full session event stream inside a
+   sandboxed iframe — DOM mutations are re-applied to a fresh
    document, mouse moves and scrolls are replayed, the visual state
    of the user's browser at any point in time is reconstructed
-   pixel-for-pixel.
+   pixel-for-pixel. The history feed sits beside the player and
+   click-seeks the replayer to any moment.
 
 The sandbox is load-bearing for security: the recorded page's scripts
 can't execute in the dashboard's chrome. See

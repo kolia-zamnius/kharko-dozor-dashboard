@@ -1,51 +1,21 @@
 import { create } from "zustand";
 
-import type { Slice } from "@/lib/slicer/types";
-import type { PlayerEvent, PlayerState, ReplayerHandle } from "./types";
+import { findActiveHistoryItemId } from "@/lib/history";
+import type { HistoryItem } from "@/lib/history/types";
+import type { PlayerEvent, PlayerState, PlayerTab, ReplayerHandle } from "./types";
 
 /**
- * Zustand (not Context+`useReducer`) for precise subscription boundaries —
- * SeekBar re-renders at ~60fps on `currentTime` but not on `consoleOpen`;
- * ControlBar is the inverse. Per-field selectors (or `useShallow`) achieve
- * this without a provider tree.
+ * Zustand (not Context+`useReducer`) for precise subscription boundaries — the seek bar
+ * re-renders at ~60fps on `currentTime` ticks, the History tab re-renders only on
+ * `activeHistoryItemId` changes. Per-field selectors achieve this without a provider tree.
  *
- * Module-scoped `handle`/`rafId` are intentionally OUTSIDE Zustand — the
- * rrweb `Replayer` mutates on calls (play/pause/seek) not on render, its
- * lifecycle is driven by Viewport's effect. React shouldn't own it.
+ * `handle` and `rafId` are module-scoped (outside Zustand) — the rrweb Replayer mutates on calls,
+ * not on render, and React shouldn't own its lifecycle. Stale `handle` after Viewport unmount is
+ * safe: every action guards `if (!handle) return` and the rAF tick catches the destroy throw.
  */
-
-// 10s — rrweb emits ≥1 event every few seconds during active use, so a 10s
-// gap is an unambiguous "stopped interacting" signal. 3-5s is noisy during
-// normal reading; 30s+ hides genuine drop-offs from the timeline.
-const IDLE_THRESHOLD_MS = 10_000;
 
 export type IdlePeriod = { start: number; end: number };
 
-// Times are offsets from the first event (matches rrweb's internal timeline so
-// `handle.getCurrentTime()` shares the reference).
-function computeIdlePeriods(events: readonly PlayerEvent[]): IdlePeriod[] {
-  const first = events[0];
-  if (!first || events.length < 2) return [];
-  const origin = first.timestamp;
-  const periods: IdlePeriod[] = [];
-  for (let i = 1; i < events.length; i++) {
-    const prev = events[i - 1];
-    const curr = events[i];
-    if (!prev || !curr) continue;
-    const gap = curr.timestamp - prev.timestamp;
-    if (gap > IDLE_THRESHOLD_MS) {
-      periods.push({
-        start: prev.timestamp - origin,
-        end: curr.timestamp - origin,
-      });
-    }
-  }
-  return periods;
-}
-
-// Live object refs whose identity should never enter React rendering.
-// Stale `handle` after Viewport unmount is safe — every action guards `if
-// (!handle) return` or catches the "Replayer destroyed" throw in the RAF tick.
 let handle: ReplayerHandle | null = null;
 let rafId = 0;
 
@@ -56,9 +26,9 @@ function startPolling(set: (partial: Partial<PlayerStoreState>) => void, get: ()
     try {
       let time = Math.max(0, handle.getCurrentTime());
 
-      const { skipInactive, idlePeriods } = get();
-      if (skipInactive) {
-        for (const period of idlePeriods) {
+      const state = get();
+      if (state.skipInactive) {
+        for (const period of state.idlePeriods) {
           if (time >= period.start && time < period.end) {
             handle.play(period.end);
             time = period.end;
@@ -67,9 +37,20 @@ function startPolling(set: (partial: Partial<PlayerStoreState>) => void, get: ()
         }
       }
 
-      set({ currentTime: time });
+      const nextActiveId = findActiveHistoryItemId(state.historyItems, state.sessionStartTimestamp + time);
+      const idChanged = nextActiveId !== state.activeHistoryItemId;
+      const timeChanged = time !== state.currentTime;
+      // Skip the `set` entirely when nothing moved — every write notifies all subscribers, and a
+      // rrweb stall (paused replay still polling) can otherwise hammer the seek bar at 60fps.
+      if (idChanged && timeChanged) {
+        set({ currentTime: time, activeHistoryItemId: nextActiveId });
+      } else if (idChanged) {
+        set({ activeHistoryItemId: nextActiveId });
+      } else if (timeChanged) {
+        set({ currentTime: time });
+      }
     } catch {
-      // Replayer destroyed mid-frame — swallow, next frame will early-return.
+      // Replayer destroyed mid-frame — next frame will early-return on `!handle`.
     }
     rafId = requestAnimationFrame(tick);
   };
@@ -85,24 +66,21 @@ type PlayerStoreState = {
   currentTime: number;
   totalTime: number;
 
-  activeSliceIndex: number;
-  totalSlices: number;
-  slices: Slice[];
-
   events: PlayerEvent[];
 
+  historyItems: HistoryItem[];
+  activeHistoryItemId: string | null;
+
   idlePeriods: IdlePeriod[];
-  /** Timestamp of the first event (Unix ms) — for real-time display, not the rrweb-internal offset clock. */
+  /** First event's timestamp (Unix ms). For real-time display, not the rrweb-internal offset. */
   sessionStartTimestamp: number;
 
   speed: number;
   skipInactive: boolean;
-  autoContinue: boolean;
+  /** Cap idle gaps in the rrweb stream to a small fixed length so the seek bar is scrubbable. */
+  compressIdle: boolean;
 
-  consoleOpen: boolean;
-
-  /** Cross-mount bridge — set on finish+auto-continue, read by `onReplayerReady` after the new Viewport mounts to decide auto-play vs paused. */
-  pendingAutoPlay: boolean;
+  activeTab: PlayerTab;
 };
 
 type PlayerStoreActions = {
@@ -112,28 +90,26 @@ type PlayerStoreActions = {
   seek: (time: number) => void;
   setSpeed: (speed: number) => void;
   toggleSkipInactive: () => void;
-  toggleAutoContinue: () => void;
-  toggleConsole: () => void;
-  selectSlice: (index: number) => void;
-  setSlices: (slices: Slice[]) => void;
-  setActiveSliceEvents: (events: PlayerEvent[]) => void;
+  toggleCompressIdle: () => void;
+  setActiveTab: (tab: PlayerTab) => void;
+  setEvents: (events: PlayerEvent[]) => void;
+  setHistoryItems: (items: HistoryItem[]) => void;
+  resetForSession: () => void;
 };
 
 export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((set, get) => ({
   state: "idle" as PlayerState,
   currentTime: 0,
   totalTime: 0,
-  activeSliceIndex: 0,
-  totalSlices: 0,
-  slices: [],
   events: [],
+  historyItems: [],
+  activeHistoryItemId: null,
   idlePeriods: [],
   sessionStartTimestamp: 0,
   speed: 1,
   skipInactive: true,
-  autoContinue: false,
-  consoleOpen: false,
-  pendingAutoPlay: false,
+  compressIdle: true,
+  activeTab: "history" as PlayerTab,
 
   onReplayerReady: (h) => {
     handle = h;
@@ -143,36 +119,12 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
     } catch {
       // Replayer may not have meta yet.
     }
-
-    const { pendingAutoPlay } = get();
-    if (pendingAutoPlay) {
-      h.play(0);
-      set({ state: "playing", currentTime: 0, totalTime, pendingAutoPlay: false });
-      startPolling(set, get);
-    } else {
-      set({ state: "paused", currentTime: 0, totalTime });
-    }
+    set({ state: "paused", currentTime: 0, totalTime });
 
     h.on("finish", () => {
       stopPolling();
-      const { autoContinue, activeSliceIndex, totalSlices, totalTime: tt } = get();
-
-      if (autoContinue && totalSlices > 0 && activeSliceIndex < totalSlices - 1) {
-        set({ currentTime: tt });
-        setTimeout(() => {
-          stopPolling();
-          handle = null;
-          set({
-            state: "idle",
-            currentTime: 0,
-            totalTime: 0,
-            activeSliceIndex: activeSliceIndex + 1,
-            pendingAutoPlay: true,
-          });
-        }, 500);
-      } else {
-        set({ state: "finished", currentTime: tt });
-      }
+      const { totalTime: tt } = get();
+      set({ state: "finished", currentTime: tt });
     });
   },
 
@@ -192,8 +144,9 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
   },
 
   seek: (time) => {
-    const { totalTime, state: s } = get();
+    const { totalTime, state: s, sessionStartTimestamp, historyItems } = get();
     const clamped = Math.max(0, Math.min(time, totalTime));
+    const nextActiveId = findActiveHistoryItemId(historyItems, sessionStartTimestamp + clamped);
     if (s === "playing") {
       handle?.play(clamped);
       startPolling(set, get);
@@ -201,6 +154,7 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
       handle?.pause(clamped);
       set({
         currentTime: clamped,
+        activeHistoryItemId: nextActiveId,
         ...(s === "finished" && clamped < totalTime ? { state: "paused" as const } : {}),
       });
     }
@@ -212,24 +166,47 @@ export const usePlayerStore = create<PlayerStoreState & PlayerStoreActions>()((s
   },
 
   toggleSkipInactive: () => set((s) => ({ skipInactive: !s.skipInactive })),
-  toggleAutoContinue: () => set((s) => ({ autoContinue: !s.autoContinue })),
+  toggleCompressIdle: () => set((s) => ({ compressIdle: !s.compressIdle })),
 
-  toggleConsole: () => set((s) => ({ consoleOpen: !s.consoleOpen })),
+  setActiveTab: (tab) => set({ activeTab: tab }),
 
-  selectSlice: (index) => {
-    stopPolling();
-    handle = null;
-    set({ state: "idle", currentTime: 0, totalTime: 0, activeSliceIndex: index, pendingAutoPlay: false });
-  },
-
-  setSlices: (slices) => set({ slices, totalSlices: slices.length }),
-
-  setActiveSliceEvents: (events) =>
+  setEvents: (events) =>
     set({
       events,
-      idlePeriods: computeIdlePeriods(events),
       sessionStartTimestamp: events[0]?.timestamp ?? 0,
     }),
+
+  // Idle bands and the skip-inactive skipper share their data with the History feed — every idle
+  // marker corresponds to one amber band, in compressed or raw timeline. Offsets resolve against
+  // `sessionStartTimestamp`, settled by the preceding `setEvents` call (Player's useEffects fire
+  // in declaration order).
+  setHistoryItems: (items) => {
+    const { sessionStartTimestamp, currentTime } = get();
+    const idlePeriods: IdlePeriod[] = [];
+    for (const item of items) {
+      if (item.kind === "idle") {
+        idlePeriods.push({
+          start: item.startedAt - sessionStartTimestamp,
+          end: item.endedAt - sessionStartTimestamp,
+        });
+      }
+    }
+    // Recompute against current playback position so live-session rebuilds (new batches arriving)
+    // don't snap the active highlight back to the init item mid-play.
+    const activeId = findActiveHistoryItemId(items, sessionStartTimestamp + currentTime);
+    set({ historyItems: items, activeHistoryItemId: activeId, idlePeriods });
+  },
+
+  resetForSession: () => {
+    stopPolling();
+    handle = null;
+    set({
+      state: "idle",
+      currentTime: 0,
+      totalTime: 0,
+      activeHistoryItemId: null,
+    });
+  },
 }));
 
 export const selectIsPlayerDisabled = (s: PlayerStoreState) => s.state === "idle" || s.events.length === 0;

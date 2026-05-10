@@ -11,8 +11,8 @@ For the capture side (browser → events) see [SDK reference](/documentation/sdk
 The page nests four layers, outer-to-inner:
 
 1. **Dashboard chrome** — Next.js + React 19 + Tailwind v4. Renders
-   the page's standard layout (header, slice picker above the
-   viewport, control bar below it).
+   the page's standard layout (header above the viewport, side panel
+   beside the viewport, control bar below).
 2. **Viewport host element** — a regular `<div>` with
    `pointer-events: none`, so the user can never click into the
    replayed content. They watch, they don't interact.
@@ -52,7 +52,7 @@ Scrubbing is "skip ahead by N ms": the player fast-forwards through
 events without rendering intermediate states, then resumes normal
 playback at the target timestamp.
 
-## Event stream + read-time slicer
+## Event stream + read-time history
 
 The session-detail endpoint (`GET /api/sessions/{id}`) returns
 metadata + a marker list — typed timeline anchors. Events themselves
@@ -68,10 +68,10 @@ GET /api/sessions/{id}/events       → { batches: [{ data: "<base64-gzip>", …
 Browser decompresses each blob (DecompressionStream),
 concatenates, sorts by timestamp
   ↓
-Slicer (pure module, src/lib/slicer/) folds the stream into slices
-based on criteria { byUrl, idleGapMs }
-  ↓
-rrweb Replayer consumes the active slice's events
+Two consumers receive the same flat event stream:
+  • rrweb Replayer plays the entire session as one continuous stream
+  • History builder (pure module, src/lib/history/) folds the stream
+    into a chronological feed of timeline annotations
 ```
 
 `useSessionEventsQuery` is `staleTime: Infinity` — recordings are
@@ -79,20 +79,20 @@ immutable once captured. The `EventBatch` rows are sorted by
 `firstTimestamp ASC` server-side; out-of-order arrival from the SDK
 is sorted out at read time.
 
-Slicing is **derived state**. Changing the criteria (e.g. flipping
-"split on idle gaps" off) reslices instantly — no extra fetch, no
-remount churn beyond the active-slice change.
+The history feed is **derived state**. Changing criteria (e.g.
+adjusting the idle-gap threshold) rebuilds the feed instantly with
+no extra fetch.
 
-### Why a `dozor:url` marker is a hard cut
+### `dozor:url` markers carry a fresh FullSnapshot
 
 The SDK pairs every `dozor:url` custom event with an immediate
 `record.takeFullSnapshot()` — the next event in the stream after the
-marker is a fresh `type: 2` (FullSnapshot) for the new pathname. The
-slicer treats the marker as a hard split because resuming an
-incremental-mutation stream (`type: 3`) across a navigation would
-apply DOM mutations against the wrong document and corrupt the
-replay. The full-snapshot reset gives every URL slice a clean DOM to
-diff forward from.
+marker is a fresh `type: 2` (FullSnapshot) for the new pathname.
+Because the player consumes one continuous stream, the new
+FullSnapshot simply lands inline and the rrweb Replayer applies it
+as a clean DOM reset for the new pathname. The history feed treats
+the marker as the boundary between two `navigation` sections so the
+user can jump straight to either page.
 
 ## Read endpoints
 
@@ -142,23 +142,31 @@ rejection.
 The wire contract for `POST /api/ingest` (the SDK-facing side) lives
 in [SDK → Wire format](/documentation/sdk/wire-format).
 
-## Slice picker
+## History feed
 
 ```
-[init]  /checkout              0:00–1:18
-[url]   /checkout/payment      1:18–3:04   ← active
-[idle]  /checkout/payment      3:04–3:42
+[▶] /checkout                  0:00–1:18    ← active
+[⇄] /checkout/payment          1:18–3:04
+[⏸] Idle                       3:04–3:42
+[👤] Identified: user-42       3:51
 ```
 
-Each row shows a reason icon + pathname + duration. Clicking a row:
+Each row shows a kind icon + label + duration. Items break down into
+two flavours:
 
-1. Updates the player's `activeSliceIndex` in the Zustand store and
-   resets `currentTime` to 0
-2. Remounts the rrweb Replayer keyed by `slice.id` (so swapping
-   slices replays cleanly without state bleed)
-3. Player lands in `paused` — user clicks **Play** when ready (no
-   auto-play across slice changes; that's what the **Auto play next**
-   toggle is for, end-of-slice → next slice)
+- **Sections** — `init` and `navigation`. They chain head-to-tail and
+  cover the entire session timeline. Exactly one section is the
+  active item at any moment of playback.
+- **Markers** — `idle` and `identify`. Markers nest inside sections;
+  during playback a marker's range takes priority over the
+  surrounding section in the active-item lookup, so playing through
+  an idle gap visibly highlights the gap.
+
+Clicking a row calls `seek(item.startedAt - sessionStart)` on the
+Zustand store. The replayer state stays as it was — playing rows
+keep playing from the new offset, paused rows pause at it. There is
+no remount: the rrweb Replayer plays one continuous stream for the
+whole session.
 
 ## Auto-scaling viewport
 
@@ -184,20 +192,35 @@ viewport dimensions; the dashboard renders it scaled to fit.
 Both observers are properly disconnected in the effect cleanup so
 no zombie listeners stay active across re-renders.
 
-## Console panel
+## Side panel — `History` + `Console` tabs
+
+A 320 px column to the right of the viewport. Two tabs share the
+column; switching tabs is local state in the Zustand store, no
+remount. Both tabs own a toolbar slot (empty today, a future home
+for filters / sort) above their feed list.
+
+### History tab
+
+Renders the history feed described above. The currently-playing
+section is highlighted with a left accent border and a tinted
+background; the list auto-scrolls (`block: "nearest"` smooth) to
+keep it in view. The active id is recomputed in the same RAF tick
+that drives `currentTime` updates and is set in the store **only
+when it actually changes** — the 60 fps `currentTime` refresh
+doesn't re-render the list.
+
+### Console tab
 
 Events of `type === 6` are rrweb's console events (when
-`recordConsole: true` was set in the SDK). The dashboard's optional
-side console panel reads them out of the same stream and renders:
+`recordConsole: true` was set in the SDK). The Console tab reads
+them out of the same stream and renders:
 
 - The log level (`info` / `warn` / `error` / `debug` / `log`)
 - The arguments serialised
-- The timestamp relative to the slice
+- The timestamp relative to the session start
 
-The panel is read-only — entries auto-scroll while you're at the
-bottom and pause auto-scroll when you scroll up to inspect an
-earlier line. Toggle the panel via the **Console** button in the
-control bar.
+Read-only feed — entries auto-scroll while you're at the bottom and
+pause auto-scroll when you scroll up to inspect an earlier line.
 
 ## Control bar
 
@@ -206,14 +229,16 @@ The bar below the viewport carries:
 - **Play / Pause** — toggle playback
 - **−5s** / **+5s** — seek backward / forward
 - **Speed** — popover with `0.5×` / `1×` / `2×`
-- **Skip idle** (toggle) — fast-forward through inactive periods
-- **Auto play next** (toggle) — when the active slice ends, advance
-  to the next slice automatically
-- **Console** (toggle) — open / close the side console panel
-- **Seek bar** — scrubbable progress within the active slice
+- **Skip idle** (toggle) — fast-forward through inactive periods during playback
+- **Compress idle** (toggle, default on) — rewrites the rrweb event stream upstream so each idle
+  gap longer than 30 s is shrunk to exactly 5 s. The Replayer's `getMetaData().totalTime` and
+  the seek bar reflect the compressed timeline; history items keep `realDurationMs` set from
+  the original gap, so labels show real durations even though seek-bar position is compressed.
+  See `lib/history/compress.ts` for the transform + `mapToCompressed` translator.
+- **Seek bar** — scrubbable progress across the (possibly compressed) timeline
 
-There are no keyboard shortcuts. Slice navigation is via the slice
-picker above the viewport.
+There are no keyboard shortcuts. The history feed in the side panel
+is the primary timeline-navigation surface.
 
 ## Privacy contract preserved
 
@@ -238,15 +263,14 @@ All paths are relative to the repo root. Player files live under
 | Module                                                                                                                                                                                                                  | Responsibility                                                    |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | [`replays/[sessionId]/page.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/page.tsx>)                                                 | Server Component prefetch of session detail                       |
-| [`components/player/index.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/index.tsx>)                               | Composition root — mounts viewport + controls + slice picker      |
+| [`components/player/index.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/index.tsx>)                               | Composition root — mounts viewport + side panel + control bar     |
 | [`components/player/viewport/index.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/viewport/index.tsx>)             | Shadow DOM host + rrweb Replayer instantiation + ResizeObservers  |
 | [`components/player/viewport/replayer-css.ts`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/viewport/replayer-css.ts>) | The CSS string injected into the shadow root (rrweb requirements) |
-| [`components/player/store.ts`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/store.ts>)                                 | Zustand store — `slices`, `activeSliceIndex`, `events`, ...       |
+| [`components/player/store.ts`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/store.ts>)                                 | Zustand store — `events`, `historyItems`, `activeTab`, ...        |
 | [`components/player/control-bar/`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/tree/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/control-bar>)                          | Play/pause/scrub/speed controls                                   |
-| [`components/player/slice-picker.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/slice-picker.tsx>)                 | Slice list + click-to-seek                                        |
-| [`components/player/console-panel.tsx`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/console-panel.tsx>)               | Console event rendering                                           |
+| [`components/player/side-panel/`](<https://github.com/kolia-zamnius/kharko-dozor-dashboard/tree/main/src/app/%5Blocale%5D/(dashboard)/replays/%5BsessionId%5D/components/player/side-panel>)                            | Tab-switched side panel — History + Console feeds                 |
 | [`api-client/sessions/queries.ts`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/api-client/sessions/queries.ts)                                                                                | `useSessionEventsQuery` + `useSessionMarkersQuery`                |
-| [`lib/slicer/`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/lib/slicer/index.ts)                                                                                                              | Pure read-time slicer — `slice(events, criteria) → Slice[]`       |
+| [`lib/history/`](https://github.com/kolia-zamnius/kharko-dozor-dashboard/blob/main/src/lib/history/index.ts)                                                                                                            | Pure history builder — `buildHistory(events, criteria)`           |
 
 ## See also
 

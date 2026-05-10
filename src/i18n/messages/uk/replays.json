@@ -96,20 +96,26 @@
         "forwardFive": "Вперед на 5 секунд",
         "skipIdleAria": "Пропускати періоди бездіяльності",
         "skipIdle": "Пропускати паузи",
-        "autoPlayAria": "Автовідтворення наступного сегмента",
-        "autoPlay": "Авто",
-        "consoleAria": "Перемкнути панель консолі",
+        "compressIdleAria": "Стискати паузи у часовій шкалі",
+        "compressIdle": "Стискати паузи"
+      },
+      "tabs": {
+        "history": "Історія",
         "console": "Консоль"
       },
-      "console": {
-        "title": "Консоль",
-        "empty": "Логів у цей момент немає."
+      "history": {
+        "count": "{count, plural, one {# запис} few {# записи} many {# записів} other {# записів}}",
+        "copyUrlAria": "Копіювати URL",
+        "copyUrlSuccess": "URL скопійовано",
+        "copyUrlError": "Не вдалося скопіювати URL",
+        "kind": {
+          "init": "Початок сесії",
+          "idle": "Простій",
+          "identify": "Ідентифіковано: {userId}"
+        }
       },
-      "slicePicker": {
-        "reasonInit": "Початок",
-        "reasonIdle": "Після паузи",
-        "reasonUrl": "Зміна URL",
-        "tooltip": "{reason} · {pathname} · {duration} · {events} подій"
+      "console": {
+        "empty": "Логів у цей момент немає."
       }
     }
   }
