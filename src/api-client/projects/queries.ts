@@ -5,12 +5,6 @@ import { projectKeys } from "./keys";
 import type { Project } from "./schemas";
 
 export const projectQueries = {
-  all: () =>
-    queryOptions({
-      queryKey: projectKeys.all(),
-      queryFn: ({ signal }) => apiFetch<Project[]>(routes.projects.list(), { signal }),
-      staleTime: 60_000,
-    }),
   byOrg: (organizationId: string) =>
     queryOptions({
       queryKey: projectKeys.byOrg(organizationId),
@@ -18,14 +12,6 @@ export const projectQueries = {
       staleTime: 60_000,
     }),
 };
-
-export function useProjectsQuery() {
-  return useQuery(projectQueries.all());
-}
-
-export function useProjectsSuspenseQuery() {
-  return useSuspenseQuery(projectQueries.all());
-}
 
 /** Conditional via `enabled` — modal flows that mount their query only when opened. Suspense doesn't accept `enabled: false`. */
 export function useOrgProjectsQuery(organizationId: string, enabled = true) {

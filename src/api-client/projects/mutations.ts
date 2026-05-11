@@ -1,5 +1,5 @@
 import { apiFetch } from "@/api-client/_lib/fetch";
-import { projectQueries } from "@/api-client/projects/queries";
+import { projectKeys } from "@/api-client/projects/keys";
 import { routes } from "@/api-client/_lib/routes";
 import type {
   CreateProjectInput,
@@ -19,9 +19,8 @@ export function useCreateProjectMutation() {
         method: "POST",
         body: JSON.stringify({ name, organizationId }),
       }),
-    onSuccess: (_, { organizationId }) => {
-      void queryClient.invalidateQueries({ queryKey: projectQueries.all().queryKey });
-      void queryClient.invalidateQueries({ queryKey: projectQueries.byOrg(organizationId).queryKey });
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: projectKeys.all() });
     },
     // User-facing copy says "API key" — `Project` is the schema-level entity.
     // The api-keys section of each org card IS the project UI; there's no separate "projects" page.
@@ -41,7 +40,7 @@ export function useUpdateProjectMutation() {
         method: "PATCH",
         body: JSON.stringify({ name }),
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectQueries.all().queryKey }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectKeys.all() }),
     meta: {
       errorKey: "settings.mutations.projects.update.error",
       successKey: "settings.mutations.projects.update.success",
@@ -57,7 +56,7 @@ export function useDeleteProjectMutation() {
       apiFetch(routes.projects.detail(projectId), {
         method: "DELETE",
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectQueries.all().queryKey }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectKeys.all() }),
     meta: {
       errorKey: "settings.mutations.projects.delete.error",
       successKey: "settings.mutations.projects.delete.success",
@@ -73,7 +72,7 @@ export function useRegenerateProjectKeyMutation() {
       apiFetch<Project>(routes.projects.regenerateKey(projectId), {
         method: "POST",
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectQueries.all().queryKey }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectKeys.all() }),
     meta: {
       errorKey: "settings.mutations.projects.regenerateKey.error",
       successKey: "settings.mutations.projects.regenerateKey.success",
