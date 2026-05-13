@@ -21,7 +21,7 @@ export default async function UsersPage() {
   const queryClient = getQueryClient();
 
   await Promise.all([
-    queryClient.prefetchQuery(trackedUserQueries.list()),
+    queryClient.prefetchInfiniteQuery(trackedUserQueries.list()),
     queryClient.prefetchQuery(trackedUserQueries.summary()),
   ]);
 

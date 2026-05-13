@@ -100,14 +100,19 @@ export const sessionListParamsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
 });
 
-/** Pre-serialisation TS shape (not z.infer) — `queries.ts` queryFn and `keys.ts` consume this directly without going through the parser. */
+/**
+ * Pre-serialisation TS shape (not z.infer) — `queries.ts` queryFn and `keys.ts`
+ * consume this directly without going through the parser. Cursor lives in
+ * `useInfiniteQuery`'s `pageParam`, not in the params object — keeping it out
+ * of the type means filter-only changes invalidate the queryKey while page
+ * advances reuse it (canonical infinite-query contract).
+ */
 export type SessionListParams = {
   projectIds?: string[];
   search?: string;
   sort?: SessionListSortBy;
   sortDir?: SessionListSortDir;
   range?: SessionDateRange;
-  cursor?: string;
 };
 
 export type SessionListItem = z.infer<typeof sessionListItemSchema>;
