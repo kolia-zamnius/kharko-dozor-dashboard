@@ -143,7 +143,7 @@ export function Player({ session }: PlayerProps) {
           )}
         </div>
         {sidePanelVisible && (
-          <div className="bg-card in-fullscreen:max-h-none max-h-96 border-t lg:max-h-none lg:border-t-0 lg:border-l">
+          <div className="bg-card in-fullscreen:max-h-none flex max-h-96 min-h-0 flex-col overflow-hidden border-t lg:h-full lg:max-h-none lg:border-t-0 lg:border-l">
             <SidePanel />
           </div>
         )}
