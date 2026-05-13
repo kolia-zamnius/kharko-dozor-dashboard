@@ -22,7 +22,7 @@ export default async function ReplaysPage() {
   const queryClient = getQueryClient();
 
   await Promise.all([
-    queryClient.prefetchQuery(sessionQueries.list()),
+    queryClient.prefetchInfiniteQuery(sessionQueries.list()),
     queryClient.prefetchQuery(sessionQueries.summary()),
   ]);
 

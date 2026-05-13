@@ -1,12 +1,19 @@
 import { apiFetch } from "@/api-client/_lib/fetch";
 import { pollingOptions } from "@/api-client/_lib/polling";
 import { routes } from "@/api-client/_lib/routes";
-import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { cursorPlaceholderData } from "@/api-client/_lib/pagination";
+import {
+  queryOptions,
+  useInfiniteQuery,
+  useQuery,
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { cursorInfiniteQueryOptions, cursorPlaceholderData } from "@/api-client/_lib/pagination";
 import { trackedUserKeys } from "./keys";
 import type {
   PaginatedTrackedUsers,
   TrackedUserDetail,
+  TrackedUserListItem,
   TrackedUserListParams,
   TrackedUsersSummary,
   UserActivity,
@@ -21,27 +28,25 @@ import {
   USER_PAGE_POLL_INTERVAL_MS,
 } from "@/api-client/tracked-users/constants";
 
-function buildListQuery(params: TrackedUserListParams): string {
+function buildListQuery(params: TrackedUserListParams, cursor: string | undefined): string {
   const sp = new URLSearchParams();
   if (params.projectIds?.length) sp.set("projectIds", params.projectIds.join(","));
   if (params.statuses?.length) sp.set("statuses", params.statuses.join(","));
   if (params.sort) sp.set("sort", params.sort);
   if (params.sortDir && params.sortDir !== "desc") sp.set("sortDir", params.sortDir);
   if (params.search) sp.set("search", params.search);
-  if (params.cursor) sp.set("cursor", params.cursor);
+  if (cursor) sp.set("cursor", cursor);
   const qs = sp.toString();
   return qs ? `?${qs}` : "";
 }
 
 export const trackedUserQueries = {
   list: (params: TrackedUserListParams = {}) =>
-    queryOptions({
+    cursorInfiniteQueryOptions<TrackedUserListItem>({
       queryKey: trackedUserKeys.list(params),
-      queryFn: ({ signal }) =>
-        apiFetch<PaginatedTrackedUsers>(`${routes.trackedUsers.list()}${buildListQuery(params)}`, { signal }),
+      fetchPage: ({ cursor, signal }) =>
+        apiFetch<PaginatedTrackedUsers>(`${routes.trackedUsers.list()}${buildListQuery(params, cursor)}`, { signal }),
       ...pollingOptions(USERS_LIST_POLL_MS),
-      // Filter / sort / cursor changes create new keys — keep previous data visible.
-      placeholderData: cursorPlaceholderData,
     }),
   summary: () =>
     queryOptions({
@@ -95,11 +100,11 @@ export const trackedUserQueries = {
     }),
 };
 
-export function useTrackedUsersQuery(params: TrackedUserListParams = {}) {
-  return useQuery(trackedUserQueries.list(params));
+export function useTrackedUsersInfiniteQuery(params: TrackedUserListParams = {}) {
+  return useInfiniteQuery(trackedUserQueries.list(params));
 }
-export function useTrackedUsersSuspenseQuery(params: TrackedUserListParams = {}) {
-  return useSuspenseQuery(trackedUserQueries.list(params));
+export function useTrackedUsersSuspenseInfiniteQuery(params: TrackedUserListParams = {}) {
+  return useSuspenseInfiniteQuery(trackedUserQueries.list(params));
 }
 
 export function useTrackedUsersSummaryQuery() {

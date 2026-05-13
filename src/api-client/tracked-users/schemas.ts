@@ -154,14 +154,18 @@ export const updateDisplayNameSchema = z
     message: "At least one of `customName` or `traitKey` must be provided",
   });
 
-/** Pre-serialisation TS shape (not z.infer) — `queries.ts` queryFn and `keys.ts` consume this directly without going through the parser. */
+/**
+ * Pre-serialisation TS shape (not z.infer) — `queries.ts` queryFn and `keys.ts`
+ * consume this directly without going through the parser. Cursor lives in
+ * `useInfiniteQuery`'s `pageParam`, not in the params object — see the twin
+ * note on `SessionListParams`.
+ */
 export type TrackedUserListParams = {
   projectIds?: string[];
   statuses?: UserActivityStatus[];
   sort?: UserListSortBy;
   sortDir?: UserListSortDir;
   search?: string;
-  cursor?: string;
 };
 
 export type TrackedUserListItem = z.infer<typeof trackedUserListItemSchema>;

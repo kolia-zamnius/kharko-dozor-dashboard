@@ -1,13 +1,20 @@
 import { apiFetch } from "@/api-client/_lib/fetch";
 import { pollingOptions } from "@/api-client/_lib/polling";
 import { routes } from "@/api-client/_lib/routes";
-import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { cursorPlaceholderData } from "@/api-client/_lib/pagination";
+import {
+  queryOptions,
+  useInfiniteQuery,
+  useQuery,
+  useSuspenseInfiniteQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { cursorInfiniteQueryOptions } from "@/api-client/_lib/pagination";
 import { sessionKeys } from "./keys";
 import type {
   PaginatedSessions,
   SessionDetail,
   SessionEventsResponse,
+  SessionListItem,
   SessionListParams,
   SessionMarkersResponse,
   SessionsSummary,
@@ -15,14 +22,14 @@ import type {
 import { DEFAULT_SESSION_DATE_RANGE } from "./domain";
 import { SESSION_DETAIL_POLL_MS, SESSIONS_LIST_POLL_MS } from "./constants";
 
-function buildSessionsUrl(params: SessionListParams): string {
+function buildSessionsUrl(params: SessionListParams, cursor: string | undefined): string {
   const sp = new URLSearchParams();
   if (params.projectIds?.length) sp.set("projectIds", params.projectIds.join(","));
   if (params.search) sp.set("search", params.search);
   if (params.sort) sp.set("sort", params.sort);
   if (params.sortDir && params.sortDir !== "desc") sp.set("sortDir", params.sortDir);
   if (params.range && params.range !== DEFAULT_SESSION_DATE_RANGE) sp.set("range", params.range);
-  if (params.cursor) sp.set("cursor", params.cursor);
+  if (cursor) sp.set("cursor", cursor);
   const qs = sp.toString();
   const base = routes.sessions.list();
   return qs ? `${base}?${qs}` : base;
@@ -30,11 +37,10 @@ function buildSessionsUrl(params: SessionListParams): string {
 
 export const sessionQueries = {
   list: (params: SessionListParams = {}) =>
-    queryOptions({
+    cursorInfiniteQueryOptions<SessionListItem>({
       queryKey: sessionKeys.list(params),
-      queryFn: ({ signal }) => apiFetch<PaginatedSessions>(buildSessionsUrl(params), { signal }),
+      fetchPage: ({ cursor, signal }) => apiFetch<PaginatedSessions>(buildSessionsUrl(params, cursor), { signal }),
       ...pollingOptions(SESSIONS_LIST_POLL_MS),
-      placeholderData: cursorPlaceholderData,
     }),
   summary: () =>
     queryOptions({
@@ -67,11 +73,11 @@ export const sessionQueries = {
     }),
 };
 
-export function useSessionsQuery(params: SessionListParams = {}) {
-  return useQuery(sessionQueries.list(params));
+export function useSessionsInfiniteQuery(params: SessionListParams = {}) {
+  return useInfiniteQuery(sessionQueries.list(params));
 }
-export function useSessionsSuspenseQuery(params: SessionListParams = {}) {
-  return useSuspenseQuery(sessionQueries.list(params));
+export function useSessionsSuspenseInfiniteQuery(params: SessionListParams = {}) {
+  return useSuspenseInfiniteQuery(sessionQueries.list(params));
 }
 
 export function useSessionsSummaryQuery() {

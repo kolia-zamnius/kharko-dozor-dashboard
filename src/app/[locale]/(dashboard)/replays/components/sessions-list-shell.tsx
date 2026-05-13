@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 // `useRouter` IS locale-aware so empty-query clears land on `/{locale}/replays`.
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
-import { Suspense, useCallback, useMemo, useState } from "react";
+import { Suspense, useCallback, useMemo } from "react";
 
 import { LastUpdated } from "@/components/last-updated";
 import { Spinner } from "@/components/ui/feedback/spinner";
@@ -19,8 +19,8 @@ import {
   type SessionListSortDir,
 } from "@/api-client/sessions/domain";
 import { SESSIONS_LIST_POLL_MS } from "@/api-client/sessions/constants";
-import { useSessionsSummarySuspenseQuery, useSessionsSuspenseQuery } from "@/api-client/sessions/queries";
-import type { SessionListItem } from "@/api-client/sessions/schemas";
+import { useSessionsSummarySuspenseQuery, useSessionsSuspenseInfiniteQuery } from "@/api-client/sessions/queries";
+import { flattenCursorPages } from "@/api-client/_lib/pagination";
 import { useCanManageActiveOrg } from "@/lib/hooks/use-can-manage-active-org";
 import { EmptyState } from "./empty-state";
 import { FilterBar } from "./filter-bar";
@@ -30,8 +30,9 @@ import { SessionsTable } from "./sessions-table";
 
 /**
  * URL-driven list shell — paired with `UsersListShell`. URL is the source of
- * truth (every filter combo is shareable); `cursor`+`prevPages` accumulate
- * pages with id-based Set dedup.
+ * truth (every filter combo is shareable); page accumulation + load-more come
+ * from `useSuspenseInfiniteQuery` — `fetchNextPage()` is a non-suspending
+ * append, so the closest Suspense boundary stays mounted.
  *
  * `canManage` is threaded to `SessionsTable` so the delete control only
  * renders for OWNER/ADMIN. The route is ADMIN-guarded regardless (double
@@ -74,7 +75,6 @@ function SessionsListShellContent() {
           params.delete(key);
         }
       }
-      params.delete("cursor");
       const qs = params.toString();
       router.replace(qs ? `?${qs}` : "/replays", { scroll: false });
     },
@@ -100,18 +100,6 @@ function SessionsListShellContent() {
     [updateUrl],
   );
 
-  const [cursor, setCursor] = useState<string | undefined>();
-  const [prevPages, setPrevPages] = useState<SessionListItem[]>([]);
-
-  const filterKey = `${urlSearch}|${urlProjectIds.join(",")}|${urlDateRange}|${urlSort}|${urlSortDir}`;
-  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
-  if (prevFilterKey !== filterKey) {
-    setPrevFilterKey(filterKey);
-    setCursor(undefined);
-    setPrevPages([]);
-  }
-
-  // Suspense handles initial load; cursor/filter changes use `placeholderData: keepPreviousData` (table keeps old page until new lands).
   const listParams = useMemo(
     () => ({
       search: urlSearch || undefined,
@@ -119,28 +107,18 @@ function SessionsListShellContent() {
       range: urlDateRange !== DEFAULT_SESSION_DATE_RANGE ? urlDateRange : undefined,
       sort: urlSort !== "date" ? urlSort : undefined,
       sortDir: urlSortDir !== "desc" ? urlSortDir : undefined,
-      cursor,
     }),
-    [urlSearch, urlProjectIds, urlDateRange, urlSort, urlSortDir, cursor],
+    [urlSearch, urlProjectIds, urlDateRange, urlSort, urlSortDir],
   );
 
-  const list = useSessionsSuspenseQuery(listParams);
+  const list = useSessionsSuspenseInfiniteQuery(listParams);
   const summary = useSessionsSummarySuspenseQuery();
 
-  // `list.data` always defined under Suspense — no `!list.data` guard needed.
-  const sessions = useMemo(() => {
-    if (!cursor) return list.data.data;
-    const seen = new Set(prevPages.map((s) => s.id));
-    const fresh = list.data.data.filter((s) => !seen.has(s.id));
-    return [...prevPages, ...fresh];
-  }, [list.data, cursor, prevPages]);
+  const sessions = useMemo(() => flattenCursorPages(list.data.pages), [list.data.pages]);
 
   const handleLoadMore = useCallback(() => {
-    if (list.data.nextCursor) {
-      setPrevPages(sessions);
-      setCursor(list.data.nextCursor);
-    }
-  }, [list.data, sessions]);
+    if (list.hasNextPage && !list.isFetchingNextPage) void list.fetchNextPage();
+  }, [list]);
 
   const hasFilters = !!(urlSearch || urlProjectIds.length || urlDateRange !== DEFAULT_SESSION_DATE_RANGE);
 
@@ -187,7 +165,7 @@ function SessionsListShellContent() {
             onSortChange={handleSortChange}
             canManage={canManage}
           />
-          {list.data.nextCursor && <LoadMore onClick={handleLoadMore} isLoading={list.isFetching && !!cursor} />}
+          {list.hasNextPage && <LoadMore onClick={handleLoadMore} isLoading={list.isFetchingNextPage} />}
         </>
       )}
     </div>
